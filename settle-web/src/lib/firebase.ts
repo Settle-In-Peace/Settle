@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,7 +13,16 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+let authInstance: Auth | null = null;
 
-export { auth, RecaptchaVerifier, signInWithPhoneNumber };
+// Lazy init: calling getAuth() at module scope crashes during Next.js
+// prerender/SSR when Firebase env vars are absent (auth/invalid-api-key).
+export function getFirebaseAuth(): Auth {
+  if (!authInstance) {
+    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+}
+
+export { RecaptchaVerifier, signInWithPhoneNumber };

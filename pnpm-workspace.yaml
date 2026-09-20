@@ -1,5 +1,5 @@
 packages:
   - 'settle-web'
   - 'settle-api'
-  - 'settle-mobile/packages/*'
+  - 'settle-mobile'
   - 'packages/*'

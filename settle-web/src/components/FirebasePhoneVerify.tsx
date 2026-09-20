@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase';
+import { getFirebaseAuth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase';
 
 interface FirebasePhoneVerifyProps {
   phone: string;
@@ -39,6 +39,7 @@ export default function FirebasePhoneVerify({ phone, token, onVerified }: Fireba
       }
       container.innerHTML = '';
 
+      const auth = getFirebaseAuth();
       recaptchaRef.current = new RecaptchaVerifier(auth, 'firebase-recaptcha', {
         size: 'invisible',
       });
