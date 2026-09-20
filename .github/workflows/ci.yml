@@ -44,12 +44,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Enable pnpm via corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm
       # The lockfile lives at the repo root (pnpm workspace), so install
       # from the root with --frozen-lockfile, then run per-package commands
       # with working-directory set.
@@ -64,12 +64,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Enable pnpm via corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Type check
@@ -86,12 +86,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Enable pnpm via corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Type check
