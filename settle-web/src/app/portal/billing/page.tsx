@@ -28,6 +28,10 @@ export default function BillingPage() {
       router.push('/login');
       return;
     }
+    if (storedUser.role !== 'provider') {
+      router.push('/dashboard');
+      return;
+    }
     setUser(storedUser);
     fetch(`${API_URL}/providers/portal/stats`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())

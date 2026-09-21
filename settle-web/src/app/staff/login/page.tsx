@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
-import { storeAuth, isAuthenticated, clearAuth } from '../../../lib/authUtils';
+import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../../lib/authUtils';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
@@ -29,7 +29,7 @@ export default function StaffLoginPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && isAuthenticated()) {
-      const user = JSON.parse(localStorage.getItem('settle_user') || '{}');
+      const user = getStoredUser() || {};
       const dest = ROLE_DASHBOARDS[user?.role] || '/dashboard';
       router.replace(dest);
     } else {

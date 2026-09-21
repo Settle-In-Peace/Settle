@@ -5,13 +5,20 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
-import { storeAuth, isAuthenticated, clearAuth } from '../../lib/authUtils';
+import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../lib/authUtils';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 
 type AuthMode = 'password' | 'otp' | 'passkey';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
+
+const redirectByRole = (role?: string) => {
+  if (role === 'admin') return '/admin';
+  if (role === 'sales') return '/sales';
+  if (role === 'provider') return '/portal';
+  return '/dashboard';
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,7 +34,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && isAuthenticated()) {
-      router.replace('/dashboard');
+      router.replace(redirectByRole(getStoredUser()?.role));
     } else {
       setCheckingAuth(false);
     }
@@ -65,13 +72,6 @@ export default function LoginPage() {
       router.push('/login');
     },
   });
-
-  const redirectByRole = (role?: string) => {
-    if (role === 'admin') return '/admin';
-    if (role === 'sales') return '/sales';
-    if (role === 'provider') return '/portal';
-    return '/dashboard';
-  };
 
   // -- Password login --
   const handlePasswordLogin = async (e: React.FormEvent) => {

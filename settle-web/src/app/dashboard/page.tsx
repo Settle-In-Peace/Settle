@@ -17,6 +17,13 @@ interface UserProfile {
   createdAt?: string;
 }
 
+// Non-customer roles belong on their own dashboards — mirrors redirectByRole in login
+function dashboardForRole(role?: string): string | null {
+  if (role === 'provider') return '/portal';
+  if (role === 'admin') return '/admin';
+  return null;
+}
+
 function getUserFromToken(): any | null {
   const token = getStoredToken();
   if (!token) return null;
@@ -43,14 +50,24 @@ export default function DashboardPage() {
       return;
     }
 
-    // Fast path: check stored user and JWT token for sales role before hitting the API
+    // Fast path: check stored user and JWT token for role before hitting the API
     const stored = getStoredUser();
+    const storedDest = dashboardForRole(stored?.role);
+    if (storedDest) {
+      router.push(storedDest);
+      return;
+    }
     if (stored?.role === 'sales') {
       setUser(stored);
       setLoading(false);
       return;
     }
     const tokenUser = getUserFromToken();
+    const tokenDest = dashboardForRole(tokenUser?.role);
+    if (tokenDest) {
+      router.push(tokenDest);
+      return;
+    }
     if (tokenUser?.role === 'sales') {
       setUser(tokenUser);
       setLoading(false);
@@ -62,6 +79,11 @@ export default function DashboardPage() {
       try {
         const apiCall = getAuthenticatedApi();
         const response = await apiCall<UserProfile>('/auth/profile', { method: 'GET' });
+        const dest = dashboardForRole(response.role);
+        if (dest) {
+          router.push(dest);
+          return;
+        }
         setUser(response);
       } catch (err) {
         setError('Failed to load profile');

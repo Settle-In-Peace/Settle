@@ -249,6 +249,10 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
     const parsed = initialUser ?? getStoredUser();
     if (!token) { router.push('/login'); return; }
     if (!parsed) { router.push('/login'); return; }
+    if (parsed.role !== 'sales' && parsed.role !== 'admin') {
+      router.push('/dashboard');
+      return;
+    }
     setUser(parsed);
     loadData(token);
   }, [router, initialUser, loadData]);

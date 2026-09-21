@@ -21,6 +21,10 @@ export default function PortalSettingsPage() {
       router.push('/login');
       return;
     }
+    if (storedUser.role !== 'provider') {
+      router.push('/dashboard');
+      return;
+    }
     setUser(storedUser);
     fetch(`${API_URL}/providers/${storedUser.sub || storedUser.id}`, {
       headers: { Authorization: `Bearer ${token}` },

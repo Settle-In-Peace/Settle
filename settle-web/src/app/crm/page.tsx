@@ -162,7 +162,8 @@ export default function CrmPage() {
       return;
     }
     const stored = getStoredUser();
-    if (!stored || stored.role !== 'admin') {
+    // Staff login routes admin, lender, and referral_manager here
+    if (!stored || !['admin', 'lender', 'referral_manager'].includes(stored.role)) {
       router.push('/dashboard');
       return;
     }
