@@ -25,11 +25,12 @@ cd settle-web
 
 # Step 2: Build the Next.js app (standalone mode, not static export)
 # NEXT_PUBLIC_* vars are inlined into the client bundle at build time, so they
-# must be overridden here — wrangler vars only apply to the worker runtime and
-# cannot change already-bundled client JS. Shell env beats .env/.env.local.
+# must be exported (not inline-assigned) — the OpenNext CLI in step 4 runs
+# `next build` a second time internally, and only exported vars reach it.
+# Shell env beats .env/.env.local.
+export NEXT_PUBLIC_API_URL="https://api.settleinpeace.com"
+export NEXT_PUBLIC_APP_URL="https://settleinpeace.com"
 echo "=== Step 2: Next.js build ==="
-NEXT_PUBLIC_API_URL="https://api.settleinpeace.com" \
-NEXT_PUBLIC_APP_URL="https://settleinpeace.com" \
 pnpm build
 
 # Step 3: Clean macOS AppleDouble files created during build

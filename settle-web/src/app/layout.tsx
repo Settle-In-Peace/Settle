@@ -32,6 +32,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* next-themes' inline theme script is transpiled by Turbopack, which
+            injects an __name() helper that doesn't exist in raw inline script
+            context — define a no-op shim so the script doesn't crash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "window.__name||(window.__name=function(f){return f})",
+          }}
+        />
         <Providers>
           <Navigation />
           {children}
