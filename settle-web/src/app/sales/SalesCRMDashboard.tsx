@@ -46,6 +46,29 @@ interface CollectionAccount {
   debtorPhone?: string;
 }
 
+interface CrmUser {
+  id?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+}
+
+interface LeadStats {
+  total?: number;
+  new?: number;
+  contacted?: number;
+  interested?: number;
+  converted?: number;
+  rejected?: number;
+  followUpsDue?: number;
+  conversionRate?: number;
+}
+
+function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 const DEBT_LABELS: Record<string, string> = {
   credit_card: 'Credit Cards',
   medical: 'Medical',
@@ -141,15 +164,15 @@ function parseActivities(notes?: string) {
 }
 
 interface SalesCRMDashboardProps {
-  initialUser?: any;
+  initialUser?: CrmUser;
 }
 
 export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProps) {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<CrmUser | null>(initialUser ?? null);
   const [tab, setTab] = useState<Tab>('leads');
   const [leads, setLeads] = useState<SalesLead[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<LeadStats | null>(null);
   const [inbox, setInbox] = useState<{ unassigned: SalesLead[]; mine: SalesLead[] }>({ unassigned: [], mine: [] });
   const [calendar, setCalendar] = useState<{ upcoming: SalesLead[]; overdue: SalesLead[] }>({ upcoming: [], overdue: [] });
   const [collections, setCollections] = useState<CollectionAccount[]>([]);
@@ -253,16 +276,19 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       router.push('/dashboard');
       return;
     }
-    setUser(parsed);
-    loadData(token);
+    queueMicrotask(() => {
+      setUser(parsed);
+      void loadData(token);
+    });
   }, [router, initialUser, loadData]);
 
-  // Load tab-specific data when tab changes
-  useEffect(() => {
-    if (tab === 'inbox') loadInbox();
-    if (tab === 'calendar') loadCalendar();
-    if (tab === 'collections') loadCollections();
-  }, [tab, loadInbox, loadCalendar, loadCollections]);
+  // Tab clicks load that tab's data via selectTab — no tab-watch effect needed.
+  const selectTab = (t: Tab) => {
+    setTab(t);
+    if (t === 'inbox') void loadInbox();
+    if (t === 'calendar') void loadCalendar();
+    if (t === 'collections') void loadCollections();
+  };
 
   const filteredLeads = useMemo(() => {
     let out = [...leads];
@@ -306,7 +332,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       }
       setSelectedLead(null); setNotes(''); setStatus('');
       await loadData(token);
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(errMsg(err)); }
     finally { setSaving(false); }
   };
 
@@ -316,7 +342,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       await loadInbox();
       const token = getStoredToken();
       if (token) await loadData(token);
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(errMsg(err)); }
   };
 
   const handleSendEmail = async () => {
@@ -330,7 +356,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       setEmailLead(null); setEmailSubject(''); setEmailBody(''); setEmailTemplate('intro');
       const token = getStoredToken();
       if (token) await loadData(token);
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(errMsg(err)); }
     finally { setEmailSending(false); }
   };
 
@@ -343,7 +369,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
         body: JSON.stringify({ to: dialLead.phone }),
       });
       setCallStatus(result.success ? `Call initiated (ID: ${result.callControlId})` : `Failed: ${result.error}`);
-    } catch (err: any) { setCallStatus(`Error: ${err.message}`); }
+    } catch (err) { setCallStatus(`Error: ${errMsg(err)}`); }
     finally { setDialing(false); }
   };
 
@@ -362,7 +388,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       setDialLead(null); setCallStatus(''); setCallLogNotes(''); setCallResult('');
       const token = getStoredToken();
       if (token) await loadData(token);
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(errMsg(err)); }
   };
 
   const handleSchedule = async () => {
@@ -376,7 +402,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       await loadCalendar();
       const token = getStoredToken();
       if (token) await loadData(token);
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(errMsg(err)); }
   };
 
   const openLead = (lead: SalesLead) => {
@@ -439,7 +465,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
           {TABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => selectTab(t.key)}
               className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                 tab === t.key
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
@@ -493,7 +519,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <option value="">All Statuses</option>
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                 </select>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'newest' | 'debt' | 'quality')}
                   className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm">
                   <option value="newest">Newest First</option>
                   <option value="debt">Highest Debt</option>
@@ -583,7 +609,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-bold text-black dark:text-white mb-3">New Leads from Website</h2>
-              <p className="text-sm text-zinc-500 mb-4">Leads that came in from the assessment form or contact page and haven't been assigned yet.</p>
+              <p className="text-sm text-zinc-500 mb-4">Leads that came in from the assessment form or contact page and haven&apos;t been assigned yet.</p>
               {inbox.unassigned?.length === 0 ? (
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-8 text-center text-zinc-500">No unassigned leads. Check back later!</div>
               ) : (
@@ -836,7 +862,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   </div>
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Type</label>
-                    <select value={scheduleType} onChange={(e) => setScheduleType(e.target.value as any)}
+                    <select value={scheduleType} onChange={(e) => setScheduleType(e.target.value as 'call' | 'email' | 'meeting')}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm">
                       <option value="call">Phone Call</option>
                       <option value="email">Email</option>
