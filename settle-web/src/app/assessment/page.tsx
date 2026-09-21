@@ -8,12 +8,9 @@ import { submitAssessment } from '@/lib/api';
 
 const STEPS = [
   { id: 'debt_amount', label: 'Debt Amount', icon: '$' },
-  { id: 'debt_types', label: 'Debt Types', icon: 'CC' },
-  { id: 'months_behind', label: 'Payment Status', icon: '!' },
-  { id: 'employment', label: 'Employment', icon: 'W' },
-  { id: 'income', label: 'Income', icon: '$' },
-  { id: 'contact', label: 'Contact', icon: '@' },
-  { id: 'consent', label: 'Review & Submit', icon: '✓' },
+  { id: 'debt_details', label: 'Your Debt', icon: 'CC' },
+  { id: 'finances', label: 'Finances', icon: 'W' },
+  { id: 'contact', label: 'Contact & Consent', icon: '@' },
 ];
 
 const DEBT_TYPE_OPTIONS = [
@@ -31,40 +28,6 @@ const US_STATES = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
   'VA','WA','WV','WI','WY',
 ];
-
-const DEBT_AMOUNT_LABELS: Record<string, string> = {
-  '5000': 'Under $7,500',
-  '10000': '$7,500 – $15,000',
-  '20000': '$15,000 – $25,000',
-  '35000': '$25,000 – $50,000',
-  '75000': '$50,000 – $100,000',
-  '125000': 'Over $100,000',
-};
-
-const EMPLOYMENT_LABELS: Record<string, string> = {
-  employed: 'Employed Full-Time',
-  self_employed: 'Self-Employed / Freelance',
-  part_time: 'Part-Time / Gig Work',
-  unemployed: 'Unemployed',
-  retired: 'Retired',
-  other: 'Disability / Other',
-};
-
-const INCOME_LABELS: Record<string, string> = {
-  '1500': 'Under $2,000/month',
-  '2750': '$2,000 – $3,500/month',
-  '4250': '$3,500 – $5,000/month',
-  '6500': '$5,000 – $8,000/month',
-  '10000': 'Over $8,000/month',
-};
-
-const MONTHS_LABELS: Record<string, string> = {
-  '0': 'Current on all payments',
-  '1': '1–2 months behind',
-  '3': '3–5 months behind',
-  '6': '6+ months behind',
-  '12': 'In collections',
-};
 
 // Exact TCPA disclosure text shown next to the consent checkbox. This is
 // sent to the backend and stored on the lead record so there is a verifiable
@@ -102,7 +65,7 @@ export default function AssessmentPage() {
 
   const currentStep = STEPS[step];
   const progress = Math.round(((step) / STEPS.length) * 100);
-  const timeLeft = Math.max(15, 120 - (step * 17));
+  const timeLeft = Math.max(15, 60 - (step * 15));
 
   const toggleDebtType = (type: string) => {
     setForm(f => ({
@@ -125,12 +88,10 @@ export default function AssessmentPage() {
 
   const canAdvance = () => {
     if (currentStep.id === 'debt_amount') return Number(form.totalDebt) >= 1000;
-    if (currentStep.id === 'debt_types') return form.debtTypes.length > 0;
-    if (currentStep.id === 'months_behind') return form.monthsBehind !== '';
-    if (currentStep.id === 'employment') return form.employmentStatus !== '';
-    if (currentStep.id === 'income') return form.monthlyIncome !== '';
-    if (currentStep.id === 'contact') return form.firstName && form.lastName && form.email && form.phone && form.state;
-    if (currentStep.id === 'consent') return form.tcpaConsent;
+    if (currentStep.id === 'debt_details') return form.debtTypes.length > 0 && form.monthsBehind !== '';
+    if (currentStep.id === 'finances') return form.employmentStatus !== '' && form.monthlyIncome !== '';
+    if (currentStep.id === 'contact')
+      return form.firstName && form.lastName && form.email && form.phone && form.state && form.tcpaConsent;
     return true;
   };
 
@@ -223,7 +184,7 @@ export default function AssessmentPage() {
         <div className="text-center mb-8">
           <p className="text-sm text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide mb-2">Free Debt Assessment</p>
           <h1 className="text-3xl font-bold text-black dark:text-white">Find your path to financial peace</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2">2 minutes · No credit check · No obligation</p>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-2">1 minute · No credit check · No obligation</p>
           <Link
             href="/assessment/chat"
             className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
@@ -279,7 +240,10 @@ export default function AssessmentPage() {
                 ].map(opt => (
                   <button
                     key={opt.value}
-                    onClick={() => setForm(f => ({ ...f, totalDebt: opt.value }))}
+                    onClick={() => {
+                      setForm(f => ({ ...f, totalDebt: opt.value }));
+                      goNext();
+                    }}
                     className={`w-full py-4 px-5 rounded-xl border-2 text-left transition-all flex items-center justify-between ${
                       form.totalDebt === opt.value
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
@@ -305,11 +269,11 @@ export default function AssessmentPage() {
             </div>
           )}
 
-          {/* Step 2: Debt Types */}
-          {currentStep.id === 'debt_types' && (
+          {/* Step 2: Debt Details */}
+          {currentStep.id === 'debt_details' && (
             <div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">What types of debt do you have?</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6">Select all that apply. This helps us match you with the right providers.</p>
+              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Tell us about your debt</h2>
+              <p className="text-zinc-500 dark:text-zinc-400 mb-6">Select all that apply.</p>
               <div className="grid grid-cols-2 gap-3">
                 {DEBT_TYPE_OPTIONS.map(opt => (
                   <button
@@ -328,21 +292,14 @@ export default function AssessmentPage() {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Step 3: Months Behind */}
-          {currentStep.id === 'months_behind' && (
-            <div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">How far behind are you on payments?</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6">On your most delinquent account.</p>
+              <h3 className="text-lg font-bold text-black dark:text-white mt-8 mb-3">How far behind are you on payments?</h3>
               <div className="space-y-3">
                 {[
-                  { label: "I'm current on all payments", value: '0', color: 'green' },
-                  { label: '1–2 months behind', value: '1', color: 'yellow' },
-                  { label: '3–5 months behind', value: '3', color: 'orange' },
-                  { label: '6+ months behind', value: '6', color: 'red' },
-                  { label: 'In collections', value: '12', color: 'red' },
+                  { label: "I'm current on all payments", value: '0' },
+                  { label: '1–2 months behind', value: '1' },
+                  { label: '3–5 months behind', value: '3' },
+                  { label: '6+ months behind', value: '6' },
+                  { label: 'In collections', value: '12' },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -365,12 +322,13 @@ export default function AssessmentPage() {
             </div>
           )}
 
-          {/* Step 4: Employment */}
-          {currentStep.id === 'employment' && (
+          {/* Step 3: Finances */}
+          {currentStep.id === 'finances' && (
             <div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">What is your employment status?</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6">This helps match you with programs you qualify for.</p>
-              <div className="space-y-3">
+              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Your finances</h2>
+              <p className="text-zinc-500 dark:text-zinc-400 mb-6">This helps match you with programs you qualify for. Stays private.</p>
+              <h3 className="text-lg font-bold text-black dark:text-white mb-3">Employment status</h3>
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Employed full-time', value: 'employed', icon: '💼' },
                   { label: 'Self-employed / Freelance', value: 'self_employed', icon: '🧑‍💻' },
@@ -382,7 +340,7 @@ export default function AssessmentPage() {
                   <button
                     key={opt.value}
                     onClick={() => setForm(f => ({ ...f, employmentStatus: opt.value }))}
-                    className={`w-full py-4 px-5 rounded-xl border-2 text-left font-medium transition-all flex items-center gap-3 ${
+                    className={`py-3 px-4 rounded-xl border-2 text-left font-medium transition-all flex items-center gap-3 ${
                       form.employmentStatus === opt.value
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
                         : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-blue-400'
@@ -393,14 +351,7 @@ export default function AssessmentPage() {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Step 5: Income */}
-          {currentStep.id === 'income' && (
-            <div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">What is your approximate monthly income?</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6">Before taxes, from all sources. This stays private.</p>
+              <h3 className="text-lg font-bold text-black dark:text-white mt-8 mb-3">Monthly income <span className="text-sm font-normal text-zinc-400">(before taxes)</span></h3>
               <div className="space-y-3">
                 {[
                   { label: 'Under $2,000/month', value: '1500' },
@@ -425,7 +376,7 @@ export default function AssessmentPage() {
             </div>
           )}
 
-          {/* Step 6: Contact Info */}
+          {/* Step 4: Contact & Consent */}
           {currentStep.id === 'contact' && (
             <div>
               <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Where should we send your matches?</h2>
@@ -497,72 +448,23 @@ export default function AssessmentPage() {
                     />
                   </div>
                 </div>
+
+                {/* Consent checkbox */}
+                <label className="flex gap-3 cursor-pointer items-start pt-2">
+                  <input
+                    type="checkbox"
+                    checked={form.tcpaConsent}
+                    onChange={e => setForm(f => ({ ...f, tcpaConsent: e.target.checked }))}
+                    className="mt-1 w-5 h-5 accent-blue-600 flex-shrink-0"
+                  />
+                  <span className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {TCPA_CONSENT_LANGUAGE}
+                  </span>
+                </label>
+                {error && (
+                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Step 7: Consent & Review */}
-          {currentStep.id === 'consent' && (
-            <div>
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Review your information</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6">Please confirm everything looks correct and provide your consent.</p>
-
-              {/* Summary card */}
-              <div className="bg-zinc-50 dark:bg-zinc-800 rounded-xl p-5 mb-6 space-y-3">
-                <div className="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-zinc-700">
-                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Assessment Summary</span>
-                  <button onClick={() => setStep(0)} className="text-xs text-blue-600 hover:underline">Edit</button>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <div className="text-zinc-400 text-xs">Total Debt</div>
-                    <div className="font-semibold text-black dark:text-white">{DEBT_AMOUNT_LABELS[form.totalDebt] || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-zinc-400 text-xs">Debt Types</div>
-                    <div className="font-semibold text-black dark:text-white">
-                      {form.debtTypes.map(t => DEBT_TYPE_OPTIONS.find(o => o.value === t)?.label).filter(Boolean).join(', ') || '—'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-zinc-400 text-xs">Payment Status</div>
-                    <div className="font-semibold text-black dark:text-white">{MONTHS_LABELS[form.monthsBehind] || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-zinc-400 text-xs">Employment</div>
-                    <div className="font-semibold text-black dark:text-white">{EMPLOYMENT_LABELS[form.employmentStatus] || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-zinc-400 text-xs">Monthly Income</div>
-                    <div className="font-semibold text-black dark:text-white">{INCOME_LABELS[form.monthlyIncome] || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-zinc-400 text-xs">Location</div>
-                    <div className="font-semibold text-black dark:text-white">{form.state}{form.zipCode ? ` ${form.zipCode}` : ''}</div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                  <div className="text-zinc-400 text-xs">Contact</div>
-                  <div className="font-semibold text-black dark:text-white text-sm">{form.firstName} {form.lastName}</div>
-                  <div className="text-zinc-500 text-xs">{form.email} · {form.phone}</div>
-                </div>
-              </div>
-
-              {/* Consent checkbox */}
-              <label className="flex gap-3 cursor-pointer items-start">
-                <input
-                  type="checkbox"
-                  checked={form.tcpaConsent}
-                  onChange={e => setForm(f => ({ ...f, tcpaConsent: e.target.checked }))}
-                  className="mt-1 w-5 h-5 accent-blue-600 flex-shrink-0"
-                />
-                <span className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  {TCPA_CONSENT_LANGUAGE}
-                </span>
-              </label>
-              {error && (
-                <p className="mt-4 text-red-600 dark:text-red-400 text-sm">{error}</p>
-              )}
             </div>
           )}
 
