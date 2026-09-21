@@ -6,12 +6,13 @@ import { AdminGuard } from './admin.guard';
 import { Provider } from '../entities/provider.entity';
 import { Lead } from '../entities/lead.entity';
 import { Match } from '../entities/match.entity';
+import { User } from '../entities/user.entity';
 import { EmailModule } from '../email/email.module';
 import { MatchingModule } from '../matching/matching.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Provider, Lead, Match]),
+    TypeOrmModule.forFeature([Provider, Lead, Match, User]),
     EmailModule,
     MatchingModule,
   ],
