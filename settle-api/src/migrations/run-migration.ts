@@ -28,6 +28,9 @@ import { CreateSkipTraceTables1700000000021 } from './1700000000021-CreateSkipTr
 import { CreateCallLogTables1700000000022 } from './1700000000022-CreateCallLogTables';
 import { CreateCreditReportTables1700000000023 } from './1700000000023-CreateCreditReportTables';
 import { CreateBackgroundCheckTables1700000000024 } from './1700000000024-CreateBackgroundCheckTables';
+import { AddSalesFollowUpColumns1700000000025 } from './1700000000025-AddSalesFollowUpColumns';
+import { CreateDebtPortfolioTables1700000000030 } from './1700000000030-CreateDebtPortfolioTables';
+import { CreatePaymentPlanTables1700000000031 } from './1700000000031-CreatePaymentPlanTables';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -60,6 +63,9 @@ const migrations: MigrationConstructor[] = [
   CreateCallLogTables1700000000022,
   CreateCreditReportTables1700000000023,
   CreateBackgroundCheckTables1700000000024,
+  AddSalesFollowUpColumns1700000000025,
+  CreateDebtPortfolioTables1700000000030,
+  CreatePaymentPlanTables1700000000031,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {
