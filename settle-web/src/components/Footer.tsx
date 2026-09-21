@@ -21,7 +21,7 @@ export default function Footer() {
     <footer className="bg-black border-t border-zinc-900 mt-auto">
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Links */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="text-white font-semibold text-sm mb-4">Settle In Peace</h3>
             <ul className="space-y-2 text-sm text-zinc-400">
@@ -59,15 +59,6 @@ export default function Footer() {
                   <li><Link href="/portal" className="hover:text-white transition-colors">Provider Portal</Link></li>
                 </>
               )}
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-white font-semibold text-sm mb-4">Sales Team</h3>
-            <ul className="space-y-2 text-sm text-zinc-400">
-              <li><Link href="/sales/login" className="hover:text-white transition-colors">Sales Team Login</Link></li>
-              <li><Link href="/sales" className="hover:text-white transition-colors">CRM Dashboard</Link></li>
-              <li><Link href="/collections" className="hover:text-white transition-colors">Collections</Link></li>
-              <li><Link href="/admin" className="hover:text-white transition-colors">Admin Panel</Link></li>
             </ul>
           </div>
           <div>
@@ -120,7 +111,7 @@ export default function Footer() {
             <span>·</span>
             <a href="mailto:help@settleinpeace.com" className="hover:text-zinc-400 transition-colors">Contact</a>
             <span>·</span>
-            <Link href="/sales/login" className="hover:text-zinc-400 transition-colors">Sales Team Login</Link>
+            <Link href="/staff/login" className="hover:text-zinc-400 transition-colors">Staff Login</Link>
           </div>
           <div>© {new Date().getFullYear()} Settle In Peace, Inc. All rights reserved. SettleInPeace.com is a trademark of Settle In Peace, Inc.</div>
         </div>

@@ -231,14 +231,31 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-black px-4">
+    <div className="min-h-screen flex flex-col bg-[#f9f7f5] dark:bg-black">
+      {/* Header — inspired by Americor's clean header with logo + contact */}
+      <header className="py-5 px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-blue-600">
+            Settle<span className="text-blue-400">InPeace</span>
+          </Link>
+          <a
+            href="mailto:help@settleinpeace.com"
+            className="flex items-center gap-2 border-[1.5px] border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-full text-sm font-bold transition-colors dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span className="hidden sm:inline">Get Help</span>
+          </a>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
 
         {/* Header */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-block text-xl font-bold text-blue-600 mb-2">
-            Settle<span className="text-blue-400">InPeace</span>
-          </Link>
           <h1 className="text-2xl font-bold text-black dark:text-white">Welcome back</h1>
         </div>
 
@@ -403,8 +420,8 @@ export default function LoginPage() {
             </p>
           )}
           <p className="text-sm text-zinc-600 dark:text-zinc-400 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-            Sales team member?{' '}
-            <Link href="/sales/login" className="text-blue-600 hover:underline font-medium">Sales Team Login →</Link>
+            Staff member?{' '}
+            <Link href="/staff/login" className="text-blue-600 hover:underline font-medium">Staff Login →</Link>
           </p>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Debt relief provider?{' '}
@@ -412,6 +429,17 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+      </main>
+
+      {/* Footer — minimal, like Americor's clean footer */}
+      <footer className="py-4 px-4 text-center text-xs text-slate-400 dark:text-zinc-500">
+        <div className="max-w-7xl mx-auto">
+          © {new Date().getFullYear()} Settle In Peace, Inc. ·{' '}
+          <Link href="/privacy" className="hover:text-slate-600 dark:hover:text-zinc-300">Privacy</Link> ·{' '}
+          <Link href="/terms" className="hover:text-slate-600 dark:hover:text-zinc-300">Terms</Link> ·{' '}
+          <Link href="/staff/login" className="hover:text-slate-600 dark:hover:text-zinc-300">Staff Login</Link>
+        </div>
+      </footer>
     </div>
   );
 }

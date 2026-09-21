@@ -42,6 +42,55 @@ interface DashboardStats {
   totalAccounts: number;
   totalBalance: number;
   statusCounts: { status: string; count: number }[];
+  // Recovery analytics (returned by GET /collections/dashboard)
+  totalCollected?: number;
+  totalFaceValue?: number;
+  collectionsThisMonth?: number;
+  activePaymentPlans?: number;
+  assignedAgentCount?: number;
+}
+
+interface DebtPortfolio {
+  id: string;
+  name: string;
+  seller?: string;
+  purchasePrice: number;
+  faceValue: number;
+  totalCollected?: number;
+  status: string;
+  createdAt?: string;
+}
+
+interface PortfolioOverview {
+  totalInvested: number;
+  totalCollected: number;
+  totalFaceValue: number;
+  portfolioCount: number;
+  roi?: number;
+}
+
+interface ScheduledPayment {
+  id: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+  paidAt?: string;
+}
+
+interface PaymentPlan {
+  id: string;
+  collectionAccountId: string;
+  totalAmount: number;
+  downPayment: number;
+  numberOfPayments: number;
+  frequency: string;
+  startDate: string;
+  status: string;
+  paymentsMade?: number;
+  amountPaid?: number;
+  remainingBalance?: number;
+  scheduledPayments?: ScheduledPayment[];
+  createdAt?: string;
 }
 
 export default function CollectionsDashboardPage() {
@@ -63,6 +112,18 @@ export default function CollectionsDashboardPage() {
   const [search, setSearch] = useState('');
   const [segmentFilter, setSegmentFilter] = useState('');
   const [viewMode, setViewMode] = useState<'accounts' | 'queue'>('accounts');
+
+  // Page section (Accounts vs Portfolios)
+  const [pageSection, setPageSection] = useState<'accounts' | 'portfolios'>('accounts');
+
+  // Portfolios
+  const [portfolios, setPortfolios] = useState<DebtPortfolio[]>([]);
+  const [portfolioOverview, setPortfolioOverview] = useState<PortfolioOverview | null>(null);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [importPortfolioOpen, setImportPortfolioOpen] = useState(false);
+  const [importTargetPortfolio, setImportTargetPortfolio] = useState<DebtPortfolio | null>(null);
+  const [newPortfolioOpen, setNewPortfolioOpen] = useState(false);
+  const [importAccountsJson, setImportAccountsJson] = useState('');
 
   const SEGMENTS = [
     { value: '', label: 'All Accounts' },
@@ -106,6 +167,16 @@ export default function CollectionsDashboardPage() {
   const [planStartDate, setPlanStartDate] = useState('');
   const [planMonthlyPayment, setPlanMonthlyPayment] = useState('');
   const [planPaymentMethod, setPlanPaymentMethod] = useState('bank_debit');
+
+  // Backend payment plans
+  const [paymentPlans, setPaymentPlans] = useState<PaymentPlan[]>([]);
+  const [paymentPlansLoading, setPaymentPlansLoading] = useState(false);
+  const [newPlanTotal, setNewPlanTotal] = useState('');
+  const [newPlanDownPayment, setNewPlanDownPayment] = useState('');
+  const [newPlanNumberOfPayments, setNewPlanNumberOfPayments] = useState(6);
+  const [newPlanFrequency, setNewPlanFrequency] = useState('monthly');
+  const [newPlanStartDate, setNewPlanStartDate] = useState('');
+  const [creatingPlan, setCreatingPlan] = useState(false);
 
   // Outreach queue
   const [outreachDate, setOutreachDate] = useState('');
@@ -158,7 +229,16 @@ export default function CollectionsDashboardPage() {
     if (activeTab === 'history' && selectedAccount) {
       loadHistory();
     }
+    if (activeTab === 'paymentPlan' && selectedAccount) {
+      loadPaymentPlans(selectedAccount.id);
+    }
   }, [activeTab, selectedAccount]);
+
+  useEffect(() => {
+    if (pageSection === 'portfolios' && !portfolios.length && !portfolioLoading) {
+      loadPortfolios();
+    }
+  }, [pageSection]);
 
   const loadData = async () => {
     if (typeof window === 'undefined' || !isAuthenticated()) return;
@@ -192,6 +272,118 @@ export default function CollectionsDashboardPage() {
       setSalesAgents(agents || []);
     } catch (err: any) {
       console.error('Failed to load sales agents', err?.message);
+    }
+  };
+
+  const loadPortfolios = async () => {
+    if (typeof window === 'undefined' || !isAuthenticated()) return;
+    setPortfolioLoading(true);
+    try {
+      const api = getAuthenticatedApi();
+      const [listRes, overviewRes] = await Promise.all([
+        api<DebtPortfolio[] | { portfolios: DebtPortfolio[] }>('/portfolios', { method: 'GET' }).catch(() => null),
+        api<PortfolioOverview>('/portfolios/dashboard/overview', { method: 'GET' }).catch(() => null),
+      ]);
+      if (listRes) {
+        setPortfolios(Array.isArray(listRes) ? listRes : listRes.portfolios || []);
+      }
+      if (overviewRes) setPortfolioOverview(overviewRes);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load portfolios');
+    } finally {
+      setPortfolioLoading(false);
+    }
+  };
+
+  const handleCreatePortfolio = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    const formData = new FormData(e.currentTarget);
+    try {
+      await getAuthenticatedApi()('/portfolios', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: formData.get('name') as string,
+          seller: formData.get('seller') as string,
+          purchasePrice: parseFloat(formData.get('purchasePrice') as string) || 0,
+          faceValue: parseFloat(formData.get('faceValue') as string) || 0,
+        }),
+      });
+      setNewPortfolioOpen(false);
+      await loadPortfolios();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create portfolio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImportAccounts = async () => {
+    if (!importTargetPortfolio || !importAccountsJson.trim()) return;
+    setSaving(true);
+    try {
+      const accounts = JSON.parse(importAccountsJson);
+      await getAuthenticatedApi()(`/portfolios/${importTargetPortfolio.id}/accounts`, {
+        method: 'POST',
+        body: JSON.stringify({ accounts }),
+      });
+      setImportPortfolioOpen(false);
+      setImportTargetPortfolio(null);
+      setImportAccountsJson('');
+      await loadPortfolios();
+      setRefreshKey((k) => k + 1);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to import accounts (check JSON format)');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const loadPaymentPlans = async (accountId: string) => {
+    setPaymentPlansLoading(true);
+    try {
+      const data = await getAuthenticatedApi()<PaymentPlan[] | { plans: PaymentPlan[] }>(
+        `/payment-plans?collectionAccountId=${accountId}`,
+        { method: 'GET' },
+      );
+      setPaymentPlans(Array.isArray(data) ? data : data.plans || []);
+    } catch (err: any) {
+      setPaymentPlans([]);
+    } finally {
+      setPaymentPlansLoading(false);
+    }
+  };
+
+  const handleCreatePaymentPlan = async () => {
+    if (!selectedAccount) return;
+    const total = parseFloat(newPlanTotal) || 0;
+    if (total <= 0) {
+      setError('Total amount must be greater than 0');
+      return;
+    }
+    setCreatingPlan(true);
+    try {
+      await getAuthenticatedApi()('/payment-plans', {
+        method: 'POST',
+        body: JSON.stringify({
+          collectionAccountId: selectedAccount.id,
+          totalAmount: total,
+          downPayment: parseFloat(newPlanDownPayment) || 0,
+          numberOfPayments: newPlanNumberOfPayments,
+          frequency: newPlanFrequency,
+          startDate: newPlanStartDate || new Date().toISOString().split('T')[0],
+        }),
+      });
+      setNewPlanTotal('');
+      setNewPlanDownPayment('');
+      setNewPlanNumberOfPayments(6);
+      setNewPlanFrequency('monthly');
+      setNewPlanStartDate('');
+      await loadPaymentPlans(selectedAccount.id);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create payment plan');
+    } finally {
+      setCreatingPlan(false);
     }
   };
 
@@ -503,16 +695,54 @@ export default function CollectionsDashboardPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Debt Collection CRM</h1>
-          <button
-            onClick={() => setNewAccountOpen(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-          >
-            + New Account
-          </button>
+          <div className="flex items-center gap-3">
+            {pageSection === 'portfolios' && (
+              <button
+                onClick={() => setNewPortfolioOpen(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+              >
+                + New Portfolio
+              </button>
+            )}
+            {pageSection === 'accounts' && (
+              <button
+                onClick={() => setNewAccountOpen(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+              >
+                + New Account
+              </button>
+            )}
+          </div>
         </div>
 
         {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
 
+        {/* Page section toggle */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setPageSection('accounts')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              pageSection === 'accounts'
+                ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
+                : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            Accounts
+          </button>
+          <button
+            onClick={() => setPageSection('portfolios')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              pageSection === 'portfolios'
+                ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
+                : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            Portfolios
+          </button>
+        </div>
+
+        {pageSection === 'accounts' && (
+        <>
         {/* Stats */}
         {stats && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -532,6 +762,50 @@ export default function CollectionsDashboardPage() {
                     {s.status}: {s.count}
                   </span>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recovery Analytics */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <div className="text-sm text-zinc-500 dark:text-zinc-400">Recovery Rate</div>
+              <div className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {stats.totalFaceValue && stats.totalFaceValue > 0
+                  ? `${Math.round(((stats.totalCollected || 0) / stats.totalFaceValue) * 100)}%`
+                  : '—'}
+              </div>
+              <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                {formatCurrency(stats.totalCollected || 0)} of {formatCurrency(stats.totalFaceValue || 0)}
+              </div>
+            </div>
+            <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <div className="text-sm text-zinc-500 dark:text-zinc-400">Active Payment Plans</div>
+              <div className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {stats.activePaymentPlans ?? accounts.filter((a) => a.status === 'payment_plan').length}
+              </div>
+              <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Accounts on a plan</div>
+            </div>
+            <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <div className="text-sm text-zinc-500 dark:text-zinc-400">Collections This Month</div>
+              <div className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {formatCurrency(stats.collectionsThisMonth || 0)}
+              </div>
+              <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                {new Date().toLocaleDateString('en-US', { month: 'long' })} payments
+              </div>
+            </div>
+            <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <div className="text-sm text-zinc-500 dark:text-zinc-400">Avg Recovery / Agent</div>
+              <div className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {stats.assignedAgentCount && stats.assignedAgentCount > 0
+                  ? formatCurrency((stats.totalCollected || 0) / stats.assignedAgentCount)
+                  : formatCurrency(stats.totalCollected || 0)}
+              </div>
+              <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                {stats.assignedAgentCount ?? salesAgents.length} assigned agents
               </div>
             </div>
           </div>
@@ -713,8 +987,101 @@ export default function CollectionsDashboardPage() {
         </div>
       </>
         )}
+        </>
+        )}
 
-      {/* Pause Modal */}
+        {/* Portfolios section */}
+        {pageSection === 'portfolios' && (
+          <div className="space-y-6">
+            {/* Portfolio stats */}
+            {portfolioOverview && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+                  <div className="text-sm text-zinc-500 dark:text-zinc-400">Total Invested</div>
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-white">{formatCurrency(portfolioOverview.totalInvested)}</div>
+                </div>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+                  <div className="text-sm text-zinc-500 dark:text-zinc-400">Total Collected</div>
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-white">{formatCurrency(portfolioOverview.totalCollected)}</div>
+                </div>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+                  <div className="text-sm text-zinc-500 dark:text-zinc-400">Total Face Value</div>
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-white">{formatCurrency(portfolioOverview.totalFaceValue)}</div>
+                </div>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+                  <div className="text-sm text-zinc-500 dark:text-zinc-400">Portfolio ROI</div>
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-white">
+                    {portfolioOverview.totalInvested && portfolioOverview.totalInvested > 0
+                      ? `${Math.round(((portfolioOverview.totalCollected - portfolioOverview.totalInvested) / portfolioOverview.totalInvested) * 100)}%`
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Debt Portfolios</h2>
+              <button
+                onClick={loadPortfolios}
+                className="px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-950"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {portfolioLoading ? (
+              <div className="text-sm text-zinc-500 dark:text-zinc-400">Loading portfolios...</div>
+            ) : (
+              <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-zinc-50 dark:bg-zinc-950">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Name</th>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Seller</th>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Purchase Price</th>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Face Value</th>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Recovery Rate</th>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Status</th>
+                      <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {portfolios.map((p) => {
+                      const recoveryRate = p.faceValue > 0 ? Math.round(((p.totalCollected || 0) / p.faceValue) * 100) : 0;
+                      return (
+                        <tr key={p.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-950">
+                          <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">{p.name}</td>
+                          <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{p.seller || '—'}</td>
+                          <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{formatCurrency(p.purchasePrice)}</td>
+                          <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{formatCurrency(p.faceValue)}</td>
+                          <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{recoveryRate}%</td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-1 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded">{p.status}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => { setImportTargetPortfolio(p); setImportPortfolioOpen(true); }}
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              Import Accounts
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {!portfolios.length && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-zinc-500 dark:text-zinc-400">
+                          No portfolios yet. Create one to start importing debt accounts.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       {pauseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg max-w-lg w-full p-6">
@@ -798,6 +1165,50 @@ export default function CollectionsDashboardPage() {
         </div>
       )}
 
+      {/* New Portfolio Modal */}
+      {newPortfolioOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg max-w-lg w-full p-6">
+            <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">New Debt Portfolio</h2>
+            <form onSubmit={handleCreatePortfolio} className="space-y-4">
+              <input name="name" required placeholder="Portfolio name" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+              <input name="seller" placeholder="Seller / originator" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <input name="purchasePrice" type="number" step="0.01" required placeholder="Purchase price" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+                <input name="faceValue" type="number" step="0.01" required placeholder="Face value" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setNewPortfolioOpen(false)} className="px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:underline text-sm">Cancel</button>
+                <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Creating...' : 'Create Portfolio'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import Portfolio Accounts Modal */}
+      {importPortfolioOpen && importTargetPortfolio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg max-w-2xl w-full p-6">
+            <h2 className="text-lg font-semibold mb-1 text-zinc-900 dark:text-white">Import Accounts — {importTargetPortfolio.name}</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              Paste a JSON array of debt accounts to bulk import into this portfolio.
+            </p>
+            <textarea
+              value={importAccountsJson}
+              onChange={(e) => setImportAccountsJson(e.target.value)}
+              placeholder='[{"accountNumber":"ACCT-001","originalBalance":1500,"currentBalance":1500,"debtorName":"John Doe","debtorPhone":"+15551234567"}]'
+              className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm font-mono"
+              rows={8}
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button type="button" onClick={() => { setImportPortfolioOpen(false); setImportTargetPortfolio(null); setImportAccountsJson(''); }} className="px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:underline text-sm">Cancel</button>
+              <button onClick={handleImportAccounts} disabled={saving || !importAccountsJson.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Importing...' : 'Import Accounts'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Account Detail Panel */}
       {selectedAccount && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50">
@@ -821,6 +1232,35 @@ export default function CollectionsDashboardPage() {
 
             {activeTab === 'overview' && (
               <div className="space-y-4">
+                {/* Compliance indicators */}
+                {(() => {
+                  const consent = selectedAccount.customFields?.consent;
+                  const dnc = selectedAccount.customFields?.dnc || selectedAccount.customFields?.consent?.dnc;
+                  const tz = selectedAccount.customFields?.outreach?.timeZone || selectedAccount.customFields?.debtorTimeZone || 'America/New_York';
+                  const debtorHour = new Date().toLocaleString('en-US', { timeZone: tz, hour: 'numeric', hour12: false });
+                  const hourNum = parseInt(debtorHour, 10);
+                  const inQuietHours = hourNum >= 20 || hourNum < 8;
+                  const recentCalls = selectedAccount.customFields?.compliance?.recentCallCount ?? 0;
+                  const freqCap = selectedAccount.customFields?.outreach?.weeklyFrequencyCap ?? 3;
+                  const capExceeded = recentCalls >= freqCap;
+                  const consentExpired = consent?.capturedAt && (Date.now() - new Date(consent.capturedAt).getTime() > 365 * 24 * 60 * 60 * 1000);
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${dnc ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                        {dnc ? 'DNC: On List' : 'DNC: Clear'}
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${consent?.tcpa && !consentExpired ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}`}>
+                        {consent?.tcpa ? (consentExpired ? 'Consent Expired' : 'Consent: Yes') : 'Consent: Missing'}
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${inQuietHours ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                        {inQuietHours ? 'Quiet Hours (8pm–8am)' : 'Outside Quiet Hours'}
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${capExceeded ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                        Calls this week: {recentCalls}/{freqCap}{capExceeded ? ' — Cap reached' : ''}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-lg">
                     <div className="text-xs text-zinc-500 dark:text-zinc-400">Current Balance</div>
@@ -1102,9 +1542,10 @@ export default function CollectionsDashboardPage() {
 
             {activeTab === 'paymentPlan' && (
               <div className="space-y-5">
-                {selectedAccount.customFields?.paymentPlan ? (
+                {/* Legacy customFields payment plan (still shown if present) */}
+                {selectedAccount.customFields?.paymentPlan && (
                   <div className="p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-100 dark:border-emerald-900 rounded-lg">
-                    <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-2">Active Payment Arrangement</div>
+                    <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-2">Active Payment Arrangement (legacy)</div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400">Monthly Payment</div>
@@ -1132,11 +1573,163 @@ export default function CollectionsDashboardPage() {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <>
+                )}
+
+                {/* Backend payment plans */}
+                <div>
+                  <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Payment Plans</div>
+                  {paymentPlansLoading ? (
+                    <div className="text-sm text-zinc-500">Loading payment plans...</div>
+                  ) : paymentPlans.length > 0 ? (
+                    <div className="space-y-4">
+                      {paymentPlans.map((plan) => {
+                        const paymentsMade = plan.paymentsMade ?? (plan.scheduledPayments?.filter((p) => p.status === 'paid').length || 0);
+                        const amountPaid = plan.amountPaid ?? (plan.scheduledPayments?.filter((p) => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0) || 0);
+                        const remaining = plan.remainingBalance ?? (plan.totalAmount - amountPaid);
+                        return (
+                          <div key={plan.id} className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                Plan — {formatCurrency(plan.totalAmount)}
+                              </span>
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                plan.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                  : plan.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                                  : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                              }`}>{plan.status}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                              <div>
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400">Payments</div>
+                                <div className="font-semibold text-zinc-900 dark:text-white">{paymentsMade} / {plan.numberOfPayments}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400">Paid</div>
+                                <div className="font-semibold text-zinc-900 dark:text-white">{formatCurrency(amountPaid)}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400">Remaining</div>
+                                <div className="font-semibold text-zinc-900 dark:text-white">{formatCurrency(remaining)}</div>
+                              </div>
+                            </div>
+                            {/* Progress bar */}
+                            <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-2 mb-3">
+                              <div
+                                className="bg-emerald-500 h-2 rounded-full"
+                                style={{ width: `${plan.numberOfPayments > 0 ? (paymentsMade / plan.numberOfPayments) * 100 : 0}%` }}
+                              />
+                            </div>
+                            {/* Scheduled payments table */}
+                            {plan.scheduledPayments && plan.scheduledPayments.length > 0 && (
+                              <div className="overflow-hidden rounded border border-zinc-200 dark:border-zinc-800">
+                                <table className="min-w-full text-xs">
+                                  <thead className="bg-zinc-100 dark:bg-zinc-900">
+                                    <tr>
+                                      <th className="text-left px-3 py-2 font-medium text-zinc-600 dark:text-zinc-400">Due Date</th>
+                                      <th className="text-left px-3 py-2 font-medium text-zinc-600 dark:text-zinc-400">Amount</th>
+                                      <th className="text-left px-3 py-2 font-medium text-zinc-600 dark:text-zinc-400">Status</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                    {plan.scheduledPayments.map((p) => (
+                                      <tr key={p.id}>
+                                        <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{new Date(p.dueDate).toLocaleDateString()}</td>
+                                        <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatCurrency(p.amount)}</td>
+                                        <td className="px-3 py-2">
+                                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                            p.status === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                              : p.status === 'overdue' ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                                              : p.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                                              : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                                          }`}>{p.status}</span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">No backend payment plans yet. Create one below.</div>
+                  )}
+                </div>
+
+                {/* Create Payment Plan form */}
+                <div className="p-4 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                  <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">Create Payment Plan</div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">AI-suggested plans</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Total Amount</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newPlanTotal}
+                        onChange={(e) => setNewPlanTotal(e.target.value)}
+                        placeholder={selectedAccount.currentBalance.toFixed(2)}
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Down Payment</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newPlanDownPayment}
+                        onChange={(e) => setNewPlanDownPayment(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Number of Payments</label>
+                      <input
+                        type="number"
+                        value={newPlanNumberOfPayments}
+                        onChange={(e) => setNewPlanNumberOfPayments(parseInt(e.target.value, 10) || 6)}
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Frequency</label>
+                      <select
+                        value={newPlanFrequency}
+                        onChange={(e) => setNewPlanFrequency(e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                      >
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Bi-weekly</option>
+                        <option value="monthly">Monthly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={newPlanStartDate}
+                        onChange={(e) => setNewPlanStartDate(e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCreatePaymentPlan}
+                    disabled={creatingPlan}
+                    className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                  >
+                    {creatingPlan ? 'Creating...' : 'Create Payment Plan'}
+                  </button>
+                </div>
+
+                {/* Legacy quick-set form */}
+                {!selectedAccount.customFields?.paymentPlan && (
+                  <>
+                    <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                      <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Quick-set arrangement (legacy)</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                         {[3, 6, 12].map((months) => {
                           const monthly = selectedAccount.currentBalance / months;
                           return (
@@ -1156,58 +1749,58 @@ export default function CollectionsDashboardPage() {
                           );
                         })}
                       </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Monthly Payment</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={planMonthlyPayment}
+                            onChange={(e) => setPlanMonthlyPayment(e.target.value)}
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Term (months)</label>
+                          <input
+                            type="number"
+                            value={planMonths}
+                            onChange={(e) => setPlanMonths(parseInt(e.target.value, 10) || 6)}
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={planStartDate}
+                            onChange={(e) => setPlanStartDate(e.target.value)}
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Payment Method</label>
+                          <select
+                            value={planPaymentMethod}
+                            onChange={(e) => setPlanPaymentMethod(e.target.value)}
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          >
+                            <option value="bank_debit">Bank Debit</option>
+                            <option value="card">Card</option>
+                            <option value="manual">Manual Payment</option>
+                          </select>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleSavePaymentPlan}
+                        disabled={saving}
+                        className="mt-4 px-4 py-2 bg-zinc-600 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                      >
+                        {saving ? 'Saving...' : 'Lock Payment Arrangement'}
+                      </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Monthly Payment</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={planMonthlyPayment}
-                          onChange={(e) => setPlanMonthlyPayment(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Term (months)</label>
-                        <input
-                          type="number"
-                          value={planMonths}
-                          onChange={(e) => setPlanMonths(parseInt(e.target.value, 10) || 6)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Start Date</label>
-                        <input
-                          type="date"
-                          value={planStartDate}
-                          onChange={(e) => setPlanStartDate(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Payment Method</label>
-                        <select
-                          value={planPaymentMethod}
-                          onChange={(e) => setPlanPaymentMethod(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
-                        >
-                          <option value="bank_debit">Bank Debit</option>
-                          <option value="card">Card</option>
-                          <option value="manual">Manual Payment</option>
-                        </select>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleSavePaymentPlan}
-                      disabled={saving}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                    >
-                      {saving ? 'Saving...' : 'Lock Payment Arrangement'}
-                    </button>
                   </>
                 )}
               </div>

@@ -232,7 +232,8 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
   const loadCollections = useCallback(async () => {
     try {
       const data = await apiCall('/collections/accounts');
-      setCollections(Array.isArray(data) ? data : []);
+      // API returns { accounts, total, ... } — extract the accounts array
+      setCollections(data.accounts || data || []);
     } catch { /* ignore */ }
   }, [apiCall]);
 
