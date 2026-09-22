@@ -18,6 +18,7 @@ export enum CreditReportProvider {
   EQUIFAX = 'equifax',
   EXPERIAN = 'experian',
   TRANSUNION = 'transunion',
+  MYFREESCORENOW = 'myfreescorenow',
   MANUAL = 'manual',
 }
 

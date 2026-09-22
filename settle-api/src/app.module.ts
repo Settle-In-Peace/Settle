@@ -65,6 +65,7 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { PaymentPlansModule } from './payment-plans/payment-plans.module';
 import { PaymentPortalModule } from './payment-portal/payment-portal.module';
+import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
 
 @Module({
   imports: [
@@ -109,6 +110,7 @@ import { PaymentPortalModule } from './payment-portal/payment-portal.module';
     PortfolioModule,
     PaymentPlansModule,
     PaymentPortalModule,
+    CreditBureauModule,
     TelnyxWebhookModule,
     ComplianceModule,
   ],
