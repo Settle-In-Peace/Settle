@@ -95,6 +95,9 @@ try {
       // next-pwa-style registration scripts crash when SWs are blocked —
       // artifact of serviceWorkers:'block', not a site defect.
       if (e.message.includes("'waiting'")) return;
+      // we abort .css/.woff requests — dynamic chunk load failures
+      // (TradingView embeds, fonts) are self-inflicted, not site defects.
+      if (/Loading (CSS )?chunk \S+ failed/i.test(e.message)) return;
       errors.push(`pageerror: ${e.message}`);
     });
     page.on('console', (m) => {
