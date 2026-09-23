@@ -23,3 +23,6 @@ find . -name '._*' -type f -not -path '*/node_modules/*' -not -path '*/.git/*' -
 
 echo "✅ No macOS metadata files found in commit."
 exit 0
+
+# Self-healing: eslint --fix staged TS files + typecheck (blocks on errors)
+bash scripts/quick-fix.sh

@@ -24,7 +24,12 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,.js,.jsx,json,md}\"",
     "clean:mac-files": "find . -name '._*' -type f -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/.next/*' -delete",
     "configure:macos": "./scripts/configure-macos.sh",
-    "install:hooks": "./scripts/install-hooks.sh"
+    "install:hooks": "./scripts/install-hooks.sh",
+    "self-heal": "bash scripts/quick-fix.sh",
+    "fix-all": "bash scripts/quick-fix.sh",
+    "check-all": "bash scripts/quick-fix.sh",
+    "watch:errors": "node scripts/watch-errors.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.62.0",
@@ -34,6 +39,7 @@
     "eslint-plugin-prettier": "^5.5.6",
     "prettier": "^3.9.1",
     "turbo": "^2.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "playwright-core": "^1.49.0"
   }
 }
