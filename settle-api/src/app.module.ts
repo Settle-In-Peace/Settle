@@ -46,6 +46,7 @@ import { DebtPortfolio } from './entities/debt-portfolio.entity';
 import { DebtPortfolioAccount } from './entities/debt-portfolio.entity';
 import { PaymentPlan } from './entities/payment-plan.entity';
 import { PaymentPlanPayment } from './entities/payment-plan-payment.entity';
+import { DialerCall } from './dialer/dialer-call.entity';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { DebtsModule } from './debts/debts.module';
@@ -66,6 +67,7 @@ import { PortfolioModule } from './portfolio/portfolio.module';
 import { PaymentPlansModule } from './payment-plans/payment-plans.module';
 import { PaymentPortalModule } from './payment-portal/payment-portal.module';
 import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
+import { DialerModule } from './dialer/dialer.module';
 
 @Module({
   imports: [
@@ -85,14 +87,14 @@ import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
         idleTimeoutMillis: 30000,
         keepAlive: true,
       },
-      entities: [User, Activity, Debt, Provider, Lead, Match, Budget, BudgetItem, Goal, CoachingSubscription, CrmLead, CrmDeal, CrmClient, Creditor, ClientEnrollment, Settlement, TrustAccount, SettlementPayment, LeadRoutingRule, LeadAssignment, DncEntry, ConsentLog, CommunicationLog, CrmTask, WorkflowRule, WorkflowExecution, CrmNotification, Milestone, CrmDocument, RefreshToken, CollectionAccount, DebtorProfile, CollectionNote, SkipTraceResult, CallLog, CreditReport, BackgroundCheck, DebtPortfolio, DebtPortfolioAccount, PaymentPlan, PaymentPlanPayment],
+      entities: [User, Activity, Debt, Provider, Lead, Match, Budget, BudgetItem, Goal, CoachingSubscription, CrmLead, CrmDeal, CrmClient, Creditor, ClientEnrollment, Settlement, TrustAccount, SettlementPayment, LeadRoutingRule, LeadAssignment, DncEntry, ConsentLog, CommunicationLog, CrmTask, WorkflowRule, WorkflowExecution, CrmNotification, Milestone, CrmDocument, RefreshToken, CollectionAccount, DebtorProfile, CollectionNote, SkipTraceResult, CallLog, CreditReport, BackgroundCheck, DebtPortfolio, DebtPortfolioAccount, PaymentPlan, PaymentPlanPayment, DialerCall],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
       autoLoadEntities: true,
       retryAttempts: 5,
       retryDelay: 3000,
     }),
-    TypeOrmModule.forFeature([User, Activity, Debt, Provider, Lead, Match, Budget, BudgetItem, Goal, CoachingSubscription, CrmLead, CrmDeal, CrmClient, Creditor, ClientEnrollment, Settlement, TrustAccount, SettlementPayment, LeadRoutingRule, LeadAssignment, DncEntry, ConsentLog, CommunicationLog, CrmTask, WorkflowRule, WorkflowExecution, CrmNotification, Milestone, CrmDocument, RefreshToken, CollectionAccount, DebtorProfile, CollectionNote, SkipTraceResult, CallLog, CreditReport, BackgroundCheck, DebtPortfolio, DebtPortfolioAccount, PaymentPlan, PaymentPlanPayment]),
+    TypeOrmModule.forFeature([User, Activity, Debt, Provider, Lead, Match, Budget, BudgetItem, Goal, CoachingSubscription, CrmLead, CrmDeal, CrmClient, Creditor, ClientEnrollment, Settlement, TrustAccount, SettlementPayment, LeadRoutingRule, LeadAssignment, DncEntry, ConsentLog, CommunicationLog, CrmTask, WorkflowRule, WorkflowExecution, CrmNotification, Milestone, CrmDocument, RefreshToken, CollectionAccount, DebtorProfile, CollectionNote, SkipTraceResult, CallLog, CreditReport, BackgroundCheck, DebtPortfolio, DebtPortfolioAccount, PaymentPlan, PaymentPlanPayment, DialerCall]),
     AuthModule,
     ActivitiesModule,
     DebtsModule,
@@ -111,6 +113,7 @@ import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
     PaymentPlansModule,
     PaymentPortalModule,
     CreditBureauModule,
+    DialerModule,
     TelnyxWebhookModule,
     ComplianceModule,
   ],

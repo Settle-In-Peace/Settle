@@ -20,6 +20,7 @@ import { SkipTraceResult } from './entities/skip-trace-result.entity';
 import { CallLog } from './entities/call-log.entity';
 import { CreditReport } from './entities/credit-report.entity';
 import { BackgroundCheck } from './entities/background-check.entity';
+import { DialerCall } from './dialer/dialer-call.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -52,6 +53,7 @@ export const dataSource = new DataSource({
     CallLog,
     CreditReport,
     BackgroundCheck,
+    DialerCall,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
