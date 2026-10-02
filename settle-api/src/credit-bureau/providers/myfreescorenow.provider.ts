@@ -60,13 +60,12 @@ const MFSN_ENVIRONMENTS = {
  *   - 3B Reports       (tri-bureau full report)
  *   - Enrollment       (enroll consumer in monitoring)
  *
- * TODO(mfsn-spec): Only the token-exchange (login) flow is publicly
- * documented (API User + Password -> access token). The credit-pull
- * endpoint paths and payload shapes are provisioned per-account and
- * were not published at integration time — they are configurable via
- * the MFSN_*_PATH env vars below so no code change is needed once
- * MyFreeScoreNow supplies the full spec. Verify against the dashboard
- * API docs before production use.
+ * Verified against the live UAT sandbox (2026-10-02): login exchange and
+ * the 1B/3B report endpoints (`POST /api/admin/{1b,3b}report-v2`, body
+ * `{from_report_id, report_type}`) return real report data. Remaining
+ * TODO(mfsn-spec): the credit/funding *snapshot* product paths and the
+ * member-enrollment payload were not discoverable from the public API —
+ * they stay env-configurable via MFSN_*_PATH until the account docs land.
  *
  * Security: credentials and tokens are NEVER logged. Log lines only
  * include method + path + upstream status.
@@ -121,21 +120,30 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     return this.config.get<number>('MFSN_MAX_RETRIES', 2);
   }
 
-  /** Endpoint paths — TODO(mfsn-spec): confirm against account-provisioned docs */
+  /** Endpoint paths — 1B/3B verified live on UAT 2026-10-02 (POST /api/admin/{1b,3b}report-v2). */
   private get loginPath(): string {
     return this.config.get<string>('MFSN_LOGIN_PATH', '/api/auth/login');
   }
 
   private get creditSnapshotPath(): string {
-    return this.config.get<string>('MFSN_CREDIT_SNAPSHOT_PATH', '/api/credit-snapshot');
+    return this.config.get<string>(
+      'MFSN_CREDIT_SNAPSHOT_PATH',
+      '/api/admin/1breport-v2',
+    );
   }
 
   private get fundingSnapshotPath(): string {
-    return this.config.get<string>('MFSN_FUNDING_SNAPSHOT_PATH', '/api/funding-snapshot');
+    return this.config.get<string>(
+      'MFSN_FUNDING_SNAPSHOT_PATH',
+      '/api/admin/1breport-v2',
+    );
   }
 
   private get threeBReportPath(): string {
-    return this.config.get<string>('MFSN_3B_REPORT_PATH', '/api/3b-reports');
+    return this.config.get<string>(
+      'MFSN_3B_REPORT_PATH',
+      '/api/admin/3breport-v2',
+    );
   }
 
   // ── HTTP plumbing (timeout + bounded retry, fail-closed on 4xx) ────────
@@ -328,9 +336,14 @@ export class MyFreeScoreNowProvider implements CreditProvider {
         throw new MfsnUpstreamError(`Unknown product: ${req.product}`);
     }
 
-    // TODO(mfsn-spec): field names are our best guess per typical MFSN
-    // payloads; confirm against the account-provisioned API docs.
+    // Verified live on UAT: report endpoints take {from_report_id,
+    // report_type:"1B"|"3B"} — a report handle, not raw PII (sandbox returns
+    // a demo tri-bureau report). referenceId maps to from_report_id.
+    const reportType =
+      req.product === CreditReportProduct.THREE_B_REPORT ? '3B' : '1B';
     const body: Record<string, any> = {
+      from_report_id: req.referenceId ?? `${reportType}-001`,
+      report_type: reportType,
       firstName: req.firstName,
       lastName: req.lastName,
       pullType: req.pullType,

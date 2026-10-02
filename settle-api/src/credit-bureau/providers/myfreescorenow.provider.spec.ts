@@ -145,7 +145,7 @@ describe('MyFreeScoreNowProvider', () => {
     expect(result.tradelines[0].creditorName).toBe('ACME Card');
 
     const [url, init] = fetchMock.mock.calls[1];
-    expect(url).toBe('https://uat-api.myfreescorenow.com/api/credit-snapshot');
+    expect(url).toBe('https://uat-api.myfreescorenow.com/api/admin/1breport-v2');
     expect((init.headers as Record<string, string>).Authorization).toBe(
       'Bearer tok-3',
     );
