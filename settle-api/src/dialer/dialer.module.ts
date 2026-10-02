@@ -13,8 +13,8 @@
  *   // data-source.ts — add `DialerCall` to the `entities` array.
  *
  *   // migrations/run-migration.ts — append:
- *   import { CreateDialerCalls1700000000033 } from './1700000000033-CreateDialerCalls';
- *   // and `CreateDialerCalls1700000000033` at the end of the migrations array.
+ *   import { CreateDialerCalls1700000000035 } from './1700000000035-CreateDialerCalls';
+ *   // and `CreateDialerCalls1700000000035` at the end of the migrations array.
  */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';

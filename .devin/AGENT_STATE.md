@@ -20,11 +20,15 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Blocked on user
 
+- **Dialer module wiring**: `DialerModule` + `DialerCall` entity need registering in `app.module.ts`/`data-source.ts`, and `CreateDialerCalls1700000000035` in `migrations/run-migration.ts` (snippets are commented at the top of `settle-api/src/dialer/dialer.module.ts`). Until wired, `/dialer/*` is not mounted.
+- **Telnyx Call Control config**: `TELNYX_CONNECTION_ID` (Call Control app) is required for outbound calls; `TELNYX_PUBLIC_KEY` for webhook signature verification on `POST /dialer/webhooks/telnyx`; set `PUBLIC_API_URL` (or `TELNYX_CALL_WEBHOOK_URL`) so the provider knows where to send call events. Enable "record from answer" on the Call Control app for recordings.
+- **ViciDial host/creds** (free/self-hosted dialer option): set `DIALER_PROVIDER=vicidial` + `VICIDIAL_BASE_URL`, `VICIDIAL_API_USER`, `VICIDIAL_API_PASS`, `VICIDIAL_AGENT_USER` (optionally `VICIDIAL_SOURCE`, `VICIDIAL_LIST_ID`, `VICIDIAL_PHONE_CODE`). ⚠️ The ViciDial adapter paths are UNTESTED against a live cluster — verify before production use.
 - **MyFreeScoreNow sandbox activation**: set `MFSN_API_USER` (or `MFSN_API_EMAIL`) + `MFSN_API_PASSWORD` env vars on settle-api (values are in the MyFreeScoreNow affiliate dashboard → API section). Until set, `/credit-bureau/*` returns 503 "not configured" and the web UI shows a setup hint.
 - **MyFreeScoreNow endpoint spec**: credit-pull paths (`/api/credit-snapshot`, `/api/funding-snapshot`, `/api/3b-reports`) and the login path are best-guess defaults — only the API-user+password→token exchange is publicly documented. Confirm real paths/payloads in the dashboard API docs and set `MFSN_LOGIN_PATH` / `MFSN_*_PATH` env vars accordingly (no code change needed).
 - **MyFreeScoreNow production**: requires submitting verification documents in the affiliate dashboard (out of scope for the integration). Set `MFSN_ENV=production` once approved.
 
 ## Recently landed
 
+- 2026-10-02 — **devin-settle-dialer — provider-agnostic dialer module** (`4b92246` API module+migration+specs, `927b278` web UI+env docs). Touched `settle-api/src/dialer/**` (new), `settle-api/src/migrations/1700000000035-CreateDialerCalls.ts` (new), `settle-api/.env.example` (append), `settle-web/src/lib/dialer.ts` (new), `settle-web/src/components/dialer/DialerPanel.tsx` (new), `settle-web/src/app/collections/page.tsx` (calls-tab JSX only). NOT wired into app.module/data-source/run-migration — see Blocked on user.
 - 2026-10-02 — **devin-settle-credit — MyFreeScoreNow credit integration hardening + web UI** (`175c8e2` API/provider/sdk, `5cc5b2f` web). Touched `settle-api/src/credit-bureau/**`, `settle-api/.env.example`, `packages/shared-sdk/src/api/index.ts`, `settle-web/src/lib/api.ts`, `settle-web/src/components/CreditReportsPanel.tsx` (new), `settle-web/src/app/collections/page.tsx` (creditReports tab JSX only).
 - 2026-10-02 — **AGENT_STATE.md established** (adopting the Prime/Dexana multi-agent coordination convention).

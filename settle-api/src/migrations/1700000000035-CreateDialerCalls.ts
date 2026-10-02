@@ -7,11 +7,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * provider-originated calls.
  *
  * ORCHESTRATOR: register in run-migration.ts —
- *   import { CreateDialerCalls1700000000033 } from './1700000000033-CreateDialerCalls';
- *   ...and append `CreateDialerCalls1700000000033` to the migrations array.
+ *   import { CreateDialerCalls1700000000035 } from './1700000000035-CreateDialerCalls';
+ *   ...and append `CreateDialerCalls1700000000035` to the migrations array.
  */
-export class CreateDialerCalls1700000000033 implements MigrationInterface {
-  name = 'CreateDialerCalls1700000000033';
+export class CreateDialerCalls1700000000035 implements MigrationInterface {
+  name = 'CreateDialerCalls1700000000035';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
