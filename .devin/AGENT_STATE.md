@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-settle-leads | lead vendor integrations | settle-api/src/lead-vendors/** (new), settle-api/src/entities/lead-*.entity.ts (new), settle-api/src/migrations/1700000000033-* (new), settle-web leads UI |
 
 ## Blocked on user
 
