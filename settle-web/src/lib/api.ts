@@ -331,3 +331,240 @@ export function getCreditReports(collectionAccountId: string) {
 export function getCreditReport(id: string) {
   return creditApi()<CreditReportSummary>(`/credit-bureau/reports/${id}`, { method: 'GET' });
 }
+
+// ── High-risk payment processors (NMI / AuthNet / Stripe fallback) ────────
+// Card data NEVER touches settle-api — charges use single-use processor
+// tokens produced by hosted fields (NMI Collect.js / AuthNet Accept.js).
+function paymentsApi() { return authenticatedApi(getToken() ?? ''); }
+
+export interface HostedFieldsConfig {
+  kind: 'collectjs' | 'acceptjs' | 'stripejs' | string;
+  scriptUrl: string;
+  tokenizationKey?: string;
+  clientKey?: string;
+  apiLoginId?: string;
+  variant?: string;
+}
+
+export interface ProcessorStatusEntry {
+  name: 'nmi' | 'authorizenet' | 'stripe' | string;
+  configured: boolean;
+  environment?: 'sandbox' | 'production';
+  priority: number;
+  capabilities: string[];
+  hostedFields?: HostedFieldsConfig;
+}
+
+export interface ProcessorStatusResponse {
+  priority: string[];
+  processors: ProcessorStatusEntry[];
+}
+
+export interface ProcessorPayment {
+  id: string;
+  debtorId?: string;
+  collectionAccountId?: string;
+  debtId?: string;
+  processor: string;
+  type: 'sale' | 'refund' | 'void' | 'recurring_sale';
+  status: 'approved' | 'declined' | 'voided' | 'refunded' | 'error' | 'pending';
+  amountCents: number;
+  currency: string;
+  convenienceFeeCents: number;
+  processorTxnId?: string;
+  authCode?: string;
+  responseText?: string;
+  cardBrand?: string;
+  cardLast4?: string;
+  permitted: boolean;
+  disclosureText?: string;
+  disclosureAcknowledgedAt?: string;
+  failureReason?: string;
+  createdAt: string;
+}
+
+export interface ChargeProcessorPaymentPayload {
+  collectionAccountId: string;
+  debtorId?: string;
+  debtId?: string;
+  paymentPlanId?: string;
+  amountCents: number;
+  convenienceFeeCents?: number;
+  paymentToken?: string;
+  vaultId?: string;
+  description?: string;
+  processor?: string;
+  disclosureAcknowledged: boolean;
+  disclosureText?: string;
+  idempotencyKey?: string;
+}
+
+export function getPaymentProcessorStatus() {
+  return paymentsApi()<ProcessorStatusResponse>('/payment-processors/status', { method: 'GET' });
+}
+export function chargeProcessorPayment(payload: ChargeProcessorPaymentPayload) {
+  return paymentsApi()<ProcessorPayment>('/payment-processors/charge', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+export function refundProcessorPayment(paymentId: string, amountCents?: number, reason?: string) {
+  return paymentsApi()<ProcessorPayment>('/payment-processors/refund', {
+    method: 'POST',
+    body: JSON.stringify({ paymentId, amountCents, reason }),
+  });
+}
+export function voidProcessorPayment(paymentId: string) {
+  return paymentsApi()<ProcessorPayment>('/payment-processors/void', {
+    method: 'POST',
+    body: JSON.stringify({ paymentId }),
+  });
+}
+export function getAccountProcessorPayments(collectionAccountId: string) {
+  return paymentsApi()<ProcessorPayment[]>(
+    `/payment-processors/accounts/${collectionAccountId}/payments`,
+    { method: 'GET' },
+  );
+}
+export function getDebtProcessorPayments(debtId: string) {
+  return paymentsApi()<ProcessorPayment[]>(
+    `/payment-processors/debts/${debtId}/payments`,
+    { method: 'GET' },
+  );
+}
+
+// ── Lead vendors (ping/post purchase + webhook/CSV import) — sales/admin ──
+function leadVendorsApi() { return authenticatedApi(getToken() ?? ''); }
+
+export interface LeadVendorStatus {
+  name: string;
+  displayName: string;
+  configured: boolean;
+  active: boolean;
+  supportsPingPost: boolean;
+  products: { id: string; name: string; price?: number; delivery?: string }[];
+}
+
+export interface LeadImportBatch {
+  id: string;
+  vendorName: string;
+  source: 'webhook' | 'csv' | 'ping_post' | 'api_order';
+  filename?: string;
+  status: 'processing' | 'completed' | 'failed';
+  totalRows: number;
+  imported: number;
+  duplicates: number;
+  invalid: number;
+  totalCost?: number;
+  rowErrors?: { row: number; reason: string }[];
+  error?: string;
+  createdAt: string;
+}
+
+export interface VendorLead {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  state?: string;
+  totalDebt?: number;
+  debtTypes?: string[];
+  qualityScore: number;
+  qualityTier?: string;
+  scoreFactors?: Record<string, unknown>;
+  status: string;
+  vendorName?: string;
+  vendorLeadId?: string;
+  importBatchId?: string;
+  purchaseCost?: number;
+  duplicateOf?: string;
+  collectionAccountId?: string;
+  tcpaConsent?: boolean;
+  createdAt: string;
+}
+
+export interface VendorLeadList {
+  leads: VendorLead[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface LeadPurchase {
+  id: string;
+  vendorName: string;
+  criteria?: Record<string, any>;
+  quantityRequested: number;
+  quantityReceived: number;
+  pricePerLead?: number;
+  totalCost?: number;
+  status: 'pending' | 'pinged' | 'posted' | 'completed' | 'rejected' | 'failed';
+  importBatchId?: string;
+  error?: string;
+  createdAt: string;
+}
+
+export function getLeadVendorStatuses() {
+  return leadVendorsApi()<LeadVendorStatus[]>('/lead-vendors', { method: 'GET' });
+}
+export function getLeadVendor(name: string) {
+  return leadVendorsApi()<LeadVendorStatus>(`/lead-vendors/vendors/${encodeURIComponent(name)}`, { method: 'GET' });
+}
+export function priceVendorLead(vendor: string, criteria: Record<string, unknown>) {
+  return leadVendorsApi()<{ accepted: boolean; price?: number; rejectionReason?: string }>('/lead-vendors/price', {
+    method: 'POST',
+    body: JSON.stringify({ vendor, ...criteria }),
+  });
+}
+export function purchaseVendorLeads(payload: {
+  vendor: string;
+  quantity: number;
+  states?: string[];
+  debtTypes?: string[];
+  minDebt?: number;
+  maxDebt?: number;
+  maxPricePerLead?: number;
+}) {
+  return leadVendorsApi()<{ purchase: LeadPurchase }>('/lead-vendors/purchase', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+export function getLeadPurchases(vendor?: string) {
+  const qs = vendor ? `?vendor=${encodeURIComponent(vendor)}` : '';
+  return leadVendorsApi()<LeadPurchase[]>(`/lead-vendors/purchases${qs}`, { method: 'GET' });
+}
+export function getLeadImportBatches(vendor?: string) {
+  const qs = vendor ? `?vendor=${encodeURIComponent(vendor)}` : '';
+  return leadVendorsApi()<LeadImportBatch[]>(`/lead-vendors/batches${qs}`, { method: 'GET' });
+}
+export function importVendorCsv(vendor: string, csv: string, filename?: string) {
+  return leadVendorsApi()<{ batch: LeadImportBatch }>('/lead-vendors/import/csv', {
+    method: 'POST',
+    body: JSON.stringify({ vendor, csv, filename }),
+  });
+}
+export function getVendorLeads(filter: {
+  vendor?: string;
+  batchId?: string;
+  minScore?: number;
+  status?: string;
+  disposition?: 'all' | 'imported' | 'duplicates';
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(filter)) {
+    if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+  }
+  const qs = params.toString();
+  return leadVendorsApi()<VendorLeadList>(`/lead-vendors/leads${qs ? `?${qs}` : ''}`, { method: 'GET' });
+}
+export function assignVendorLeadToCollections(leadId: string) {
+  return leadVendorsApi()<{ account: any; alreadyAssigned: boolean }>(
+    `/lead-vendors/leads/${leadId}/assign-collections`,
+    { method: 'POST' },
+  );
+}

@@ -65,6 +65,7 @@ export default function Navigation() {
     if (user.role === 'provider') roleItems.push({ href: '/portal', label: 'Provider Portal' });
     if (user.role === 'sales') {
       roleItems.push({ href: '/sales', label: 'Sales CRM' });
+      roleItems.push({ href: '/leads', label: 'Leads' });
       roleItems.push({ href: '/collections', label: 'Collections' });
     }
     if (user.role === 'admin') {
@@ -72,6 +73,7 @@ export default function Navigation() {
       roleItems.push({ href: '/admin/sales-agents', label: 'Sales Team' });
       roleItems.push({ href: '/admin/sales', label: 'Sales CRM' });
       roleItems.push({ href: '/crm', label: 'CRM Center' });
+      roleItems.push({ href: '/leads', label: 'Leads' });
       roleItems.push({ href: '/collections', label: 'Collections' });
     }
   }
