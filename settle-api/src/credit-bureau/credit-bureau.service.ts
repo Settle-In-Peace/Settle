@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -6,7 +11,11 @@ import {
   CreditPullRequest,
   CreditPullResult,
 } from './credit-provider.interface';
-import { MyFreeScoreNowProvider } from './providers/myfreescorenow.provider';
+import {
+  MfsnNotConfiguredError,
+  MfsnUpstreamError,
+  MyFreeScoreNowProvider,
+} from './providers/myfreescorenow.provider';
 import { PullCreditDto } from './dto/pull-credit.dto';
 import {
   CreditReport,
@@ -40,6 +49,13 @@ export class CreditBureauService {
   ): Promise<{ report: CreditReport; result: CreditPullResult }> {
     const provider = this.getProvider();
 
+    // Fail closed with a clear 503 when credentials aren't configured.
+    if (!provider.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'Credit provider is not configured. Set MFSN_API_USER (or MFSN_API_EMAIL) and MFSN_API_PASSWORD on the API.',
+      );
+    }
+
     const req: CreditPullRequest = {
       firstName: dto.firstName,
       lastName: dto.lastName,
@@ -64,8 +80,19 @@ export class CreditBureauService {
       referenceId: dto.referenceId,
     };
 
-    // Execute the pull
-    const result = await provider.pullCredit(req);
+    // Execute the pull — translate provider errors into HTTP semantics.
+    let result: CreditPullResult;
+    try {
+      result = await provider.pullCredit(req);
+    } catch (err) {
+      if (err instanceof MfsnNotConfiguredError) {
+        throw new ServiceUnavailableException(err.message);
+      }
+      if (err instanceof MfsnUpstreamError) {
+        throw new ServiceUnavailableException(err.message);
+      }
+      throw err;
+    }
 
     // Persist to audit table
     const primaryScore = result.scores[0]?.score ?? null;
@@ -118,6 +145,26 @@ export class CreditBureauService {
     return {
       provider: provider.name,
       healthy: await provider.healthCheck(),
+    };
+  }
+
+  /**
+   * Configuration status — does NOT call upstream, safe for UI hints.
+   * Lets the web app show a "set up credentials" hint instead of a crash
+   * when MFSN env vars are unset.
+   */
+  getStatus(): {
+    provider: string;
+    configured: boolean;
+    environment: 'sandbox' | 'production';
+    products: string[];
+  } {
+    const provider = this.getProvider();
+    return {
+      provider: provider.name,
+      configured: provider.isConfigured(),
+      environment: this.mfsnProvider.environment,
+      products: ['credit_snapshot', 'funding_snapshot', '3b_report'],
     };
   }
 }

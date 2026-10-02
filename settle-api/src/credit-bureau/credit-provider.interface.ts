@@ -102,6 +102,9 @@ export interface CreditProvider {
   /** Provider identifier (e.g. "myfreescorenow") */
   readonly name: string;
 
+  /** Whether required credentials/config are present (fail-closed check) */
+  isConfigured(): boolean;
+
   /** Authenticate with the provider and cache the token */
   authenticate(): Promise<string>;
 

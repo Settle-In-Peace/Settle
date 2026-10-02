@@ -15,25 +15,61 @@ interface MfsnLoginResponse {
   token: string;
 }
 
+/** Thrown when MFSN credentials/base URL are not configured. Maps to HTTP 503 upstream. */
+export class MfsnNotConfiguredError extends Error {
+  constructor() {
+    super(
+      'MyFreeScoreNow integration is not configured. Set MFSN_API_USER (or MFSN_API_EMAIL) and MFSN_API_PASSWORD.',
+    );
+    this.name = 'MfsnNotConfiguredError';
+  }
+}
+
+/** Thrown for upstream failures after retries are exhausted. */
+export class MfsnUpstreamError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = 'MfsnUpstreamError';
+  }
+}
+
+const MFSN_ENVIRONMENTS = {
+  sandbox: 'https://uat-api.myfreescorenow.com',
+  production: 'https://api.myfreescorenow.com',
+} as const;
+
 /**
  * MyFreeScoreNow provider — tri-bureau credit data via REST API.
  *
- * Environments:
+ * Environments (selected via MFSN_ENV=sandbox|production, or override
+ * entirely with MFSN_API_BASE_URL):
  *   Sandbox:    https://uat-api.myfreescorenow.com
  *   Production: https://api.myfreescorenow.com
  *
- * Auth: Bearer token from POST /api/auth/login
+ * Auth: POST {MFSN_LOGIN_PATH:-/api/auth/login} with
+ *   { email|apiUser, password } -> { success, token }.
+ *   The returned token is sent as `Authorization: Bearer <token>` and
+ *   cached for ~55 minutes (Laravel Sanctum-style token).
  *
- * Products:
+ * Products (per MFSN affiliate docs):
  *   - Credit Snapshot  (soft pull, score + summary)
  *   - Funding Snapshot (qualification-focused soft pull)
  *   - 3B Reports       (tri-bureau full report)
  *   - Enrollment       (enroll consumer in monitoring)
  *
- * Only Login/Logout are publicly documented. The credit-pull
- * endpoints are provisioned per-account — paths are configurable via
- * env vars so they can be adjusted without code changes once full
- * docs are provided by MyFreeScoreNow support.
+ * TODO(mfsn-spec): Only the token-exchange (login) flow is publicly
+ * documented (API User + Password -> access token). The credit-pull
+ * endpoint paths and payload shapes are provisioned per-account and
+ * were not published at integration time — they are configurable via
+ * the MFSN_*_PATH env vars below so no code change is needed once
+ * MyFreeScoreNow supplies the full spec. Verify against the dashboard
+ * API docs before production use.
+ *
+ * Security: credentials and tokens are NEVER logged. Log lines only
+ * include method + path + upstream status.
  */
 @Injectable()
 export class MyFreeScoreNowProvider implements CreditProvider {
@@ -45,22 +81,51 @@ export class MyFreeScoreNowProvider implements CreditProvider {
 
   constructor(private readonly config: ConfigService) {}
 
+  // ── Configuration ──────────────────────────────────────────────────────
+
+  get environment(): 'sandbox' | 'production' {
+    return this.config.get<string>('MFSN_ENV', 'sandbox') === 'production'
+      ? 'production'
+      : 'sandbox';
+  }
+
   private get baseUrl(): string {
     return this.config.get<string>(
       'MFSN_API_BASE_URL',
-      'https://uat-api.myfreescorenow.com',
-    );
+      MFSN_ENVIRONMENTS[this.environment],
+    ).replace(/\/$/, '');
   }
 
-  private get email(): string {
-    return this.config.get<string>('MFSN_API_EMAIL', '');
+  /** API user — MFSN_API_USER preferred, MFSN_API_EMAIL kept for backwards compat. */
+  private get apiUser(): string {
+    return (
+      this.config.get<string>('MFSN_API_USER', '') ||
+      this.config.get<string>('MFSN_API_EMAIL', '')
+    );
   }
 
   private get password(): string {
     return this.config.get<string>('MFSN_API_PASSWORD', '');
   }
 
-  /** Endpoint paths — configurable for when full docs arrive */
+  isConfigured(): boolean {
+    return Boolean(this.apiUser && this.password && this.baseUrl);
+  }
+
+  private get timeoutMs(): number {
+    return this.config.get<number>('MFSN_TIMEOUT_MS', 15_000);
+  }
+
+  /** Retries for transient failures (network error, 429, 5xx). 4xx never retries. */
+  private get maxRetries(): number {
+    return this.config.get<number>('MFSN_MAX_RETRIES', 2);
+  }
+
+  /** Endpoint paths — TODO(mfsn-spec): confirm against account-provisioned docs */
+  private get loginPath(): string {
+    return this.config.get<string>('MFSN_LOGIN_PATH', '/api/auth/login');
+  }
+
   private get creditSnapshotPath(): string {
     return this.config.get<string>('MFSN_CREDIT_SNAPSHOT_PATH', '/api/credit-snapshot');
   }
@@ -73,41 +138,115 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     return this.config.get<string>('MFSN_3B_REPORT_PATH', '/api/3b-reports');
   }
 
+  // ── HTTP plumbing (timeout + bounded retry, fail-closed on 4xx) ────────
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * fetch with a hard timeout and bounded exponential-backoff retries.
+   * Retries: network failures, 429, 5xx. Never retries 4xx (fail-closed —
+   * a rejected credit request must not be silently re-submitted).
+   */
+  private async request(
+    path: string,
+    init: RequestInit,
+    attempt = 0,
+  ): Promise<Response> {
+    const url = `${this.baseUrl}${path}`;
+    const method = init.method ?? 'GET';
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, signal: controller.signal });
+    } catch (err) {
+      clearTimeout(timer);
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      if (attempt < this.maxRetries) {
+        const backoff = 250 * 2 ** attempt;
+        this.logger.warn(
+          `${method} ${path} network${isTimeout ? ' timeout' : ''} error — retry ${attempt + 1}/${this.maxRetries} in ${backoff}ms`,
+        );
+        await this.sleep(backoff);
+        return this.request(path, init, attempt + 1);
+      }
+      throw new MfsnUpstreamError(
+        `MyFreeScoreNow unreachable after ${attempt + 1} attempt(s): ${isTimeout ? 'timeout' : (err as Error).message}`,
+      );
+    }
+    clearTimeout(timer);
+
+    if (res.ok) return res;
+
+    // Fail-closed on 4xx — never retry a rejected request.
+    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+      const body = await this.safeBody(res);
+      throw new MfsnUpstreamError(
+        `MyFreeScoreNow ${method} ${path} rejected (${res.status}): ${body}`,
+        res.status,
+      );
+    }
+
+    // 429 / 5xx — retryable
+    if (attempt < this.maxRetries) {
+      const backoff = 250 * 2 ** attempt;
+      this.logger.warn(
+        `${method} ${path} -> ${res.status} — retry ${attempt + 1}/${this.maxRetries} in ${backoff}ms`,
+      );
+      await this.sleep(backoff);
+      return this.request(path, init, attempt + 1);
+    }
+
+    const body = await this.safeBody(res);
+    throw new MfsnUpstreamError(
+      `MyFreeScoreNow ${method} ${path} failed (${res.status}) after ${attempt + 1} attempt(s): ${body}`,
+      res.status,
+    );
+  }
+
+  /** Truncate an upstream error body for logs/errors — never log beyond 300 chars. */
+  private async safeBody(res: Response): Promise<string> {
+    try {
+      const text = await res.text();
+      return text.slice(0, 300);
+    } catch {
+      return '(unreadable body)';
+    }
+  }
+
   // ── Auth ────────────────────────────────────────────────────────────────
 
   async authenticate(): Promise<string> {
-    // Reuse cached token if still valid (5-minute buffer)
+    if (!this.isConfigured()) {
+      throw new MfsnNotConfiguredError();
+    }
+
+    // Reuse cached token if still valid (5-minute buffer baked into expiry)
     if (this.cachedToken && Date.now() < this.tokenExpiresAt) {
       return this.cachedToken;
     }
 
-    if (!this.email || !this.password) {
-      throw new Error(
-        'MyFreeScoreNow credentials not configured. Set MFSN_API_EMAIL and MFSN_API_PASSWORD.',
-      );
-    }
+    this.logger.log(`Authenticating with MyFreeScoreNow (${this.environment})`);
 
-    const url = `${this.baseUrl}/api/auth/login`;
-    this.logger.log(`Authenticating with MyFreeScoreNow at ${url}`);
-
-    const res = await fetch(url, {
+    const res = await this.request(this.loginPath, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: this.email, password: this.password }),
+      // Body contains credentials — never log `body`.
+      body: JSON.stringify({ email: this.apiUser, password: this.password }),
     });
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`MyFreeScoreNow login failed (${res.status}): ${body}`);
-    }
 
     const data = (await res.json()) as MfsnLoginResponse;
     if (!data.success || !data.token) {
-      throw new Error(`MyFreeScoreNow login failed: ${data.message}`);
+      throw new MfsnUpstreamError(
+        `MyFreeScoreNow login failed: ${data.message ?? 'no token returned'}`,
+      );
     }
 
     this.cachedToken = data.token;
-    // Tokens appear to be Laravel-style (id|hash) — cache for 55 minutes
+    // Tokens appear to be Laravel Sanctum-style — cache for 55 minutes
     this.tokenExpiresAt = Date.now() + 55 * 60 * 1000;
 
     this.logger.log('MyFreeScoreNow authentication successful');
@@ -115,6 +254,7 @@ export class MyFreeScoreNowProvider implements CreditProvider {
   }
 
   async healthCheck(): Promise<boolean> {
+    if (!this.isConfigured()) return false;
     try {
       await this.authenticate();
       return true;
@@ -127,26 +267,43 @@ export class MyFreeScoreNowProvider implements CreditProvider {
 
   async pullCredit(req: CreditPullRequest): Promise<CreditPullResult> {
     const token = await this.authenticate();
-    const { url, body } = this.buildRequest(req);
+    const { path, body } = this.buildRequest(req);
 
+    // Log only product/pull-type and non-PII reference — never log names/SSN.
     this.logger.log(
-      `Pulling ${req.product} (${req.pullType}) for ${req.firstName} ${req.lastName}`,
+      `Pulling ${req.product} (${req.pullType}) ref=${req.referenceId ?? 'n/a'}`,
     );
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const doFetch = () =>
+      this.request(path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      throw new Error(
-        `MyFreeScoreNow ${req.product} failed (${res.status}): ${errBody}`,
-      );
+    let res: Response;
+    try {
+      res = await doFetch();
+    } catch (err) {
+      // A 401 means our cached token was rejected — refresh and retry once.
+      if (err instanceof MfsnUpstreamError && err.status === 401) {
+        this.cachedToken = null;
+        this.tokenExpiresAt = 0;
+        const freshToken = await this.authenticate();
+        res = await this.request(path, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify(body),
+        });
+      } else {
+        throw err;
+      }
     }
 
     const raw = await res.json();
@@ -155,7 +312,7 @@ export class MyFreeScoreNowProvider implements CreditProvider {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  private buildRequest(req: CreditPullRequest): { url: string; body: Record<string, any> } {
+  private buildRequest(req: CreditPullRequest): { path: string; body: Record<string, any> } {
     let path: string;
     switch (req.product) {
       case CreditReportProduct.CREDIT_SNAPSHOT:
@@ -168,9 +325,11 @@ export class MyFreeScoreNowProvider implements CreditProvider {
         path = this.threeBReportPath;
         break;
       default:
-        throw new Error(`Unknown product: ${req.product}`);
+        throw new MfsnUpstreamError(`Unknown product: ${req.product}`);
     }
 
+    // TODO(mfsn-spec): field names are our best guess per typical MFSN
+    // payloads; confirm against the account-provisioned API docs.
     const body: Record<string, any> = {
       firstName: req.firstName,
       lastName: req.lastName,
@@ -189,7 +348,7 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     if (req.phone) body.phone = req.phone;
     if (req.email) body.email = req.email;
 
-    // Consent metadata
+    // FCRA consent metadata
     body.consent = {
       grantedAt: req.consent.grantedAt.toISOString(),
       method: req.consent.method,
@@ -197,14 +356,15 @@ export class MyFreeScoreNowProvider implements CreditProvider {
       userAgent: req.consent.userAgent,
     };
 
-    return { url: `${this.baseUrl}${path}`, body };
+    return { path, body };
   }
 
   /**
    * Normalize the provider response into our internal schema.
-   * The exact response shape will be confirmed once full API docs
-   * are provided. This handles common JSON structures and falls
-   * back gracefully.
+   * TODO(mfsn-spec): the exact response shape will be confirmed once the
+   * full API docs are provided. This handles common JSON structures and
+   * falls back gracefully — the raw payload is always preserved in
+   * `rawResponse` for audit.
    */
   private normalizeResponse(raw: Record<string, any>): CreditPullResult {
     const data = raw.data ?? raw.result ?? raw;

@@ -48,4 +48,10 @@ export class CreditBureauController {
   healthCheck() {
     return this.creditBureauService.healthCheck();
   }
+
+  /** Config status (no upstream call) — for UI setup hints */
+  @Get('status')
+  getStatus() {
+    return this.creditBureauService.getStatus();
+  }
 }
