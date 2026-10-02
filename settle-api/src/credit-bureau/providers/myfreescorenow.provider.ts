@@ -18,7 +18,10 @@ interface MfsnLoginResponse {
 /**
  * MyFreeScoreNow provider — tri-bureau credit data via REST API.
  *
- * Sandbox: https://uat-api.myfreescorenow.com
+ * Environments:
+ *   Sandbox:    https://uat-api.myfreescorenow.com
+ *   Production: https://api.myfreescorenow.com
+ *
  * Auth: Bearer token from POST /api/auth/login
  *
  * Products:
@@ -27,7 +30,7 @@ interface MfsnLoginResponse {
  *   - 3B Reports       (tri-bureau full report)
  *   - Enrollment       (enroll consumer in monitoring)
  *
- * Only the Login endpoint is publicly documented. The credit-pull
+ * Only Login/Logout are publicly documented. The credit-pull
  * endpoints are provisioned per-account — paths are configurable via
  * env vars so they can be adjusted without code changes once full
  * docs are provided by MyFreeScoreNow support.
