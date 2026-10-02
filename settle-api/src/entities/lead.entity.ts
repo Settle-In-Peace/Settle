@@ -138,4 +138,26 @@ export class Lead {
 
   @Column({ type: 'timestamp', name: 'last_contacted_at', nullable: true })
   lastContactedAt?: Date;
+
+  // ── Lead vendor sourcing (set only for purchased/imported vendor leads) ──
+  @Column({ type: 'varchar', length: 100, name: 'vendor_name', nullable: true })
+  vendorName?: string; // which external vendor supplied this lead
+
+  @Column({ type: 'varchar', length: 255, name: 'vendor_lead_id', nullable: true })
+  vendorLeadId?: string; // vendor-side lead id for support/reconciliation
+
+  @Column({ type: 'uuid', name: 'import_batch_id', nullable: true })
+  importBatchId?: string; // → lead_import_batches.id
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'purchase_cost', nullable: true })
+  purchaseCost?: number; // what we paid the vendor for this lead
+
+  @Column({ type: 'simple-json', name: 'score_factors', nullable: true })
+  scoreFactors?: Record<string, unknown>; // transparent scoring breakdown
+
+  @Column({ type: 'uuid', name: 'duplicate_of', nullable: true })
+  duplicateOf?: string; // set when dedupe matched an existing lead row
+
+  @Column({ type: 'uuid', name: 'collection_account_id', nullable: true })
+  collectionAccountId?: string; // handoff link after assign-to-collections
 }
