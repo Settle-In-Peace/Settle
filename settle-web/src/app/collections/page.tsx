@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getAuthenticatedApi } from '@/lib/api';
 import { getStoredUser, isAuthenticated } from '@/lib/authUtils';
 import CreditReportsPanel from '@/components/CreditReportsPanel';
+import DialerPanel from '@/components/dialer/DialerPanel';
 
 const STATUS_OPTIONS = [
   'new',
@@ -634,19 +635,6 @@ export default function CollectionsDashboardPage() {
       setRefreshKey((k) => k + 1);
     } catch (err: any) {
       setError(err?.message || 'Failed to run skip trace');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDialCall = async () => {
-    if (!selectedAccount || !phone) return;
-    setSaving(true);
-    try {
-      await getAuthenticatedApi()(`/collections/accounts/${selectedAccount.id}/calls/dial`, { method: 'POST', body: JSON.stringify({ to: phone }) });
-      setRefreshKey((k) => k + 1);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to dial call');
     } finally {
       setSaving(false);
     }
@@ -1826,26 +1814,31 @@ export default function CollectionsDashboardPage() {
               </div>
             )}
 
-            {(activeTab === 'skipTrace' || activeTab === 'calls') && (
+            {activeTab === 'calls' && (
+              <DialerPanel
+                accountId={selectedAccount.id}
+                contactId={selectedAccount.crmClientId}
+              />
+            )}
+
+            {activeTab === 'skipTrace' && (
               <div className="space-y-3">
                 <input
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder={activeTab === 'calls' ? 'Phone number to dial (E.164)' : 'Phone / identifier for skip trace'}
+                  placeholder="Phone / identifier for skip trace"
                   className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
                 />
                 <button
-                  onClick={activeTab === 'calls' ? handleDialCall : handleRunSkipTrace}
+                  onClick={handleRunSkipTrace}
                   disabled={saving}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
                 >
-                  {saving ? 'Working...' : activeTab === 'calls' ? 'Dial Call' : 'Run Skip Trace'}
+                  {saving ? 'Working...' : 'Run Skip Trace'}
                 </button>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {activeTab === 'calls'
-                    ? 'Calls are placed through the Telnyx integration when configured; otherwise a mock call log is created.'
-                    : 'Skip trace records a manual search request. Add a background-check or credit-report provider to fetch structured data.'}
+                  Skip trace records a manual search request. Add a background-check or credit-report provider to fetch structured data.
                 </p>
               </div>
             )}
