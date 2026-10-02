@@ -21,6 +21,9 @@ import { CallLog } from './entities/call-log.entity';
 import { CreditReport } from './entities/credit-report.entity';
 import { BackgroundCheck } from './entities/background-check.entity';
 import { DialerCall } from './dialer/dialer-call.entity';
+import { LeadVendorAccount } from './entities/lead-vendor-account.entity';
+import { LeadImportBatch } from './entities/lead-import-batch.entity';
+import { LeadPurchase } from './entities/lead-purchase.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -54,6 +57,9 @@ export const dataSource = new DataSource({
     CreditReport,
     BackgroundCheck,
     DialerCall,
+    LeadVendorAccount,
+    LeadImportBatch,
+    LeadPurchase,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
