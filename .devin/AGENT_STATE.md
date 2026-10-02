@@ -16,6 +16,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
 | devin-settle-leads | lead vendor integrations | settle-api/src/lead-vendors/** (new), settle-api/src/entities/lead-*.entity.ts (new), settle-api/src/migrations/1700000000033-* (new), settle-web leads UI |
+| devin-settle-payments | high-risk processor layer | settle-api/src/payment-processors/** (new), settle-api/src/entities/processor-payment.entity.ts (new), settle-api/src/migrations/1700000000034-* (new), settle-web/src/components/payments/** (new), settle-web collections page payments tab |
 
 ## Blocked on user
 
