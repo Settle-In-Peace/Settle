@@ -281,14 +281,14 @@ export class LeadVendorsService {
           email: lead.email ?? '',
           phone: lead.phone ?? '',
           state: lead.state ?? '',
-          zipCode: lead.zipCode,
+          zipCode: lead.zipCode?.slice(0, 10),
           totalDebt: lead.totalDebt ?? 0,
           debtTypes: lead.debtTypes,
           tcpaConsent: lead.tcpaConsent === true,
           consentTimestamp: lead.tcpaConsent ? new Date() : undefined,
-          source: `vendor:${vendor}`,
+          source: `vendor:${vendor}`.slice(0, 100),
           vendorName: vendor,
-          vendorLeadId: lead.vendorLeadId,
+          vendorLeadId: lead.vendorLeadId?.slice(0, 255),
           importBatchId: batch.id,
           purchaseCost: opts.costPerLead,
           status: 'new',
@@ -429,7 +429,7 @@ export class LeadVendorsService {
 
     const qb = this.leadsRepository
       .createQueryBuilder('lead')
-      .where('lead.vendor_name IS NOT NULL');
+      .where('lead.vendorName IS NOT NULL');
 
     if (filter.disposition === 'duplicates') {
       qb.andWhere(`lead.status = 'duplicate'`);
@@ -437,12 +437,12 @@ export class LeadVendorsService {
       qb.andWhere(`lead.status != 'duplicate'`);
     }
     if (filter.vendor) {
-      qb.andWhere('lead.vendor_name = :vendor', {
+      qb.andWhere('lead.vendorName = :vendor', {
         vendor: filter.vendor.toLowerCase(),
       });
     }
     if (filter.batchId) {
-      qb.andWhere('lead.import_batch_id = :batchId', { batchId: filter.batchId });
+      qb.andWhere('lead.importBatchId = :batchId', { batchId: filter.batchId });
     }
     if (filter.minScore !== undefined) {
       qb.andWhere('lead.qualityScore >= :minScore', { minScore: filter.minScore });
