@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuthenticatedApi } from '@/lib/api';
 import { getStoredUser, isAuthenticated } from '@/lib/authUtils';
+import CreditReportsPanel from '@/components/CreditReportsPanel';
 
 const STATUS_OPTIONS = [
   'new',
@@ -1849,11 +1850,15 @@ export default function CollectionsDashboardPage() {
               </div>
             )}
 
-            {(activeTab === 'creditReports' || activeTab === 'backgroundChecks') && (
+            {activeTab === 'creditReports' && (
+              <CreditReportsPanel accountId={selectedAccount.id} />
+            )}
+
+            {activeTab === 'backgroundChecks' && (
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                <p>Use the backend endpoints directly to upload {activeTab === 'creditReports' ? 'credit report' : 'background check'} JSON:</p>
+                <p>Use the backend endpoints directly to upload background check JSON:</p>
                 <code className="block mt-2 p-2 bg-zinc-100 dark:bg-zinc-950 rounded text-xs">
-                  POST /collections/accounts/{selectedAccount.id}/{activeTab === 'creditReports' ? 'credit-reports' : 'background-checks'}
+                  POST /collections/accounts/{selectedAccount.id}/background-checks
                 </code>
               </div>
             )}

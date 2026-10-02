@@ -260,3 +260,74 @@ export function getGoals() { return coachingApi()<Goal[]>('/coaching/goals', { m
 export function createGoal(data: GoalPayload) { return coachingApi()<Goal>('/coaching/goals', { method: 'POST', body: JSON.stringify(data) }); }
 export function updateGoalProgress(id: string, currentAmount: number) { return coachingApi()<Goal>(`/coaching/goals/${id}/progress`, { method: 'PUT', body: JSON.stringify({ currentAmount }) }); }
 export function deleteGoal(id: string) { return coachingApi()<{ success: boolean }>(`/coaching/goals/${id}`, { method: 'DELETE' }); }
+
+// ── Credit bureau (MyFreeScoreNow) — sales/admin only ────────────────────
+// Mirrors the `credit` namespace added to `createSettleApi` in shared-sdk.
+function creditApi() { return authenticatedApi(getToken() ?? ''); }
+
+export interface CreditProviderStatus {
+  provider: string;
+  configured: boolean;
+  environment: 'sandbox' | 'production';
+  products: string[];
+}
+
+export interface CreditReportSummary {
+  id: string;
+  collectionAccountId: string;
+  provider: string;
+  status: 'pending' | 'success' | 'failed' | 'manual';
+  creditScore?: number;
+  reportDate?: string;
+  accounts?: Record<string, any>[];
+  inquiries?: Record<string, any>[];
+  publicRecords?: Record<string, any>[];
+  warnings?: string[];
+  notes?: string;
+  createdAt: string;
+}
+
+export interface PullCreditPayload {
+  firstName: string;
+  lastName: string;
+  ssn?: string;
+  dateOfBirth?: string;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  phone?: string;
+  email?: string;
+  pullType: 'soft' | 'hard';
+  product: 'credit_snapshot' | 'funding_snapshot' | '3b_report';
+  permissiblePurpose: string;
+  consent: {
+    grantedAt: string;
+    method: 'web_form' | 'phone' | 'paper' | 'imported';
+    ipAddress?: string;
+    userAgent?: string;
+    consentLanguage?: string;
+  };
+  referenceId?: string;
+  collectionAccountId?: string;
+}
+
+/** Provider config status — safe to call even when MFSN is unconfigured. */
+export function getCreditProviderStatus() {
+  return creditApi()<CreditProviderStatus>('/credit-bureau/status', { method: 'GET' });
+}
+export function pullCreditReport(payload: PullCreditPayload) {
+  return creditApi()<{ report: CreditReportSummary; result: any }>('/credit-bureau/pull', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+export function getCreditReports(collectionAccountId: string) {
+  return creditApi()<CreditReportSummary[]>(
+    `/credit-bureau/accounts/${collectionAccountId}/reports`,
+    { method: 'GET' },
+  );
+}
+export function getCreditReport(id: string) {
+  return creditApi()<CreditReportSummary>(`/credit-bureau/reports/${id}`, { method: 'GET' });
+}
