@@ -24,6 +24,7 @@ import { DialerCall } from './dialer/dialer-call.entity';
 import { LeadVendorAccount } from './entities/lead-vendor-account.entity';
 import { LeadImportBatch } from './entities/lead-import-batch.entity';
 import { LeadPurchase } from './entities/lead-purchase.entity';
+import { ProcessorPayment } from './entities/processor-payment.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -60,6 +61,7 @@ export const dataSource = new DataSource({
     LeadVendorAccount,
     LeadImportBatch,
     LeadPurchase,
+    ProcessorPayment,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

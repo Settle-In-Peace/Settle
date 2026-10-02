@@ -33,6 +33,7 @@ import { CreateDebtPortfolioTables1700000000030 } from './1700000000030-CreateDe
 import { CreatePaymentPlanTables1700000000031 } from './1700000000031-CreatePaymentPlanTables';
 import { AddMyFreeScoreNowProvider1700000000032 } from './1700000000032-AddMyFreeScoreNowProvider';
 import { CreateLeadVendorTables1700000000033 } from './1700000000033-CreateLeadVendorTables';
+import { CreateProcessorPaymentsTable1700000000034 } from './1700000000034-CreateProcessorPaymentsTable';
 import { CreateDialerCalls1700000000035 } from './1700000000035-CreateDialerCalls';
 
 type MigrationConstructor = new () => MigrationInterface;
@@ -71,6 +72,7 @@ const migrations: MigrationConstructor[] = [
   CreatePaymentPlanTables1700000000031,
   AddMyFreeScoreNowProvider1700000000032,
   CreateLeadVendorTables1700000000033,
+  CreateProcessorPaymentsTable1700000000034,
   CreateDialerCalls1700000000035,
 ];
 

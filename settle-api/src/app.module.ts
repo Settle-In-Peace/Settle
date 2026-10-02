@@ -50,6 +50,7 @@ import { DialerCall } from './dialer/dialer-call.entity';
 import { LeadVendorAccount } from './entities/lead-vendor-account.entity';
 import { LeadImportBatch } from './entities/lead-import-batch.entity';
 import { LeadPurchase } from './entities/lead-purchase.entity';
+import { ProcessorPayment } from './entities/processor-payment.entity';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { DebtsModule } from './debts/debts.module';
@@ -72,6 +73,7 @@ import { PaymentPortalModule } from './payment-portal/payment-portal.module';
 import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
 import { DialerModule } from './dialer/dialer.module';
 import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
+import { PaymentProcessorsModule } from './payment-processors/payment-processors.module';
 
 @Module({
   imports: [
@@ -139,6 +141,7 @@ import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
         LeadVendorAccount,
         LeadImportBatch,
         LeadPurchase,
+        ProcessorPayment,
       ],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
@@ -192,6 +195,7 @@ import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
       LeadVendorAccount,
       LeadImportBatch,
       LeadPurchase,
+      ProcessorPayment,
     ]),
     AuthModule,
     ActivitiesModule,
@@ -213,6 +217,7 @@ import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
     CreditBureauModule,
     DialerModule,
     LeadVendorsModule,
+    PaymentProcessorsModule,
     TelnyxWebhookModule,
     ComplianceModule,
   ],
