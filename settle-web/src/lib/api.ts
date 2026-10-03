@@ -568,3 +568,107 @@ export function assignVendorLeadToCollections(leadId: string) {
     { method: 'POST' },
   );
 }
+
+// ── Collection AI (propensity / draft offers / next action / compliance) ──
+// Mirrors settle-api /collection-ai/*. Every POST returns 503 with a clear
+// body when the API has no AI key — the panel shows a setup hint instead.
+function collectionAiApi() { return authenticatedApi(getToken() ?? ''); }
+
+export interface CollectionAiStatus {
+  configured: boolean;
+  model: string;
+  provider: string;
+}
+
+export interface CollectionAiPropensity {
+  accountId: string;
+  score: number; // 0-100
+  reasoning: string;
+  keyFactors: string[];
+  heuristicScore: number;
+  degraded: boolean;
+  generatedAt: string;
+}
+
+export interface CollectionAiDraftOffer {
+  accountId: string;
+  offerAmount: number;
+  targetPercent: number;
+  termMonths: number;
+  letter: string;
+  complianceFlags: string[];
+  requiresReview: true;
+  generatedAt: string;
+}
+
+export interface CollectionAiNextAction {
+  accountId: string;
+  action: 'call' | 'email' | 'sms' | 'letter' | 'settle' | 'escalate';
+  reason: string;
+  scriptSnippet?: string;
+  requiresReview: true;
+  generatedAt: string;
+}
+
+export interface CollectionAiSummary {
+  summary: string;
+  keyPoints: string[];
+  promisedActions: string[];
+  sourceItemCount: number;
+  generatedAt: string;
+}
+
+export interface CollectionAiComplianceFlag {
+  rule: string;
+  severity: 'high' | 'medium' | 'low';
+  excerpt: string;
+  guidance: string;
+  source: 'deterministic' | 'llm';
+}
+
+export interface CollectionAiComplianceCheck {
+  ok: boolean;
+  flags: CollectionAiComplianceFlag[];
+  suggestedRewrite?: string;
+  requiresReview: true;
+  generatedAt: string;
+}
+
+export function getCollectionAiStatus() {
+  return collectionAiApi()<CollectionAiStatus>('/collection-ai/status', { method: 'GET' });
+}
+export function getCollectionAiPropensity(accountId: string) {
+  return collectionAiApi()<CollectionAiPropensity>(`/collection-ai/propensity/${accountId}`, { method: 'POST' });
+}
+export function draftCollectionAiOffer(payload: {
+  accountId: string;
+  targetPercent?: number;
+  termMonths?: number;
+  notes?: string;
+}) {
+  return collectionAiApi()<CollectionAiDraftOffer>('/collection-ai/draft-offer', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+export function getCollectionAiNextAction(accountId: string) {
+  return collectionAiApi()<CollectionAiNextAction>('/collection-ai/next-action', {
+    method: 'POST',
+    body: JSON.stringify({ accountId }),
+  });
+}
+export function summarizeCollectionAi(payload: { accountId?: string; text?: string }) {
+  return collectionAiApi()<CollectionAiSummary>('/collection-ai/summarize', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+export function checkCollectionAiCompliance(payload: {
+  text: string;
+  channel?: 'call_script' | 'sms' | 'email' | 'letter' | 'note';
+}) {
+  return collectionAiApi()<CollectionAiComplianceCheck>('/collection-ai/compliance-check', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

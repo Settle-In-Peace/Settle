@@ -7,6 +7,7 @@ import { getStoredUser, isAuthenticated } from '@/lib/authUtils';
 import CreditReportsPanel from '@/components/CreditReportsPanel';
 import TakePaymentPanel from '@/components/payments/TakePaymentPanel';
 import DialerPanel from '@/components/dialer/DialerPanel';
+import CollectionAiPanel from '@/components/CollectionAiPanel';
 
 const STATUS_OPTIONS = [
   'new',
@@ -104,7 +105,7 @@ export default function CollectionsDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<CollectionAccount | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'paymentPlan' | 'outreach' | 'history' | 'skipTrace' | 'calls' | 'creditReports' | 'backgroundChecks' | 'payments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'paymentPlan' | 'outreach' | 'history' | 'skipTrace' | 'calls' | 'creditReports' | 'backgroundChecks' | 'payments' | 'aiAssist'>('overview');
 
   // Sales team data for admin assignment
   const [salesAgents, setSalesAgents] = useState<{ id: string; email: string; firstName?: string; lastName?: string }[]>([]);
@@ -1209,13 +1210,13 @@ export default function CollectionsDashboardPage() {
             </div>
 
             <div className="flex gap-2 mb-6 overflow-x-auto">
-              {(['overview', 'notes', 'paymentPlan', 'outreach', 'history', 'skipTrace', 'calls', 'creditReports', 'backgroundChecks', 'payments'] as const).map((tab) => (
+              {(['overview', 'notes', 'paymentPlan', 'outreach', 'history', 'skipTrace', 'calls', 'creditReports', 'backgroundChecks', 'payments', 'aiAssist'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${activeTab === tab ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}`}
                 >
-                  {tab === 'paymentPlan' ? 'Payment Plan' : tab === 'outreach' ? 'Outreach' : tab === 'history' ? 'History' : tab === 'payments' ? 'Take Payment' : tab.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
+                  {tab === 'paymentPlan' ? 'Payment Plan' : tab === 'outreach' ? 'Outreach' : tab === 'history' ? 'History' : tab === 'payments' ? 'Take Payment' : tab === 'aiAssist' ? 'AI Assist' : tab.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
                 </button>
               ))}
             </div>
@@ -1850,6 +1851,10 @@ export default function CollectionsDashboardPage() {
 
             {activeTab === 'payments' && (
               <TakePaymentPanel accountId={selectedAccount.id} debtorId={selectedAccount.crmClientId} />
+            )}
+
+            {activeTab === 'aiAssist' && (
+              <CollectionAiPanel accountId={selectedAccount.id} />
             )}
 
             {activeTab === 'backgroundChecks' && (
