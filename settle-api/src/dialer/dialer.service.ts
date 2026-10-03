@@ -57,10 +57,10 @@ export class DialerService {
     ]);
   }
 
-  /** Active provider — selected by DIALER_PROVIDER (default 'telnyx'). */
+  /** Active provider — selected by DIALER_PROVIDER (default 'vicidial', the free/self-hosted option; 'telnyx' is paid). */
   private getProvider(name?: string): DialerProvider {
     const providerName =
-      name ?? this.config.get<string>('DIALER_PROVIDER', 'telnyx');
+      name ?? this.config.get<string>('DIALER_PROVIDER', 'vicidial');
     const provider = this.providers.get(providerName);
     if (!provider) throw new BadRequestException(`Unknown dialer provider: ${providerName}`);
     return provider;
@@ -363,7 +363,7 @@ export class DialerService {
     activeProvider: string;
     providers: { name: string; configured: boolean }[];
   } {
-    const activeProvider = this.config.get<string>('DIALER_PROVIDER', 'telnyx');
+    const activeProvider = this.config.get<string>('DIALER_PROVIDER', 'vicidial');
     return {
       activeProvider,
       providers: Array.from(this.providers.values()).map((p) => ({
