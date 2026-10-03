@@ -60,6 +60,7 @@ import { StripeModule } from './stripe/stripe.module';
 import { AdminModule } from './admin/admin.module';
 import { MatchingModule } from './matching/matching.module';
 import { AiModule } from './ai/ai.module';
+import { CollectionAiModule } from './collection-ai/collection-ai.module';
 import { CoachingModule } from './coaching/coaching.module';
 import { CrmModule } from './crm/crm.module';
 import { BillingModule } from './billing/billing.module';
@@ -206,6 +207,7 @@ import { PaymentProcessorsModule } from './payment-processors/payment-processors
     AdminModule,
     MatchingModule,
     AiModule,
+    CollectionAiModule,
     CoachingModule,
     CrmModule,
     BillingModule,

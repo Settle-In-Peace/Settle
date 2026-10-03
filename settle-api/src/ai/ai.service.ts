@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { LlmClientService } from './llm-client.service';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -26,10 +26,10 @@ export interface AssessmentData {
 export class AiService {
   private readonly logger = new Logger(AiService.name);
 
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly llm: LlmClientService) {}
 
   /**
-   * Conduct a conversational debt assessment using GPT-4.
+   * Conduct a conversational debt assessment using the configured LLM.
    * The AI asks questions one at a time, extracts debt info from responses,
    * and builds a structured assessment over the conversation.
    */
@@ -37,9 +37,7 @@ export class AiService {
     messages: ChatMessage[],
     currentData: AssessmentData,
   ): Promise<{ reply: string; extractedData: AssessmentData; isComplete: boolean }> {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-
-    if (!apiKey) {
+    if (!this.llm.isConfigured()) {
       return {
         reply: "I'm sorry, the AI assistant isn't available right now. Please use our standard assessment form instead.",
         extractedData: currentData,
@@ -83,43 +81,28 @@ You MUST respond with a JSON object in this exact format:
 }`;
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'system', content: systemPrompt }, ...messages],
-          temperature: 0.7,
-          max_tokens: 300,
-          response_format: { type: 'json_object' },
-        }),
+      const parsed = await this.llm.chatJson<{
+        reply?: string;
+        extractedData?: AssessmentData;
+        isComplete?: boolean;
+      }>([{ role: 'system', content: systemPrompt }, ...messages], {
+        temperature: 0.7,
+        maxTokens: 300,
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const data: any = await response.json();
-      const content = data.choices[0]?.message?.content || '{}';
-
-      try {
-        const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object') {
         return {
-          reply: parsed.reply || content,
+          reply: parsed.reply || "I'm here to help with your debt assessment. Could you tell me more?",
           extractedData: { ...currentData, ...parsed.extractedData },
           isComplete: parsed.isComplete || false,
         };
-      } catch {
-        // If not JSON, treat as plain text
-        return {
-          reply: content,
-          extractedData: currentData,
-          isComplete: false,
-        };
       }
+
+      return {
+        reply: "I'm having trouble understanding. Could you rephrase that?",
+        extractedData: currentData,
+        isComplete: false,
+      };
     } catch (error) {
       this.logger.error(`AI chat error: ${error}`);
       return {
@@ -137,9 +120,7 @@ You MUST respond with a JSON object in this exact format:
     assessmentData: AssessmentData,
     matchedProviders: any[],
   ): Promise<string> {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-
-    if (!apiKey || matchedProviders.length === 0) {
+    if (!this.llm.isConfigured() || matchedProviders.length === 0) {
       return 'Based on your assessment, we\'ve matched you with several providers. Please review the comparison below.';
     }
 
@@ -151,23 +132,11 @@ Matched providers: ${JSON.stringify(matchedProviders.map((p) => ({ name: p.compa
 Be encouraging and specific. Mention their debt amount and how the providers can help.`;
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-          max_tokens: 200,
-        }),
-      });
-
-      if (!response.ok) throw new Error(`OpenAI API error: ${response.status}`);
-      const data: any = await response.json();
-      return data.choices[0]?.message?.content || '';
+      const { content } = await this.llm.chat(
+        [{ role: 'user', content: prompt }],
+        { temperature: 0.7, maxTokens: 200 },
+      );
+      return content || '';
     } catch (error) {
       this.logger.error(`AI summary error: ${error}`);
       return 'We\'ve matched you with providers that fit your specific debt situation. Review the options below to find your best match.';

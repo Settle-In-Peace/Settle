@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-ai | AI layer — LLM client + collection-ai module + AI Assist UI | `settle-api/src/ai/llm-client.service.ts`, `settle-api/src/ai/ai.service.ts` (refactor only), `settle-api/src/collection-ai/**` (new), `settle-api/src/app.module.ts` (module import only), `settle-api/.env.example` (AI vars), `settle-web/src/components/CollectionAiPanel.tsx` (new), `settle-web/src/lib/api.ts` (append), `settle-web/src/app/collections/page.tsx` (AI Assist tab only) |
 
 ## Blocked on user
 
