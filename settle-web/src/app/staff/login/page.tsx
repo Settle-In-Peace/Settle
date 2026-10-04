@@ -80,8 +80,16 @@ export default function StaffLoginPage() {
       } else {
         setError(response.error || 'Login failed');
       }
-    } catch {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      if (err?.status === 403) {
+        setError(err.message || 'Account access is restricted. Please contact support.');
+      } else if (err?.status === 401) {
+        setError('Invalid email or password');
+      } else if (err?.status === 429) {
+        setError('Too many attempts. Please wait a minute and try again.');
+      } else {
+        setError(err?.message || 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }

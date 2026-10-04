@@ -14,6 +14,14 @@ function normalizeApiBaseUrl(url) {
     }
     return normalized;
 }
+class HttpError extends Error {
+    constructor(status, message, data) {
+        super(message);
+        this.status = status;
+        this.data = data;
+        this.name = 'HttpError';
+    }
+}
 function createJsonApiClient(options) {
     const timeout = options.timeout || 25000;
     return async function jsonApiCall(endpoint, requestOptions = {}) {
@@ -43,15 +51,23 @@ function createJsonApiClient(options) {
             });
             if (timeoutId)
                 clearTimeout(timeoutId);
-            if (response.status === 401 || response.status === 403) {
+            // 401 = unauthenticated → trigger redirect/clear-auth handlers.
+            if (response.status === 401) {
                 if (options.onUnauthorized) {
                     options.onUnauthorized();
                 }
-                throw new Error('Unauthorized');
+                const body = await response.json().catch(() => ({ message: 'Unauthorized' }));
+                throw new HttpError(401, body.message || 'Unauthorized', body);
+            }
+            // 403 = forbidden (e.g. account lockout) → keep the backend message and
+            // do NOT treat it as a session-expiration event.
+            if (response.status === 403) {
+                const body = await response.json().catch(() => ({ message: 'Forbidden' }));
+                throw new HttpError(403, body.message || 'Forbidden', body);
             }
             if (!response.ok) {
                 const error = await response.json().catch(() => ({ message: 'Request failed' }));
-                throw new Error(error.message || 'Request failed');
+                throw new HttpError(response.status, error.message || 'Request failed', error);
             }
             return response.json();
         }

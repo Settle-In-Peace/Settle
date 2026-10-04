@@ -32,6 +32,17 @@ export function normalizeApiBaseUrl(url: string): string {
   return normalized;
 }
 
+class HttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+    public data?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+
 export function createJsonApiClient(options: CreateJsonApiClientOptions) {
   const timeout = options.timeout || 25000;
 
@@ -70,16 +81,25 @@ export function createJsonApiClient(options: CreateJsonApiClientOptions) {
 
       if (timeoutId) clearTimeout(timeoutId);
 
-      if (response.status === 401 || response.status === 403) {
+      // 401 = unauthenticated → trigger redirect/clear-auth handlers.
+      if (response.status === 401) {
         if (options.onUnauthorized) {
           options.onUnauthorized();
         }
-        throw new Error('Unauthorized');
+        const body = await response.json().catch(() => ({ message: 'Unauthorized' }));
+        throw new HttpError(401, (body as { message?: string }).message || 'Unauthorized', body as Record<string, unknown>);
+      }
+
+      // 403 = forbidden (e.g. account lockout) → keep the backend message and
+      // do NOT treat it as a session-expiration event.
+      if (response.status === 403) {
+        const body = await response.json().catch(() => ({ message: 'Forbidden' }));
+        throw new HttpError(403, (body as { message?: string }).message || 'Forbidden', body as Record<string, unknown>);
       }
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Request failed' }));
-        throw new Error((error as { message?: string }).message || 'Request failed');
+        throw new HttpError(response.status, (error as { message?: string }).message || 'Request failed', error as Record<string, unknown>);
       }
 
       return response.json() as Promise<T>;
