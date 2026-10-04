@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
+import PasswordInput from '../../components/PasswordInput';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -75,8 +76,7 @@ function ResetPasswordForm() {
             <label htmlFor="password" className="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
               New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -90,8 +90,7 @@ function ResetPasswordForm() {
             <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Confirm New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

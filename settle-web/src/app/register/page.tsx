@@ -8,6 +8,7 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isValidEmail, clearAuth } from '../../lib/authUtils';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import PasswordInput from '../../components/PasswordInput';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
@@ -249,8 +250,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -261,8 +261,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">Confirm Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

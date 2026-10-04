@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../../lib/authUtils';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import PasswordInput from '../../../components/PasswordInput';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
@@ -146,8 +147,7 @@ export default function StaffLoginPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

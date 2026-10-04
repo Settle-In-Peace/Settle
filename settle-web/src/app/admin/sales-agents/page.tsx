@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStoredToken, getStoredUser } from '@/lib/authUtils';
+import PasswordInput from '../../../components/PasswordInput';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
@@ -165,13 +166,12 @@ export default function SalesTeamPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
               />
-              <input
-                type="password"
+              <PasswordInput
                 required
                 placeholder="Password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
               />
               <input
                 type="text"

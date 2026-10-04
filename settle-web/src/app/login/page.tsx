@@ -8,6 +8,7 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../lib/authUtils';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import PasswordInput from '../../components/PasswordInput';
 
 type AuthMode = 'password' | 'otp' | 'passkey';
 
@@ -302,8 +303,7 @@ export default function LoginPage() {
             </div>
             <div>
               <label className="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
 import { signupAsProvider } from '@/lib/api';
+import PasswordInput from '../../components/PasswordInput';
 
 const HOW_IT_WORKS_STEPS = [
   {
@@ -515,8 +516,8 @@ export default function ProvidersPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Password *</label>
-                  <input
-                    type="password" required minLength={8} value={form.password}
+                  <PasswordInput
+                    required minLength={8} value={form.password}
                     onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
