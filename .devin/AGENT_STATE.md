@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-growth | $16k/month growth plan | docs/16K_MONTHLY_GROWTH_PLAN.md, .devin/AGENT_STATE.md |
 
 ## Blocked on user
 
