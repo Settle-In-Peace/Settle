@@ -15,7 +15,6 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
-| devin-growth | $16k/month growth plan | docs/16K_MONTHLY_GROWTH_PLAN.md, .devin/AGENT_STATE.md |
 
 ## Blocked on user
 
@@ -32,6 +31,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Recently landed
 
+- 2026-10-04 — **devin-growth: $16k/month revenue growth plan** (`100e1cf`). Created `docs/16K_MONTHLY_GROWTH_PLAN.md` covering revenue math, acquisition strategy, 30-day daily calendar, phased roadmap, integration checklist, compliance notes, and 15 ready-to-use social post templates. Updated `.devin/AGENT_STATE.md`.
 - 2026-10-04 — **devin: show/hide password toggle on every auth password field** (`bf61d1f`, deployed to settleinpeace worker v7ea27699). New shared `settle-web/src/components/PasswordInput.tsx` (client component — wraps the input, eye/eye-off toggle, `pr-10` so text clears the button, `tabIndex={-1}` so it doesn't trap tab order, aria-labels). Swapped into: `/staff/login`, `/login`, `/register` (×2), `/reset-password` (×2), `/providers` signup, `/admin/sales` + `/admin/sales-agents` agent-creation forms. tsc clean, prod 200 verified.
 - 2026-10-04 — **devin: auth error messages now surface real backend reasons** (`226d0dc`, deployed to settleinpeace worker v342acbf7). `createJsonApiClient` was swallowing 401/403 response bodies and treating all 401/403 as "Unauthorized" (even calling `onUnauthorized` for 403). Login forms therefore showed "Invalid email or password" for account lockouts and rate limits. Now the SDK throws an `HttpError` carrying `status` + backend `message`, only fires `onUnauthorized` for 401, and preserves 403 details. `/login` and `/staff/login` catch blocks now show: lockout message / rate-limit / unauthorized. tsc clean, shared-sdk rebuilt + dist committed.
 - 2026-10-03 — **devin-orchestrator: production email delivery restored (Resend domain verified).** `/auth/send-otp` + password resets were failing in prod — root cause: `settleinpeace.com` was added to Resend 3mo ago but DNS verification never completed (status: Failed). Fixed via Playwright: logged into Resend (Google SSO as settleinpeacenow), pulled the real DNS records from the domain page RSC payload, added 3 records to Cloudflare zone `0984d657ead0b063e4dedc4d414892af` via API: TXT `resend._domainkey` (DKIM), MX+TXT `send` → `feedback-smtp.us-east-1.amazonses.com` / `v=spf1 include:amazonses.com ~all`. Status now **Partially Verified** = sending fully enabled; the "Receiving" MX was intentionally skipped (would break Cloudflare Email Routing on the apex). Verified: `POST api.resend.com/emails` to a real mailbox returns an id; prod `/auth/send-otp` responds `success:true`. ⚠️ Resend rejects `example.com` recipients outright — test with real addresses. **Render access path**: sign in via Google SSO (settleinpeacenow@gmail.com) → "Settle" workspace → `Settle-api` = `srv-da6fdmgu01pc73ftdv1g` (settle-backend project).
