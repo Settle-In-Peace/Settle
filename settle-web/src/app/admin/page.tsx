@@ -356,6 +356,7 @@ export default function AdminPage() {
             <span className="text-xs bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full font-medium">Admin</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/admin/crm" className="text-sm text-blue-600 hover:underline">CRM</Link>
             <Link href="/admin/sales" className="text-sm text-blue-600 hover:underline">Sales CRM</Link>
             <span className="text-sm text-zinc-500 hidden sm:block">{user?.email}</span>
             <button onClick={handleLogout} className="text-sm text-zinc-500 hover:text-red-500">Logout</button>
