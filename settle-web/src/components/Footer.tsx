@@ -30,6 +30,8 @@ export default function Footer() {
               <li><Link href="/coaching" className="hover:text-white transition-colors">Financial Coaching</Link></li>
               <li><Link href="/compare" className="hover:text-white transition-colors">Compare Providers</Link></li>
               <li><Link href="/providers" className="hover:text-white transition-colors">For Providers</Link></li>
+              <li><Link href="/questions" className="hover:text-white transition-colors">Community Q&amp;A</Link></li>
+              <li><Link href="/roadmap" className="hover:text-white transition-colors">Product Roadmap</Link></li>
             </ul>
           </div>
           <div>
