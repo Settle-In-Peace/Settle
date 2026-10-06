@@ -32,6 +32,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Recently landed
 
+- 2026-10-07 devin `9d9cf5f` — **weekly revenue-KPI workflow (Mon 13:15 UTC). Needs STRIPE_SECRET_KEY repo secret.**
+
 - 2026-10-06 devin `d7dba29` — **Social autoposter ported from Prime** (16K engine 2): tools/social/{social_poster,card_maker,blog_to_queue} + social-daily.yml cron 14:15 UTC, emerald branding, 10 posts seeded from plan appendix templates. Platform secrets unset → skipped cleanly. Also KPI script already present (`scripts/revenue-kpi.mjs`).
 
 
