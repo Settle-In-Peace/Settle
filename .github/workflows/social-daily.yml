@@ -1,0 +1,72 @@
+name: Daily Social Post
+
+# Self-hosted social autoposter ($0 — no Buffer/Hootsuite). Posts the queue
+# item due today to every configured platform, renders a branded 1200x630
+# card, commits posted_state.json so tomorrow knows what's sent.
+# Configure per-platform secrets — unset platforms are skipped cleanly.
+
+on:
+  schedule:
+    - cron: '15 14 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Queue new blog articles
+        env:
+          FEED_URL: https://settleinpeace.com/feed.xml
+          # Tolerates a missing/404 feed — exits 0 with "Feed unavailable".
+        run: node tools/social/blog_to_queue.mjs
+
+      - name: Render image cards
+        env:
+          CARD_KICKER: SETTLE IN PEACE
+          CARD_WORD1: SETTLE
+          CARD_WORD2: IN PEACE
+          CARD_URL: settleinpeace.com
+          CARD_ACCENT: '34d399'
+          CARD_ACCENT_DEEP: '059669'
+          CARD_BG_BOTTOM: '064e3b'
+        run: |
+          pip install pillow
+          python tools/social/card_maker.py
+
+      - name: Post due content
+        env:
+          POSTER_UA: Settle-SocialPoster/1.0
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_ID: ${{ secrets.LINKEDIN_PERSON_ID }}
+          LINKEDIN_ORG_ID: ${{ secrets.LINKEDIN_ORG_ID }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USERNAME: ${{ secrets.REDDIT_USERNAME }}
+          REDDIT_PASSWORD: ${{ secrets.REDDIT_PASSWORD }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: python tools/social/social_poster.py
+
+      - name: Commit posting state
+        run: |
+          git config user.name "settle-social-bot"
+          git config user.email "bot@settleinpeace.com"
+          git add tools/social/posted_state.json tools/social/content_queue.json tools/social/cards/
+          git diff --cached --quiet || git commit -m "chore(social): posted state [skip ci]"
+          git push
