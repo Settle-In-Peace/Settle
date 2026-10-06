@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-features | feature board + anonymous Q&A | `settle-api/src/feedback/**`, `settle-api/src/questions/**`, `settle-api/src/migrations/*Feedback*|*Questions*`, `settle-web/src/app/roadmap/**`, `settle-web/src/app/questions/**`, `settle-web/src/components/FeedbackWidget.tsx`, + one-line registrations (app.module imports/entities, data-source, run-migration, root layout mount) |
 
 ## Blocked on user
 
