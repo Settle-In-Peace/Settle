@@ -15,7 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
-| devin-features | feature board + anonymous Q&A | `settle-api/src/feedback/**`, `settle-api/src/questions/**`, `settle-api/src/migrations/*Feedback*|*Questions*`, `settle-web/src/app/roadmap/**`, `settle-web/src/app/questions/**`, `settle-web/src/components/FeedbackWidget.tsx`, + one-line registrations (app.module imports/entities, data-source, run-migration, root layout mount) |
+
 
 ## Blocked on user
 
@@ -32,6 +32,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 - **Lead vendor credentials**: no real vendor accounts yet. To enable a vendor (boberdoo / LeadsPedia / LeadProsper / etc.), set `LEADVENDOR_NAMES=<name>` plus `LEADVENDOR_<NAME>_PING_URL`/`_POST_URL`/`_ORDER_URL`/`_KEY` (auth style via `_AUTH`, wire format via `_FORMAT`) on settle-api — see `.env.example`. For inbound delivery, set `LEADVENDOR_<NAME>_WEBHOOK_SECRET` and point the vendor at `POST /lead-vendors/import/webhook?vendor=<name>` with `X-Lead-Vendor-Signature` (HMAC-SHA256 of raw body). Until configured, `/lead-vendors` shows "not configured" and purchase returns 503.
 
 ## Recently landed
+
+- 2026-10-07 **devin-features — feature board + anonymous Q&A** (`6914303` API, `bc91baf` web). New: `settle-api/src/feedback/**` (`GET /feedback` public ?status=, `POST /feedback` optional-JWT w/ email-required-if-anon, `POST /feedback/:id/vote` toggle + authoritative recount, `PATCH /feedback/:id` admin), `src/questions/**` (public GET list/detail, no-auth POST, email-gated anonymous answers, staff 'Settle team' labels + `is_official`, admin PATCH hide/official — public responses NEVER expose `author_user_id`/`contact_email`), `OptionalJwtAuthGuard` (shared from `src/feedback/`), migrations `1700000000036/37` (registered in run-migration/data-source/app.module). Web: `/roadmap` (vote via localStorage `settle_voter_id`/`settle_voted`), floating `FeedbackWidget` in root layout, `/questions` + `/questions/[id]` (params-as-Promise via React `use`), footer links. Client helpers colocated in `app/roadmap/api.ts` + `app/questions/api.ts`. **Deploy status: NOT deployed** — Render repo-link blocker above still applies; when `settle-api` redeploys, `pnpm run migration:run` in buildCommand applies both migrations automatically. Web needs `pnpm cf:build && pnpm cf:deploy`. Both builds verified clean locally.
 
 - 2026-10-07 devin `9d9cf5f` — **weekly revenue-KPI workflow (Mon 13:15 UTC). Needs STRIPE_SECRET_KEY repo secret.**
 
