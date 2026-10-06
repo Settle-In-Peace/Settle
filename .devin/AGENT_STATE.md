@@ -32,6 +32,9 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Recently landed
 
+- 2026-10-06 devin `d7dba29` — **Social autoposter ported from Prime** (16K engine 2): tools/social/{social_poster,card_maker,blog_to_queue} + social-daily.yml cron 14:15 UTC, emerald branding, 10 posts seeded from plan appendix templates. Platform secrets unset → skipped cleanly. Also KPI script already present (`scripts/revenue-kpi.mjs`).
+
+
 - 2026-10-06 devin-ci `88ab109` — autofix pnpm/action-setup v2/9→v4/9.15.5. Dependabot 'updater encountered errors' is GitHub-side (security_update_not_possible on undici/qs) — self-resolved, latest run green. CI backend failure from Sep 21 (missing portfolio module files) was a stale run; current CI green.
 
 - 2026-10-06 `2f8c334` — **devin-email: Prime dual-path reset.** settle-api `forgotPassword` returns `_resetToken/_emailSent/_sendTo/_firstName/_resetUrl` to `x-internal-key` callers; new `settle-web` route `/api/auth/forgot-password` proxies + Resend fallback; page rewired through it. Worker secrets INTERNAL_API_KEY+RESEND_API_KEY+EMAIL_FROM set on `settleinpeace`; worker redeployed (`ca9377a7`). **Blocked on user**: the same `INTERNAL_API_KEY` value (staged in `settle-api/.env`, gitignored) must be pasted into the Render `settle-api` env — no Render API key for this workspace. Backend Resend path itself is already correct (verified domain `settleinpeace.com`, sender `onboarding@settleinpeace.com`) — this adds the self-healing fallback.
