@@ -51,6 +51,10 @@ import { LeadVendorAccount } from './entities/lead-vendor-account.entity';
 import { LeadImportBatch } from './entities/lead-import-batch.entity';
 import { LeadPurchase } from './entities/lead-purchase.entity';
 import { ProcessorPayment } from './entities/processor-payment.entity';
+import { FeatureRequest } from './feedback/feature-request.entity';
+import { FeatureRequestVote } from './feedback/feature-request-vote.entity';
+import { QaQuestion } from './questions/qa-question.entity';
+import { QaAnswer } from './questions/qa-answer.entity';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { DebtsModule } from './debts/debts.module';
@@ -75,6 +79,8 @@ import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
 import { DialerModule } from './dialer/dialer.module';
 import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
 import { PaymentProcessorsModule } from './payment-processors/payment-processors.module';
+import { FeedbackModule } from './feedback/feedback.module';
+import { QuestionsModule } from './questions/questions.module';
 
 @Module({
   imports: [
@@ -143,6 +149,10 @@ import { PaymentProcessorsModule } from './payment-processors/payment-processors
         LeadImportBatch,
         LeadPurchase,
         ProcessorPayment,
+        FeatureRequest,
+        FeatureRequestVote,
+        QaQuestion,
+        QaAnswer,
       ],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
@@ -197,6 +207,10 @@ import { PaymentProcessorsModule } from './payment-processors/payment-processors
       LeadImportBatch,
       LeadPurchase,
       ProcessorPayment,
+      FeatureRequest,
+      FeatureRequestVote,
+      QaQuestion,
+      QaAnswer,
     ]),
     AuthModule,
     ActivitiesModule,
@@ -222,6 +236,8 @@ import { PaymentProcessorsModule } from './payment-processors/payment-processors
     PaymentProcessorsModule,
     TelnyxWebhookModule,
     ComplianceModule,
+    FeedbackModule,
+    QuestionsModule,
   ],
   controllers: [AppController],
   providers: [

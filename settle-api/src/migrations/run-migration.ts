@@ -35,6 +35,8 @@ import { AddMyFreeScoreNowProvider1700000000032 } from './1700000000032-AddMyFre
 import { CreateLeadVendorTables1700000000033 } from './1700000000033-CreateLeadVendorTables';
 import { CreateProcessorPaymentsTable1700000000034 } from './1700000000034-CreateProcessorPaymentsTable';
 import { CreateDialerCalls1700000000035 } from './1700000000035-CreateDialerCalls';
+import { CreateFeedbackTables1700000000036 } from './1700000000036-CreateFeedbackTables';
+import { CreateQuestionsTables1700000000037 } from './1700000000037-CreateQuestionsTables';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -74,6 +76,8 @@ const migrations: MigrationConstructor[] = [
   CreateLeadVendorTables1700000000033,
   CreateProcessorPaymentsTable1700000000034,
   CreateDialerCalls1700000000035,
+  CreateFeedbackTables1700000000036,
+  CreateQuestionsTables1700000000037,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

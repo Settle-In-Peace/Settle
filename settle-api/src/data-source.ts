@@ -25,6 +25,10 @@ import { LeadVendorAccount } from './entities/lead-vendor-account.entity';
 import { LeadImportBatch } from './entities/lead-import-batch.entity';
 import { LeadPurchase } from './entities/lead-purchase.entity';
 import { ProcessorPayment } from './entities/processor-payment.entity';
+import { FeatureRequest } from './feedback/feature-request.entity';
+import { FeatureRequestVote } from './feedback/feature-request-vote.entity';
+import { QaQuestion } from './questions/qa-question.entity';
+import { QaAnswer } from './questions/qa-answer.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -62,6 +66,10 @@ export const dataSource = new DataSource({
     LeadImportBatch,
     LeadPurchase,
     ProcessorPayment,
+    FeatureRequest,
+    FeatureRequestVote,
+    QaQuestion,
+    QaAnswer,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
