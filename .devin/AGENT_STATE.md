@@ -48,3 +48,6 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 ### Stripe sync (2026-10-04) — devin
 
 - Audited Stripe account via API (live key present in repo env). See portfolio report for cross-account details.
+
+### CRM UI (2026-10-06) — devin
+- `6600d51` — `/admin/crm` page (Pipeline/Leads/Clients) wired to settle-api `/crm/*`: funnel counts, open deals, advance/nurture/promote/lose actions, lead capture form. Linked from admin header.
