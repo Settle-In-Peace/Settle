@@ -331,11 +331,18 @@ export class AuthService {
     return result;
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const user = await this.usersRepository.findOne({ 
-      where: { email: forgotPasswordDto.email } 
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto, internalKey?: string) {
+    // Internal service key (trusted web edge) unlocks reset internals so the
+    // frontend can send a fallback email when our mailer fails. Normal clients
+    // never receive those fields.
+    const isInternal =
+      !!process.env.INTERNAL_API_KEY &&
+      internalKey === process.env.INTERNAL_API_KEY;
+
+    const user = await this.usersRepository.findOne({
+      where: { email: forgotPasswordDto.email }
     });
-    
+
     if (!user) {
       // Don't reveal if email exists for security
       return { success: true, message: 'If email exists, password reset link sent' };
@@ -352,12 +359,21 @@ export class AuthService {
     });
 
     // Send password reset email (logged to console in dev mode when no RESEND_API_KEY)
-    await this.emailService.sendPasswordResetEmail(user.email, resetToken, user.firstName);
+    const emailSent = await this.emailService.sendPasswordResetEmail(user.email, resetToken, user.firstName);
 
-    return {
+    const response: Record<string, unknown> = {
       success: true,
       message: 'Password reset link sent',
     };
+    if (isInternal) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3025';
+      response._resetToken = resetToken;
+      response._emailSent = emailSent;
+      response._sendTo = user.email;
+      response._firstName = user.firstName;
+      response._resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    }
+    return response;
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, UsePipes, ValidationPipe, Put, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Headers, UseGuards, Request, Get, UsePipes, ValidationPipe, Put, Delete, Param } from '@nestjs/common';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -56,8 +56,11 @@ export class AuthController {
   @UsePipes(new ValidationPipe())
   @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per hour for password reset
   @Post('forgot-password')
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+    @Headers('x-internal-key') internalKey?: string,
+  ) {
+    return this.authService.forgotPassword(forgotPasswordDto, internalKey);
   }
 
   @UsePipes(new ValidationPipe())

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { isValidEmail } from '../../lib/authUtils';
 
 export default function ForgotPasswordPage() {
@@ -25,17 +24,23 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const apiCall = createJsonApiClient({
-        getBaseUrl: () => process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com',
-        getToken: () => null,
-      });
-
-      const response = await apiCall<{ success: boolean; message?: string; error?: string }>('/auth/forgot-password', {
+      // Goes through the worker route so the edge can send a Resend fallback
+      // when the backend mailer fails (Prime dual-path pattern).
+      const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      const data = (await response.json().catch(() => ({}))) as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || data.message || 'reset request failed');
+      }
 
-      setMessage(response.message || 'Password reset link sent if email exists');
+      setMessage(data.message || 'Password reset link sent if email exists');
     } catch (err) {
       setError('Failed to send password reset link');
     } finally {
