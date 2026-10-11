@@ -15,7 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
-| devin-mfsn | MyFreeScoreNow provider rewrite to real enrollment-lifecycle API (verified against live API docs 2026-10-10) | `settle-api/src/credit-bureau/**` only |
+
 
 
 ## Blocked on user
@@ -28,7 +28,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 - **NMI merchant account**: module is wired and mounted (`/payment-processors/*`). Set `NMI_SECURITY_KEY`, `NMI_PUBLIC_KEY` (Collect.js tokenization key), `NMI_WEBHOOK_SECRET` (Settings → Webhooks signing key) on settle-api; `NMI_ENV=sandbox` default (sandbox.nmi.com) / `production` → secure.nmi.com. Until set, the Take Payment panel shows "not configured" and charges return 503.
 - **High-risk gateway boarding**: debt collection is a high-risk MCC — an acquiring-bank merchant account on the NMI (or AuthNet) gateway must be boarded via merchant services; not a code task. AuthNet adapter (`AUTHNET_API_LOGIN_ID`/`AUTHNET_TRANSACTION_KEY`/`AUTHNET_CLIENT_KEY`/`AUTHNET_SIGNATURE_KEY`) is implemented but UNTESTED against sandbox.authorize.net.
 - **MyFreeScoreNow — copy env vars to Render**: `MFSN_API_EMAIL` + `MFSN_API_PASSWORD` + `MFSN_API_BASE_URL` are set and LIVE-VERIFIED in local `settle-api/.env` (login + `POST /api/admin/1breport-v2` + `/api/admin/3breport-v2` confirmed against UAT — commit `524154f`). Production settle-api on Render still needs these env vars set or `/credit-bureau/*` returns 503.
-- **MyFreeScoreNow remaining spec gaps**: 1B/3B report endpoints verified. Snapshot products (`credit-snapshot`/`funding-snapshot`) currently alias the 1B endpoint — real snapshot paths + member-enrollment payload are provisioned per-account in dashboard API docs; adjust via `MFSN_*_PATH` env vars, no code change needed.
+- **MyFreeScoreNow spec resolved (2026-10-10)**: Real enrollment-lifecycle API implemented — commits `255bd78` + `3babf06`. Flow: start-enroll (DIT) → send-link (SMFA) → validate-link → enroll → payment → member Active. New endpoints under `/credit-bureau/enrollment/*`. Still needed: `MFSN_CLIENT_TOKEN` (for `fetch-3B-json`) — visible in the portal's API docs payload; copy from dashboard → env.
+- **MyFreeScoreNow UAT blocker (vendor-side)**: `start-enroll` returns `400 "Provided data is not allowed for test usage"` for ALL payloads including their own provisioned test members (KRISTIN HERNANDEZ / JOSEPHINE LORENA, company 33656, valid till 2026-10-12) AND their docs' example payload. Login, clear-ssn, plan-details, check-status all work — only the DIT gate rejects. Needs a support ticket to MyFreeScoreNow (888-548-2008 / info@myfreescorenow.com).
 - **MyFreeScoreNow production**: requires submitting verification documents in the affiliate dashboard (out of scope for the integration). Set `MFSN_ENV=production` once approved.
 - **Lead vendor credentials**: no real vendor accounts yet. To enable a vendor (boberdoo / LeadsPedia / LeadProsper / etc.), set `LEADVENDOR_NAMES=<name>` plus `LEADVENDOR_<NAME>_PING_URL`/`_POST_URL`/`_ORDER_URL`/`_KEY` (auth style via `_AUTH`, wire format via `_FORMAT`) on settle-api — see `.env.example`. For inbound delivery, set `LEADVENDOR_<NAME>_WEBHOOK_SECRET` and point the vendor at `POST /lead-vendors/import/webhook?vendor=<name>` with `X-Lead-Vendor-Signature` (HMAC-SHA256 of raw body). Until configured, `/lead-vendors` shows "not configured" and purchase returns 503.
 
