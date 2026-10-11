@@ -8,6 +8,7 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isValidEmail, clearAuth } from '../../lib/authUtils';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import Logo from '../../components/Logo';
 import PasswordInput from '../../components/PasswordInput';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
@@ -200,8 +201,8 @@ export default function RegisterPage() {
 
         {/* Header */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-block text-xl font-bold text-blue-600 mb-2">
-            Settle<span className="text-blue-400">InPeace</span>
+          <Link href="/" className="inline-block text-xl mb-2">
+            <Logo variant="blue" />
           </Link>
           <h1 className="text-2xl font-bold text-black dark:text-white">Create your account</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Free assessment, no obligation, no credit check</p>

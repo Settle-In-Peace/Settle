@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
+import Logo from '../../components/Logo';
 import { submitAssessment } from '@/lib/api';
 
 const STEPS = [
@@ -163,8 +164,8 @@ export default function AssessmentPage() {
       <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-black dark:text-white">
-              Settle<span className="text-blue-600">InPeace</span>
+            <span className="text-lg">
+              <Logo markClassName="h-6 w-auto" />
             </span>
           </div>
           <div className="flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">

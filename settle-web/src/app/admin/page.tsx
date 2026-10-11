@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clearAuth, getStoredToken, getStoredUser } from '@/lib/authUtils';
+import Logo from '@/components/Logo';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
@@ -350,8 +351,8 @@ export default function AdminPage() {
       <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl font-bold text-black dark:text-white">
-              Settle<span className="text-blue-600">InPeace</span>
+            <Link href="/" className="text-xl">
+              <Logo />
             </Link>
             <span className="text-xs bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full font-medium">Admin</span>
           </div>

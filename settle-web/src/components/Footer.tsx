@@ -23,7 +23,11 @@ export default function Footer() {
         {/* Links */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="text-white font-semibold text-sm mb-4">Settle In Peace</h3>
+            <h3 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/sp-mark-white.png" alt="" aria-hidden="true" className="h-5 w-auto" />
+              Settle In Peace
+            </h3>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li><Link href="/assessment" className="hover:text-white transition-colors">Free Assessment</Link></li>
               <li><Link href="/calculators" className="hover:text-white transition-colors">Debt Calculators</Link></li>

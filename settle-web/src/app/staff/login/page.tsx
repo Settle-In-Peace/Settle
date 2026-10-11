@@ -7,6 +7,7 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../../lib/authUtils';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import PasswordInput from '../../../components/PasswordInput';
+import Logo from '../../../components/Logo';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
@@ -104,8 +105,8 @@ export default function StaffLoginPage() {
       {/* Header — inspired by Americor's clean header with logo + contact */}
       <header className="py-5 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-blue-600">
-            Settle<span className="text-blue-400">InPeace</span>
+          <Link href="/" className="text-xl">
+            <Logo variant="blue" mark="blue" />
           </Link>
           <a
             href="mailto:help@settleinpeace.com"

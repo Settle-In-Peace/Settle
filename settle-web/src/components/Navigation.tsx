@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { isAuthenticated, getStoredUser, clearAuth } from '../lib/authUtils';
+import Logo from './Logo';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -86,8 +87,8 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           {/* Logo + marketplace links */}
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold text-black dark:text-white mr-8 flex-shrink-0">
-              Settle<span className="text-blue-600">InPeace</span>
+            <Link href="/" className="text-xl mr-8 flex-shrink-0">
+              <Logo />
             </Link>
             <div className="hidden sm:flex sm:space-x-6">
               {navItems.map(item => (

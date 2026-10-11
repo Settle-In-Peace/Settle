@@ -8,6 +8,7 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../lib/authUtils';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import Logo from '../../components/Logo';
 import PasswordInput from '../../components/PasswordInput';
 
 type AuthMode = 'password' | 'otp' | 'passkey';
@@ -244,8 +245,8 @@ export default function LoginPage() {
       {/* Header — inspired by Americor's clean header with logo + contact */}
       <header className="py-5 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-blue-600">
-            Settle<span className="text-blue-400">InPeace</span>
+          <Link href="/" className="text-xl">
+            <Logo variant="blue" />
           </Link>
           <a
             href="mailto:help@settleinpeace.com"
