@@ -423,10 +423,34 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     return this.authedPost(`${this.seg(product)}/enroll`, { correlationId });
   }
 
-  /** Available subscription plans for this affiliate account. */
-  async getPlanDetails(): Promise<Record<string, any>> {
+  /**
+   * Plan details — GET /api/auth/enrollment/plan-details/{planId}.
+   * Verified live on UAT 2026-10-10: B01A0001 = $39.90/mo no trial,
+   * B02A0001 = $29.90/mo with 7-day $1 trial.
+   */
+  async getPlanDetails(planId?: string): Promise<Record<string, any>> {
     this.logger.log('getPlanDetails');
-    return this.authedPost(`${this.enrollmentBase}/plan-details/`, {});
+    const token = await this.authenticate();
+    const suffix = planId ? `/${encodeURIComponent(planId)}` : '/';
+    const res = await this.request(`${this.enrollmentBase}/plan-details${suffix}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  }
+
+  /**
+   * Member status — GET /api/auth/member/check-status/{email}.
+   * Returns whether an email is an enrolled/active member.
+   */
+  async checkMemberStatus(memberEmail: string): Promise<Record<string, any>> {
+    this.logger.log('checkMemberStatus');
+    const token = await this.authenticate();
+    const res = await this.request(
+      `/api/auth/member/check-status/${encodeURIComponent(memberEmail)}`,
+      { method: 'GET', headers: { Authorization: `Bearer ${token}` } },
+    );
+    return res.json();
   }
 
   /**

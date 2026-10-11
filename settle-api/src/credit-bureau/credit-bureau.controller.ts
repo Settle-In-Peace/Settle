@@ -68,9 +68,15 @@ export class CreditBureauController {
   }
 
   /** Available subscription plans on this affiliate account */
-  @Get('enrollment/plans')
-  getPlanDetails() {
-    return this.creditBureauService.getPlanDetails();
+  @Get('enrollment/plans/:planId?')
+  getPlanDetails(@Param('planId') planId?: string) {
+    return this.creditBureauService.getPlanDetails(planId);
+  }
+
+  /** Whether an email belongs to an enrolled/active member */
+  @Get('enrollment/member-status/:email')
+  checkMemberStatus(@Param('email') email: string) {
+    return this.creditBureauService.checkMemberStatus(email);
   }
 
   /** Report for an enrolled member (keyed by member email) */

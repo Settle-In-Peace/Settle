@@ -137,10 +137,20 @@ export class CreditBureauService {
   }
 
   /** Available subscription plans for this affiliate account. */
-  async getPlanDetails() {
+  async getPlanDetails(planId?: string) {
     const provider = this.requireConfigured();
     try {
-      return await provider.getPlanDetails();
+      return await provider.getPlanDetails(planId);
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Whether an email belongs to an enrolled/active member. */
+  async checkMemberStatus(email: string) {
+    const provider = this.requireConfigured();
+    try {
+      return await provider.checkMemberStatus(email);
     } catch (err) {
       this.translateError(err);
     }
