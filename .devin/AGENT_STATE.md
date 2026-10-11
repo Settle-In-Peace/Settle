@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-mfsn | MyFreeScoreNow provider rewrite to real enrollment-lifecycle API (verified against live API docs 2026-10-10) | `settle-api/src/credit-bureau/**` only |
 
 
 ## Blocked on user

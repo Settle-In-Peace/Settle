@@ -12,11 +12,18 @@ import {
   CreditPullResult,
 } from './credit-provider.interface';
 import {
+  MfsnEnrollmentProduct,
   MfsnNotConfiguredError,
   MfsnUpstreamError,
   MyFreeScoreNowProvider,
 } from './providers/myfreescorenow.provider';
 import { PullCreditDto } from './dto/pull-credit.dto';
+import {
+  SendEnrollmentLinkDto,
+  StartEnrollmentDto,
+} from './dto/start-enrollment.dto';
+import { EnrollmentPaymentDto } from './dto/payment.dto';
+import { MemberReportDto } from './dto/member-report.dto';
 import {
   CreditReport,
   CreditReportStatus,
@@ -40,6 +47,129 @@ export class CreditBureauService {
     const provider = this.providers.get(name);
     if (!provider) throw new Error(`Unknown credit provider: ${name}`);
     return provider;
+  }
+
+  /** Fail-closed helper — every MFSN call must be configured first. */
+  private requireConfigured(): MyFreeScoreNowProvider {
+    if (!this.mfsnProvider.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'Credit provider is not configured. Set MFSN_API_USER (or MFSN_API_EMAIL) and MFSN_API_PASSWORD on the API.',
+      );
+    }
+    return this.mfsnProvider;
+  }
+
+  /** Translate provider errors into HTTP semantics. */
+  private translateError(err: unknown): never {
+    if (
+      err instanceof MfsnNotConfiguredError ||
+      err instanceof MfsnUpstreamError
+    ) {
+      throw new ServiceUnavailableException((err as Error).message);
+    }
+    throw err;
+  }
+
+  // ── Enrollment lifecycle (member | credit | funding products) ──────────
+
+  /** Step 1 — DIT identity verification. Returns correlationId + decision. */
+  async startEnrollment(dto: StartEnrollmentDto) {
+    const provider = this.requireConfigured();
+    const { product, ...input } = dto;
+    try {
+      return await provider.startEnrollment(
+        input,
+        product ?? 'member',
+      );
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Step 2 — send the SMFA verification link to the applicant. */
+  async sendEnrollmentLink(dto: SendEnrollmentLinkDto) {
+    const provider = this.requireConfigured();
+    try {
+      return await provider.sendEnrollmentLink(
+        dto.correlationId,
+        {
+          subjectIdentifier: dto.subjectIdentifier,
+          subjectType: dto.subjectType,
+          redirectUrl: dto.redirectUrl,
+        },
+        dto.product ?? 'member',
+      );
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Step 3 — confirm the applicant consumed the SMFA link. */
+  async validateEnrollmentLink(
+    correlationId: string,
+    product?: MfsnEnrollmentProduct,
+  ) {
+    const provider = this.requireConfigured();
+    try {
+      return await provider.validateEnrollmentLink(
+        correlationId,
+        product ?? 'member',
+      );
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Step 4 — complete the enrollment, creating the member account. */
+  async completeEnrollment(
+    correlationId: string,
+    product?: MfsnEnrollmentProduct,
+  ) {
+    const provider = this.requireConfigured();
+    try {
+      return await provider.completeEnrollment(
+        correlationId,
+        product ?? 'member',
+      );
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Available subscription plans for this affiliate account. */
+  async getPlanDetails() {
+    const provider = this.requireConfigured();
+    try {
+      return await provider.getPlanDetails();
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Step 5 — card payment; a paid member counts as an Active for commissions. */
+  async submitEnrollmentPayment(dto: EnrollmentPaymentDto) {
+    const provider = this.requireConfigured();
+    const { product, correlationId, ...card } = dto;
+    try {
+      return await provider.submitPayment(
+        { correlationId, ...card },
+        product ?? 'member',
+      );
+    } catch (err) {
+      this.translateError(err);
+    }
+  }
+
+  /** Fetch a report for an enrolled member (keyed by member email). */
+  async getMemberReport(dto: MemberReportDto) {
+    const provider = this.requireConfigured();
+    try {
+      return dto.product === '3b'
+        ? await provider.getMember3BReport(dto.email)
+        : await provider.getMember1BReport(dto.email, dto.product);
+    } catch (err) {
+      this.translateError(err);
+    }
   }
 
   /** Pull credit and persist the result to the audit table */

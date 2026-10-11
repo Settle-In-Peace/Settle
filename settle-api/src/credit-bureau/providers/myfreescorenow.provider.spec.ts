@@ -13,6 +13,7 @@ import {
 const SAMPLE_REQUEST: CreditPullRequest = {
   firstName: 'Jane',
   lastName: 'Doe',
+  email: 'jane.doe@example.com', // reports are keyed by enrolled member email
   pullType: CreditPullType.SOFT,
   product: CreditReportProduct.CREDIT_SNAPSHOT,
   permissiblePurpose: 'account_review',
@@ -145,14 +146,14 @@ describe('MyFreeScoreNowProvider', () => {
     expect(result.tradelines[0].creditorName).toBe('ACME Card');
 
     const [url, init] = fetchMock.mock.calls[1];
-    expect(url).toBe('https://uat-api.myfreescorenow.com/api/admin/1breport-v2');
+    expect(url).toBe(
+      'https://uat-api.myfreescorenow.com/api/auth/enrollment/credit/getOneBReport',
+    );
     expect((init.headers as Record<string, string>).Authorization).toBe(
       'Bearer tok-3',
     );
     const payload = JSON.parse(init.body as string);
-    expect(payload.pullType).toBe('soft');
-    expect(payload.consent.method).toBe('web_form');
-    expect(payload.ssn).toBeUndefined(); // absent PII is not sent
+    expect(payload).toEqual({ email: 'jane.doe@example.com' });
   });
 
   it('re-authenticates once when the cached token is rejected (401)', async () => {
@@ -174,5 +175,79 @@ describe('MyFreeScoreNowProvider', () => {
     expect(
       (retryInit.headers as Record<string, string>).Authorization,
     ).toBe('Bearer fresh-tok');
+  });
+
+  it('startEnrollment posts to the member segment and returns correlationId + decision', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, message: 'ok', token: 'tok-4' }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          message: 'DIT verification completed',
+          correlationId: 'corr-1',
+          decision: 'Approve',
+        }),
+      );
+
+    const provider = new MyFreeScoreNowProvider(makeConfig());
+    const result = await provider.startEnrollment({
+      firstName: 'Test',
+      lastName: 'Member',
+      addressLine1: '1 Main St',
+      city: 'Austin',
+      region: 'TX',
+      postalCode: '78701',
+      dob: '01/01/1980',
+      ssn: '666000001',
+      number: '5125550100',
+      email: 'member@example.com',
+      consentURL: 'https://settleinpeace.com/consent',
+      planId: 'B01A0001',
+      password: 'TestPass@1',
+    });
+
+    expect(result.correlationId).toBe('corr-1');
+    expect(result.decision).toBe('Approve');
+
+    const [url, init] = fetchMock.mock.calls[1];
+    expect(url).toBe(
+      'https://uat-api.myfreescorenow.com/api/auth/enrollment/member/start-enroll',
+    );
+    const payload = JSON.parse(init.body as string);
+    expect(payload.type).toBe('member');
+    expect(payload.planId).toBe('B01A0001');
+  });
+
+  it('enrollment steps hit the product-specific segment', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, message: 'ok', token: 'tok-5' }),
+      )
+      .mockImplementation(async () => jsonResponse({ success: true }));
+
+    const provider = new MyFreeScoreNowProvider(makeConfig());
+    await provider.sendEnrollmentLink(
+      'corr-9',
+      { subjectIdentifier: 'm@example.com', redirectUrl: 'https://x.com/v' },
+      'funding',
+    );
+    await provider.validateEnrollmentLink('corr-9', 'funding');
+    await provider.completeEnrollment('corr-9', 'funding');
+
+    const urls = fetchMock.mock.calls.slice(1).map((c) => c[0]);
+    expect(urls).toEqual([
+      'https://uat-api.myfreescorenow.com/api/auth/enrollment/funding/send-link',
+      'https://uat-api.myfreescorenow.com/api/auth/enrollment/funding/validate-link',
+      'https://uat-api.myfreescorenow.com/api/auth/enrollment/funding/enroll',
+    ]);
+  });
+
+  it('3B reports require MFSN_CLIENT_TOKEN', async () => {
+    const provider = new MyFreeScoreNowProvider(makeConfig());
+    await expect(provider.getMember3BReport('m@example.com')).rejects.toThrow(
+      MfsnNotConfiguredError,
+    );
   });
 });

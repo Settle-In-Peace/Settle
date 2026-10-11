@@ -15,6 +15,51 @@ interface MfsnLoginResponse {
   token: string;
 }
 
+export type MfsnEnrollmentProduct = 'member' | 'credit' | 'funding';
+export type MfsnDitDecision = 'Approve' | 'Review' | 'Deny';
+
+export interface MfsnStartEnrollmentInput {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  /** MM/DD/YYYY */
+  dob: string;
+  /** 9 digits, no dashes */
+  ssn: string;
+  /** 10-digit mobile, no formatting */
+  number: string;
+  email: string;
+  /** URL where the applicant provided consent */
+  consentURL: string;
+  planId: string;
+  password: string;
+}
+
+export interface MfsnStartEnrollmentResult {
+  correlationId: string;
+  decision: MfsnDitDecision;
+  message?: string;
+  raw: Record<string, any>;
+}
+
+export interface MfsnPaymentInput {
+  correlationId: string;
+  firstName: string;
+  lastName: string;
+  cardNumber: string;
+  cvv: string;
+  billingZip: string;
+  expiryMonth: number;
+  expiryYear: number;
+  term: 'monthly' | 'yearly';
+  installment?: string;
+}
+
 /** Thrown when MFSN credentials/base URL are not configured. Maps to HTTP 503 upstream. */
 export class MfsnNotConfiguredError extends Error {
   constructor() {
@@ -42,33 +87,42 @@ const MFSN_ENVIRONMENTS = {
 } as const;
 
 /**
- * MyFreeScoreNow provider — tri-bureau credit data via REST API.
+ * MyFreeScoreNow provider — member enrollment + credit monitoring via REST API.
  *
  * Environments (selected via MFSN_ENV=sandbox|production, or override
  * entirely with MFSN_API_BASE_URL):
  *   Sandbox:    https://uat-api.myfreescorenow.com
  *   Production: https://api.myfreescorenow.com
  *
- * Auth: POST {MFSN_LOGIN_PATH:-/api/auth/login} with
- *   { email|apiUser, password } -> { success, token }.
- *   The returned token is sent as `Authorization: Bearer <token>` and
- *   cached for ~55 minutes (Laravel Sanctum-style token).
+ * Auth: POST /api/auth/login { email: <api user>, password } -> { token }.
+ *   Bearer token, cached ~55 minutes.
  *
- * Products (per MFSN affiliate docs):
- *   - Credit Snapshot  (soft pull, score + summary)
- *   - Funding Snapshot (qualification-focused soft pull)
- *   - 3B Reports       (tri-bureau full report)
- *   - Enrollment       (enroll consumer in monitoring)
+ * REAL endpoint map (extracted from the affiliate API Reference on
+ * 2026-10-10 — the product sections share one enrollment lifecycle):
  *
- * Verified against the live UAT sandbox (2026-10-02): login exchange and
- * the 1B/3B report endpoints (`POST /api/admin/{1b,3b}report-v2`, body
- * `{from_report_id, report_type}`) return real report data. Remaining
- * TODO(mfsn-spec): the credit/funding *snapshot* product paths and the
- * member-enrollment payload were not discoverable from the public API —
- * they stay env-configurable via MFSN_*_PATH until the account docs land.
+ *   POST /api/auth/login
+ *   POST /api/auth/logout
  *
- * Security: credentials and tokens are NEVER logged. Log lines only
- * include method + path + upstream status.
+ *   Enrollment lifecycle (one per product segment — member | credit | funding):
+ *   POST /api/auth/enrollment/{seg}/start-enroll     — DIT identity check
+ *                                                    -> { correlationId, decision }
+ *   POST /api/auth/enrollment/{seg}/send-link        — SMFA link to applicant
+ *   POST /api/auth/enrollment/{seg}/validate-link    — confirm link consumed
+ *   POST /api/auth/enrollment/{seg}/enroll           — complete enrollment
+ *   POST /api/auth/enrollment/{seg}/payment          — card on file -> ACTIVE member
+ *   POST /api/auth/enrollment/plan-details/          — available plans
+ *
+ *   Reports (require an enrolled member, keyed by member email):
+ *   POST /api/auth/enrollment/credit/getOneBReport   { email }
+ *   POST /api/auth/enrollment/funding/getOneBReport  { email }
+ *   POST /api/auth/fetch-3B-json                     { email, client_token }
+ *
+ *   Test utilities (sandbox only):
+ *   POST /api/auth/clear-ssn          { ssn }
+ *   POST /api/auth/cancel-enrollment  { firstName, lastName, ssn }
+ *
+ * Security: credentials, tokens, and member PII are NEVER logged. Log lines
+ * only include method + path + upstream status.
  */
 @Injectable()
 export class MyFreeScoreNowProvider implements CreditProvider {
@@ -107,6 +161,11 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     return this.config.get<string>('MFSN_API_PASSWORD', '');
   }
 
+  /** Client token required by fetch-3B-json — from the affiliate dashboard. */
+  private get clientToken(): string {
+    return this.config.get<string>('MFSN_CLIENT_TOKEN', '');
+  }
+
   isConfigured(): boolean {
     return Boolean(this.apiUser && this.password && this.baseUrl);
   }
@@ -120,30 +179,20 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     return this.config.get<number>('MFSN_MAX_RETRIES', 2);
   }
 
-  /** Endpoint paths — 1B/3B verified live on UAT 2026-10-02 (POST /api/admin/{1b,3b}report-v2). */
+  /** Base path for enrollment endpoints — overridable if MFSN changes layout. */
+  private get enrollmentBase(): string {
+    return this.config.get<string>(
+      'MFSN_ENROLLMENT_BASE',
+      '/api/auth/enrollment',
+    ).replace(/\/$/, '');
+  }
+
   private get loginPath(): string {
     return this.config.get<string>('MFSN_LOGIN_PATH', '/api/auth/login');
   }
 
-  private get creditSnapshotPath(): string {
-    return this.config.get<string>(
-      'MFSN_CREDIT_SNAPSHOT_PATH',
-      '/api/admin/1breport-v2',
-    );
-  }
-
-  private get fundingSnapshotPath(): string {
-    return this.config.get<string>(
-      'MFSN_FUNDING_SNAPSHOT_PATH',
-      '/api/admin/1breport-v2',
-    );
-  }
-
-  private get threeBReportPath(): string {
-    return this.config.get<string>(
-      'MFSN_3B_REPORT_PATH',
-      '/api/admin/3breport-v2',
-    );
+  private seg(product: MfsnEnrollmentProduct): string {
+    return `${this.enrollmentBase}/${product}`;
   }
 
   // ── HTTP plumbing (timeout + bounded retry, fail-closed on 4xx) ────────
@@ -155,7 +204,7 @@ export class MyFreeScoreNowProvider implements CreditProvider {
   /**
    * fetch with a hard timeout and bounded exponential-backoff retries.
    * Retries: network failures, 429, 5xx. Never retries 4xx (fail-closed —
-   * a rejected credit request must not be silently re-submitted).
+   * a rejected enrollment/credit request must not be silently re-submitted).
    */
   private async request(
     path: string,
@@ -225,6 +274,34 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     }
   }
 
+  /** Authenticated POST with automatic one-shot token refresh on 401. */
+  private async authedPost(
+    path: string,
+    body: Record<string, any>,
+    retried = false,
+  ): Promise<any> {
+    const token = await this.authenticate();
+    let res: Response;
+    try {
+      res = await this.request(path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      if (err instanceof MfsnUpstreamError && err.status === 401 && !retried) {
+        this.cachedToken = null;
+        this.tokenExpiresAt = 0;
+        return this.authedPost(path, body, true);
+      }
+      throw err;
+    }
+    return res.json();
+  }
+
   // ── Auth ────────────────────────────────────────────────────────────────
 
   async authenticate(): Promise<string> {
@@ -254,7 +331,7 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     }
 
     this.cachedToken = data.token;
-    // Tokens appear to be Laravel Sanctum-style — cache for 55 minutes
+    // Laravel Sanctum-style token — cache for 55 minutes
     this.tokenExpiresAt = Date.now() + 55 * 60 * 1000;
 
     this.logger.log('MyFreeScoreNow authentication successful');
@@ -271,113 +348,186 @@ export class MyFreeScoreNowProvider implements CreditProvider {
     }
   }
 
-  // ── Credit Pull ──────────────────────────────────────────────────────────
+  // ── Enrollment lifecycle ────────────────────────────────────────────────
 
+  /**
+   * Step 1 — Start Enrollment. Runs Digital Identity Trust (DIT) verification
+   * on the applicant. Returns a correlationId used by every subsequent step,
+   * plus a decision: Approve (continue) | Review (manual review) | Deny (stop).
+   */
+  async startEnrollment(
+    input: MfsnStartEnrollmentInput,
+    product: MfsnEnrollmentProduct = 'member',
+  ): Promise<MfsnStartEnrollmentResult> {
+    this.logger.log(`startEnrollment (${product}) — DIT check`);
+    const raw = await this.authedPost(`${this.seg(product)}/start-enroll`, {
+      ...input,
+      type: product,
+    });
+    if (!raw?.correlationId) {
+      throw new MfsnUpstreamError(
+        `MyFreeScoreNow start-enroll returned no correlationId: ${raw?.message ?? 'unknown'}`,
+      );
+    }
+    return {
+      correlationId: raw.correlationId,
+      decision: raw.decision,
+      message: raw.message,
+      raw,
+    };
+  }
+
+  /**
+   * Step 2 — Send Link (SMFA). Emails (or SMS) the applicant a secure
+   * verification link. Only valid for correlationIds whose DIT decision
+   * was Approve.
+   */
+  async sendEnrollmentLink(
+    correlationId: string,
+    opts: {
+      subjectIdentifier: string;
+      subjectType?: 'Email' | 'Sms';
+      redirectUrl: string;
+    },
+    product: MfsnEnrollmentProduct = 'member',
+  ): Promise<Record<string, any>> {
+    this.logger.log(`sendEnrollmentLink (${product})`);
+    return this.authedPost(`${this.seg(product)}/send-link`, {
+      correlationId,
+      subjectIdentifier: opts.subjectIdentifier,
+      subjectType: opts.subjectType ?? 'Email',
+      redirectUrl: opts.redirectUrl,
+    });
+  }
+
+  /** Step 3 — Validate Link. Confirms the applicant consumed the SMFA link. */
+  async validateEnrollmentLink(
+    correlationId: string,
+    product: MfsnEnrollmentProduct = 'member',
+  ): Promise<Record<string, any>> {
+    this.logger.log(`validateEnrollmentLink (${product})`);
+    return this.authedPost(`${this.seg(product)}/validate-link`, {
+      correlationId,
+    });
+  }
+
+  /**
+   * Step 4 — Complete Enrollment. Creates the member account after the
+   * SMFA link is validated.
+   */
+  async completeEnrollment(
+    correlationId: string,
+    product: MfsnEnrollmentProduct = 'member',
+  ): Promise<Record<string, any>> {
+    this.logger.log(`completeEnrollment (${product})`);
+    return this.authedPost(`${this.seg(product)}/enroll`, { correlationId });
+  }
+
+  /** Available subscription plans for this affiliate account. */
+  async getPlanDetails(): Promise<Record<string, any>> {
+    this.logger.log('getPlanDetails');
+    return this.authedPost(`${this.enrollmentBase}/plan-details/`, {});
+  }
+
+  /**
+   * Step 5 — Payment. Attaches a card and bills the first period; a paid
+   * member is what counts as an "Active" for affiliate commissions.
+   */
+  async submitPayment(
+    input: MfsnPaymentInput,
+    product: MfsnEnrollmentProduct = 'member',
+  ): Promise<Record<string, any>> {
+    this.logger.log(`submitPayment (${product})`);
+    return this.authedPost(`${this.seg(product)}/payment`, { ...input });
+  }
+
+  // ── Member reports ──────────────────────────────────────────────────────
+
+  /**
+   * 1B report summary for an enrolled member — product segment selects the
+   * credit vs funding variant of the report.
+   */
+  async getMember1BReport(
+    memberEmail: string,
+    product: 'credit' | 'funding' = 'credit',
+  ): Promise<Record<string, any>> {
+    this.logger.log(`getMember1BReport (${product})`);
+    return this.authedPost(`${this.seg(product)}/getOneBReport`, {
+      email: memberEmail,
+    });
+  }
+
+  /** Full tri-bureau report for an enrolled member. Requires MFSN_CLIENT_TOKEN. */
+  async getMember3BReport(memberEmail: string): Promise<Record<string, any>> {
+    if (!this.clientToken) {
+      throw new MfsnNotConfiguredError();
+    }
+    this.logger.log('getMember3BReport');
+    return this.authedPost('/api/auth/fetch-3B-json', {
+      email: memberEmail,
+      client_token: this.clientToken,
+    });
+  }
+
+  // ── Sandbox test utilities (not available in production) ───────────────
+
+  /** Clear a test member's SSN so sandbox test data can be re-used. */
+  async clearTestSsn(ssn: string): Promise<Record<string, any>> {
+    this.logger.log('clearTestSsn');
+    return this.authedPost('/api/auth/clear-ssn', { ssn });
+  }
+
+  /** Cancel a test enrollment in UAT (restart a test case). */
+  async cancelTestEnrollment(input: {
+    firstName: string;
+    lastName: string;
+    ssn: string;
+  }): Promise<Record<string, any>> {
+    this.logger.log('cancelTestEnrollment');
+    return this.authedPost('/api/auth/cancel-enrollment', { ...input });
+  }
+
+  // ── Credit Pull (member reports) ───────────────────────────────────────
+
+  /**
+   * Pull a credit report for an ALREADY-ENROLLED member. MFSN reports are
+   * keyed by member email — pass it via `email` (preferred) or `referenceId`.
+   * New consumers must go through the enrollment lifecycle first; there is
+   * no anonymous-pull endpoint.
+   */
   async pullCredit(req: CreditPullRequest): Promise<CreditPullResult> {
-    const token = await this.authenticate();
-    const { path, body } = this.buildRequest(req);
-
-    // Log only product/pull-type and non-PII reference — never log names/SSN.
-    this.logger.log(
-      `Pulling ${req.product} (${req.pullType}) ref=${req.referenceId ?? 'n/a'}`,
-    );
-
-    const doFetch = () =>
-      this.request(path, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-    let res: Response;
-    try {
-      res = await doFetch();
-    } catch (err) {
-      // A 401 means our cached token was rejected — refresh and retry once.
-      if (err instanceof MfsnUpstreamError && err.status === 401) {
-        this.cachedToken = null;
-        this.tokenExpiresAt = 0;
-        const freshToken = await this.authenticate();
-        res = await this.request(path, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${freshToken}`,
-          },
-          body: JSON.stringify(body),
-        });
-      } else {
-        throw err;
-      }
+    const memberEmail = req.email ?? req.referenceId;
+    if (!memberEmail) {
+      throw new MfsnUpstreamError(
+        'MyFreeScoreNow reports require an enrolled member email (req.email).',
+      );
     }
 
-    const raw = await res.json();
+    this.logger.log(
+      `Pulling ${req.product} (${req.pullType}) for enrolled member ref=${req.referenceId ?? 'n/a'}`,
+    );
+
+    let raw: Record<string, any>;
+    if (req.product === CreditReportProduct.THREE_B_REPORT) {
+      raw = await this.getMember3BReport(memberEmail);
+    } else {
+      raw = await this.getMember1BReport(
+        memberEmail,
+        req.product === CreditReportProduct.FUNDING_SNAPSHOT
+          ? 'funding'
+          : 'credit',
+      );
+    }
+
     return this.normalizeResponse(raw);
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  private buildRequest(req: CreditPullRequest): { path: string; body: Record<string, any> } {
-    let path: string;
-    switch (req.product) {
-      case CreditReportProduct.CREDIT_SNAPSHOT:
-        path = this.creditSnapshotPath;
-        break;
-      case CreditReportProduct.FUNDING_SNAPSHOT:
-        path = this.fundingSnapshotPath;
-        break;
-      case CreditReportProduct.THREE_B_REPORT:
-        path = this.threeBReportPath;
-        break;
-      default:
-        throw new MfsnUpstreamError(`Unknown product: ${req.product}`);
-    }
-
-    // Verified live on UAT: report endpoints take {from_report_id,
-    // report_type:"1B"|"3B"} — a report handle, not raw PII (sandbox returns
-    // a demo tri-bureau report). referenceId maps to from_report_id.
-    const reportType =
-      req.product === CreditReportProduct.THREE_B_REPORT ? '3B' : '1B';
-    const body: Record<string, any> = {
-      from_report_id: req.referenceId ?? `${reportType}-001`,
-      report_type: reportType,
-      firstName: req.firstName,
-      lastName: req.lastName,
-      pullType: req.pullType,
-      permissiblePurpose: req.permissiblePurpose,
-      referenceId: req.referenceId,
-    };
-
-    // Optional PII — only include if provided
-    if (req.ssn) body.ssn = req.ssn;
-    if (req.dateOfBirth) body.dateOfBirth = req.dateOfBirth;
-    if (req.streetAddress) body.streetAddress = req.streetAddress;
-    if (req.city) body.city = req.city;
-    if (req.state) body.state = req.state;
-    if (req.zip) body.zip = req.zip;
-    if (req.phone) body.phone = req.phone;
-    if (req.email) body.email = req.email;
-
-    // FCRA consent metadata
-    body.consent = {
-      grantedAt: req.consent.grantedAt.toISOString(),
-      method: req.consent.method,
-      ipAddress: req.consent.ipAddress,
-      userAgent: req.consent.userAgent,
-    };
-
-    return { path, body };
-  }
-
   /**
    * Normalize the provider response into our internal schema.
-   * TODO(mfsn-spec): the exact response shape will be confirmed once the
-   * full API docs are provided. This handles common JSON structures and
-   * falls back gracefully — the raw payload is always preserved in
-   * `rawResponse` for audit.
+   * The exact response shape is confirmed incrementally as UAT calls land —
+   * the raw payload is always preserved in `rawResponse` for audit.
    */
   private normalizeResponse(raw: Record<string, any>): CreditPullResult {
     const data = raw.data ?? raw.result ?? raw;
