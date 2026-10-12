@@ -68,7 +68,7 @@ export class CreditBureauController {
   }
 
   /** Available subscription plans on this affiliate account */
-  @Get('enrollment/plans/:planId?')
+  @Get('enrollment/plans{/:planId}')
   getPlanDetails(@Param('planId') planId?: string) {
     return this.creditBureauService.getPlanDetails(planId);
   }
