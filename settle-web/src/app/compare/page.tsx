@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
+import { PARTNER_OFFERS } from '../../config/partner-offers';
 import { compareProviders, getProviders } from '@/lib/api';
 import { getToken } from '@/lib/auth';
 
@@ -224,6 +225,39 @@ function CompareContent() {
                     </Link>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Partner offers — affiliate links bridge the gap while the marketplace fills in */}
+            <div>
+              <div className="text-center mb-6">
+                <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-2">Available now</p>
+                <h2 className="text-3xl font-black text-black dark:text-white">Partner programs you can explore today</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 mt-2 max-w-2xl mx-auto text-sm">
+                  Settle In Peace may earn a commission if you enroll through these links — at no cost to you. Offers are provided by third parties; eligibility and results vary.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {PARTNER_OFFERS.map((offer) => (
+                  <div
+                    key={offer.id}
+                    className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col"
+                  >
+                    <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-2">
+                      {offer.tag}
+                    </span>
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{offer.name}</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 flex-1">{offer.blurb}</p>
+                    <a
+                      href={offer.url}
+                      target="_blank"
+                      rel="sponsored nofollow noopener"
+                      className="mt-4 inline-flex justify-center items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                    >
+                      {offer.cta} →
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
 
