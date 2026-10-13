@@ -45,6 +45,6 @@ export const PARTNER_OFFERS: PartnerOffer[] = [
     blurb:
       'Track your credit score and monitor changes while you work through a debt relief plan.',
     cta: 'Check My Score',
-    url: 'https://www.smartcredit.com/?PID=57216',
+    url: 'https://www.smartcredit.com/join/?pid=57216',
   },
 ];
