@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-settle-audit | live audit + AI/automation feature (affiliate postback receiver per 16K §1.4) | NEW files only (settle-api/src/affiliates/**, migrations, docs) + AGENT_STATE.md; avoiding files w/ uncommitted changes (main.ts, ai.controller.ts, matching, providers, telnyx) |
 
 
 

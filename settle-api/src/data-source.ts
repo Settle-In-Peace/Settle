@@ -29,6 +29,7 @@ import { FeatureRequest } from './feedback/feature-request.entity';
 import { FeatureRequestVote } from './feedback/feature-request-vote.entity';
 import { QaQuestion } from './questions/qa-question.entity';
 import { QaAnswer } from './questions/qa-answer.entity';
+import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -70,6 +71,7 @@ export const dataSource = new DataSource({
     FeatureRequestVote,
     QaQuestion,
     QaAnswer,
+    AffiliateConversion,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

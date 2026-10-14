@@ -55,6 +55,7 @@ import { FeatureRequest } from './feedback/feature-request.entity';
 import { FeatureRequestVote } from './feedback/feature-request-vote.entity';
 import { QaQuestion } from './questions/qa-question.entity';
 import { QaAnswer } from './questions/qa-answer.entity';
+import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { DebtsModule } from './debts/debts.module';
@@ -81,6 +82,7 @@ import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
 import { PaymentProcessorsModule } from './payment-processors/payment-processors.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { QuestionsModule } from './questions/questions.module';
+import { AffiliatesModule } from './affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -153,6 +155,7 @@ import { QuestionsModule } from './questions/questions.module';
         FeatureRequestVote,
         QaQuestion,
         QaAnswer,
+        AffiliateConversion,
       ],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
@@ -211,6 +214,7 @@ import { QuestionsModule } from './questions/questions.module';
       FeatureRequestVote,
       QaQuestion,
       QaAnswer,
+      AffiliateConversion,
     ]),
     AuthModule,
     ActivitiesModule,
@@ -238,6 +242,7 @@ import { QuestionsModule } from './questions/questions.module';
     ComplianceModule,
     FeedbackModule,
     QuestionsModule,
+    AffiliatesModule,
   ],
   controllers: [AppController],
   providers: [
