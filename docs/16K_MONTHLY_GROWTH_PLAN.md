@@ -1,8 +1,27 @@
 # Settle — $16,000/Month Revenue Growth Plan
 
-> **Start date:** Today  
-> **Goal:** Reach $16,000 USD in monthly revenue as quickly and predictably as possible.  
 > **Model:** Debt-relief **marketplace / affiliate-referral** business. Settle does **not** settle debt directly. We earn when we match financially distressed consumers with vetted, licensed third-party debt relief, consolidation, and financial-coaching providers.
+> **Resources:** bootstrap only — agents + organic acquisition (SEO, social, outreach). No ad spend assumed; paid search/social becomes an optional accelerator only after organic channels show converting traffic.
+> **Last verified:** 2026-10-21 (live probes, not assumptions)
+
+---
+
+## 0. Status Snapshot — verified live state
+
+| Piece | State | Evidence |
+|---|---|---|
+| Web (Cloudflare Worker `settleinpeace`) | ✅ `settleinpeace.com` → 200 | live probe |
+| API (Render `settle-api`) | ✅ `api.settleinpeace.com/health` → 200 | live probe |
+| Sitemap | ✅ `/sitemap.xml` → 200 | live probe; includes 51 state pages + learn hub |
+| SEO content surface | ✅ 51 state debt-relief pages, statute-of-limitations data, FAQ JSON-LD, AG/CFPB/211/NFCC links, `/learn/*` fixed (was hard-404ing — `dynamicParams` removed) | landed Oct 20 |
+| Social autoposter | ⚠️ Built + seeded, **not publishing** — platform secrets missing (X/Bluesky/LinkedIn/FB/Mastodon/Reddit) | workflow exists, creds absent |
+| Affiliate/referral pipeline | ⚠️ **CuraDebt**: logged in, payout terms live ($50/debt PPL + 2.5% CPA; $45/tax lead + $500/FPC), widget pages + creative submitted → **In Review**, account still TEST mode. **SmartCredit/PartnerHub**: link live (`?PID=57216`), contract gated on Stripe Connect KYC (user DOB/SSN/bank needed). **FlexOffers**: waiting on user's email passcode | AGENT_STATE 2026-10-13 |
+| Stripe checkout | ✅ subscriptions + provider billing built | `settle-api` Stripe module |
+| Lead scoring + matching | ⚠️ partial | checklist §5 |
+| Render deploys | 🔴 **Build minutes exhausted** — deploys frozen until workspace plan/limit raised | AGENT_STATE 2026-10-11 |
+| Revenue baseline | ~$0 (no settled affiliate payout or subscription verified) | no Stripe/affiliate settlements on record |
+
+**One-line read:** the traffic + content engine is shipped; the money side (affiliate accounts exiting TEST mode, provider seats selling) is gated almost entirely on user actions, not code.
 
 ---
 
@@ -10,568 +29,170 @@
 
 | Item | Value |
 |------|-------|
-| Target MRR | **$16,000/month** |
-| Current baseline | **~$0–$1,000/month** (newly launched; first provider seat + early coaching subs possible) |
-| Gap to close | **~$15,000/month** |
-| Time horizon to first $16k | **90–120 days** (with disciplined daily execution) |
-| Primary driver | Qualified consumer leads sold to providers + recurring provider seats + coaching subscriptions |
+| Target monthly revenue | **$16,000** |
+| Current baseline | **~$0** |
+| Gap | **$16,000** |
+| First $16k horizon | 90–120 days *after* affiliate programs exit review and the first lead sells |
+| Primary driver | Qualified consumer leads sold to providers + recurring provider seats + coaching subs |
 
-### What "$16k month" actually means
-
-We do **not** need 10,000 customers. We need a small number of high-intent consumers who complete the free assessment and are matched with providers who pay us for qualified referrals. The fastest path is:
-
-- **80–120 qualified leads/month** sold at $100–$150/lead, **plus**
-- **2–4 provider marketplace seats** at $500–$1,500/month, **plus**
-- **40–70 coaching subscriptions** at $49/month.
-
-That combination puts us at or above $16,000/month.
+We do **not** need 10,000 customers. We need ~80–120 qualified leads/month, a handful of provider seats, and a few dozen coaching subs.
 
 ---
 
-## 2. Monetization Streams & Unit Economics
+## 2. Monetization Streams & Unit Economics (build status tagged)
 
-### Revenue streams
-
-| Stream | Model | Price / Value | Notes |
-|--------|-------|---------------|-------|
-| **Pay-per-lead (PPL) referrals** | Affiliate / referral fee per qualified consumer matched to provider | $75–$300/lead; target **$125 avg** | Highest near-term lever. Lead is qualified by debt amount, state, employment, credit tier, and expressed intent via assessment quiz. |
-| **Provider marketplace seats** | Monthly SaaS subscription for providers to access lead pipeline | $500–$2,500/mo; target **$1,000 avg** | Recurring, high-margin. Locks in baseline revenue. |
-| **Premium provider placement** | Featured listing / category boost | $200–$500/mo | Easy upsell once provider seats exist. |
-| **Financial coaching subscription** | Consumer SaaS (DIY tools + education) | $49–$97/mo; target **$49** | Captures users who don't qualify for settlement; also warms them up for later conversion. |
-| **Future Phase 4** | Direct settlement revenue share | 15–25% of enrolled debt | **Not used until licensed.** Keep in plan but do not execute now. |
-
-### Unit economics (assumed)
-
-| Metric | Value | Source / rationale |
-|--------|-------|--------------------|
-| Average lead payout | $125 | Midpoint of $75–$300 range; business plan used $100 avg, competitive analysis used $150 avg. |
-| Lead → paid-referral conversion | 60–80% | Not every lead is purchasable (state/debt-type mismatches). We pay-gate only leads a provider accepts. |
-| Landing page visitor → assessment start | 25–35% | Strong problem-aware traffic with clear CTA. |
-| Assessment start → completed lead | 20–30% | Multi-step quiz; optimize for mobile and reduce friction. |
-| Completed lead → provider purchase | 50–70% | Depends on lead quality scoring and provider match density. |
-| Effective blended visitor → revenue | ~$4–$8 per visitor | At scale, each 1,000 targeted visitors should produce $4,000–$8,000 in referral revenue. |
+| Stream | Model | Price | Status |
+|--------|-------|-------|--------|
+| **PPL referrals** | Affiliate fee per qualified consumer lead | $50–$150/lead; target **$75–$125 avg** | **[NEEDS-CREDS]** — CuraDebt pipeline built, exits TEST only after user completes approval steps; SmartCredit link live but payout gated on Stripe KYC |
+| **Provider marketplace seats** | Monthly SaaS for providers to access lead pipeline | $500–$2,500/mo; target **$1,000** | **[BUILT]** — Stripe seat billing exists; needs sales motion |
+| **Premium provider placement** | Featured listing / category boost | $200–$500/mo | **[BUILT-ish]** — trivial once seats exist |
+| **Coaching subscription** | Consumer DIY tools + education | $49/mo (intro $1 first month) | **[BUILT]** — Stripe checkout exists; needs funnel traffic |
+| **Phase 4: direct settlement share** | 15–25% of enrolled debt | — | **[NOT-BUILT]** — requires licensing; do not execute |
 
 ### Math to $16,000/month
 
-**Conservative mixed model (target: month 4)**
+**Primary mix (target: month 4)**
 
 | Stream | Volume | Price | Monthly revenue |
 |--------|--------|-------|-----------------|
 | PPL referrals | 80 leads | $125 | $10,000 |
-| Provider seats | 3 providers | $1,000 | $3,000 |
-| Premium placement | 2 upgrades | $250 | $500 |
-| Coaching subscriptions | 50 subs | $49 | $2,450 |
+| Provider seats | 3 | $1,000 | $3,000 |
+| Premium placement | 2 | $250 | $500 |
+| Coaching subs | 50 | $49 | $2,450 |
 | **Total** | | | **$15,950** |
 
-**Lead-only bridge model (if seats/coaching lag)**
+**Lead-only bridge (if seats/coaching lag):** 130 qualified leads × $125 = $16,250.
 
-| Volume | Price | Monthly revenue |
-|--------|-------|-----------------|
-| 130 qualified leads | $125 | $16,250 |
+To produce 80–130 qualified leads/month organically:
+- ~6,000–8,000 targeted visitors/month at ~2% lead conversion.
+- The 51 state pages + learn hub are the traffic surface; assessment funnel is the capture.
 
-To hit 130 qualified leads/month organically + paid:
+**Unit economics (assumed):**
 
-- **Organic SEO/blog:** ~6,000–8,000 targeted visitors/month at 2% lead conversion = 120–160 leads.
-- **Paid search/social:** at $4–$7 cost per click and 8–12% assessment completion, blended CAC of $40–$80 per lead leaves healthy margin.
-
----
-
-## 3. Customer Acquisition Strategy
-
-### A. SEO / organic search (primary 90-day engine)
-
-**Why:** Debt-relief keywords have strong commercial intent and the competitive analysis identified high-volume targets with moderate competition.
-
-**Priority keyword targets**
-
-| Keyword | Est. monthly searches |
-|---------|----------------------|
-| debt relief options | 40,500 |
-| debt settlement companies | 27,100 |
-| debt consolidation vs settlement | 12,100 |
-| best debt relief companies | 8,100 |
-| how to settle debt yourself | 6,600 |
-| debt settlement calculator | 5,400 |
-| credit card debt relief | 4,400+ |
-| debt relief program | 3,600+ |
-
-**Content pillars to publish in first 60 days**
-
-1. **Comparison guides** — "Debt Settlement vs Consolidation vs Bankruptcy: Which Is Right for You?"
-2. **Calculator / tool pages** — "Debt Settlement Calculator", "Debt Payoff Calculator (Snowball / Avalanche)", "Debt-to-Income Calculator".
-3. **State-specific law guides** — one page per state on debt collection statutes, garnishment rules, and licensed providers.
-4. **DIY negotiation scripts** — "How to Negotiate Credit Card Debt Yourself (Free Scripts)".
-5. **Credit recovery content** — "How to Rebuild Credit After Debt Settlement".
-6. **Hardship stories / anonymized case studies** — build trust and E-E-A-T.
-
-**SEO execution rules**
-
-- Publish **2–3 long-form articles per week** (1,500–2,500 words) for 90 days.
-- Every article links to `/assessment` and a relevant calculator.
-- Include CFPB/FTC-compliant disclaimers above the fold on every financial page.
-- Use schema markup for FAQ, HowTo, and FinancialProduct where applicable.
-- Build 5–10 high-quality backlinks/month via HARO, personal-finance guest posts, and provider partnerships.
-
-### B. Paid search & paid social (accelerator)
-
-**Google Ads**
-
-- Start with **high-intent keywords**: "debt settlement", "debt relief program", "credit card debt help", "consolidate my debt".
-- Use **phrase + exact match**; negative keywords: "free government", "grant", "loan", "credit repair".
-- Initial daily budget: **$50/day** ($1,500/month), scaling to $100/day once CAC < $60 per lead.
-- Landing pages: dedicated LP per ad group (e.g., "Credit Card Debt Relief" → `/lp/credit-card-debt-relief`).
-- Ad copy must include **"Compare vetted providers" + "Free, no-obligation assessment"**.
-
-**Meta / Facebook & Instagram**
-
-- Target: U.S., ages 28–55, interests in budgeting, credit cards, debt payoff, Dave Ramsey, Credit Karma.
-- Creative angle: "See your real debt relief options in 2 minutes" + calculator hook.
-- Retargeting: visitors who started but did not complete the assessment; blog readers who did not convert.
-- Initial budget: **$30/day**, scale once CPL < $50.
-
-**Native / programmatic (month 2–3)**
-
-- Test Taboola/Outbrain advertorials: "The Truth About Debt Settlement in 2026".
-- Goal: add 20–30 qualified leads/day at <$40 CPL.
-
-### C. Content & community
-
-- **YouTube / Shorts:** 60-second explainers: "What happens to your credit score in debt settlement?"
-- **TikTok / Reels:** Debt-free motivational clips, myth-busting, calculator demos.
-- **Email newsletter:** weekly "Debt-Free Friday" with one actionable tip + assessment CTA.
-- **Reddit / Facebook groups:** Provide genuine advice in r/personalfinance, r/debtfree, and niche debt groups; never pitch directly, signature links to free resources.
-
-### D. Partnerships
-
-1. **Debt relief affiliate networks** — enroll with existing networks that already have buyer demand (see checklist in Section 7).
-2. **Credit counseling agencies (nonprofit)** — co-branded content; they refer users who don't fit their DMP model.
-3. **Personal finance influencers** — pay $200–$500 for a sponsored post/story once landing page converts.
-4. **Financial advisors / CPAs** — referral agreement for clients with unsustainable unsecured debt.
-5. **Employer / HR wellness programs** — white-label financial wellness page.
+| Metric | Value |
+|--------|-------|
+| Lead payout | $75–$300 (CuraDebt: $50 debt / $45 tax — mid-market) |
+| Assessment start → completed lead | 20–30% |
+| Completed lead → provider purchase | 50–70% |
+| Effective visitor value | ~$4–$8 per targeted visitor |
 
 ---
 
-## 4. Marketing & Promotions
+## 3. Phase-Gated Execution Plan
 
-### Launch promotions (first 30 days)
+### Phase 0 — Unblock & verify (this week)
+**Exit gate: a consumer can complete the assessment end-to-end and the lead lands in the system; a provider could buy it tomorrow.**
 
-| Promo | Mechanics |
-|-------|-----------|
-| **"Peace Check" free assessment** | Complete the 2-minute assessment and receive a personalized debt-relief options report (automated PDF/email). |
-| **First-month coaching for $1** | First 100 subscribers get 30 days for $1, then $49/mo. Converts non-settlement users. |
-| **Provider launch discount** | First 5 providers get 50% off the first month marketplace seat + 20% off first 10 leads. |
-| **Refer-a-friend** | Existing user gets $25 account credit for each friend who completes assessment and is matched. |
-| **Debt calculator giveaway** | Free downloadable "Debt Payoff Playbook" in exchange for email. |
+| # | Task | Where |
+|---|------|-------|
+| 0.1 | Raise Render build-pipeline limit / upgrade plan — **all settle-api deploys frozen** | Render dashboard (user) |
+| 0.2 | Verify Render repo connection survived the `obdulr/Settle → Settle-In-Peace` org rename | Render dashboard (user) |
+| 0.3 | Set Render AI env (`AI_BASE_URL=https://models.github.ai/inference`, `AI_API_KEY=<fine-grained PAT>`, `AI_MODEL=openai/gpt-4o-mini`) | Render dashboard (user) |
+| 0.4 | Paste MFSN creds (`MFSN_API_EMAIL/PASSWORD/BASE_URL`, `MFSN_ENV=production`) | Render dashboard (user) |
+| 0.5 | E2E test: mobile `/assessment` → lead record → scoring → match stub fires | Playwright |
 
-### Debt calculators & lead magnets
+### Phase 1 — Money plumbing live
+**Exit gate: first real referral payout path is active; coaching checkout completes in prod.**
 
-Deploy these on `/calculators` and embed in blog posts:
+| # | Task |
+|---|------|
+| 1.1 | **CuraDebt**: get creative approved → install widget on approved pages → exit TEST mode; request API key + funnel_ids (user action) |
+| 1.2 | **SmartCredit**: complete Stripe Connect onboarding (user DOB/SSN/bank) → sign partnership contract → activate `?PID=57216` link on money pages |
+| 1.3 | **FlexOffers**: user submits the 6-digit email passcode → apply Freedom Debt Relief ($14.40/lead) + top-5 debt merchants |
+| 1.4 | Server postback receiver for affiliate conversions (`/api/affiliates/postback`) so payouts reconcile — currently no endpoint |
+| 1.5 | Affiliate disclosure in footer + assessment results page (compliance gate, §7) |
+| 1.6 | Verify Stripe webhooks fire in prod for coaching subs + seat billing |
 
-1. **Debt Settlement Calculator** — estimates potential savings and fees.
-2. **Debt Payoff Calculator** — snowball/avalanche timelines.
-3. **Debt-to-Income (DTI) Calculator** — instantly shows severity.
-4. **Forgiven-Debt Tax Calculator** — estimates 1099-C tax impact.
-5. **Monthly Payment Relief Calculator** — shows lower-payment alternatives.
+### Phase 2 — Acquisition engine
+**Exit gate: sitemaps indexed, ≥1 social channel posting daily, first 50 outreach contacts sent.**
 
-Each calculator ends with: *"Want a personalized plan? Take the free 2-minute assessment."*
+| # | Task |
+|---|------|
+| 2.1 | Submit `settleinpeace.com/sitemap.xml` in Google Search Console + Bing WMT (user grants access) |
+| 2.2 | Activate social poster: create X + LinkedIn + Facebook app creds → workflow secrets; poster already exits non-zero on zero-published |
+| 2.3 | Add calculator pages (`/calculators`): settlement-savings, payoff snowball/avalanche, DTI — each ends at `/assessment` CTA |
+| 2.4 | Provider outreach: `sales-outreach` skill → 50 debt-relief/consolidation providers, "intent-verified leads in your states" pitch + one-pager |
+| 2.5 | 2–3 learn articles/week targeting the keyword table below; internal-link to state pages + `/assessment` |
+| 2.6 | `refer-a-friend` credit loop (code exists in other portfolio projects — port the pattern) |
 
-### Free assessment funnel
+**Priority keywords:** debt relief options (40.5k), debt settlement companies (27.1k), consolidation vs settlement (12.1k), best debt relief companies (8.1k), how to settle debt yourself (6.6k), debt settlement calculator (5.4k), credit card debt relief (4.4k+).
 
-```
-Traffic source (SEO / Ads / Social)
-    ↓
-Landing page / calculator / blog post
-    ↓
-CTA: "See my options — free 2-min assessment"
-    ↓
-/assessment (multi-step quiz)
-    ↓
-Lead captured + TCPA consent + email verification
-    ↓
-Instant report: "Your top 3 options"
-    ↓
-Matched to 1–3 vetted providers
-    ↓
-Provider purchases lead (PPL revenue)
-    ↓
-Email nurture: coaching, credit recovery, upsells
-```
+**Content pillars:** comparison guides, calculator/tool pages, state-law guides (✅ shipped), DIY negotiation scripts, credit-recovery content, anonymized case studies. 2–3 articles/week for 90 days, each linking `/assessment`, CFPB/FTC disclaimers above the fold, FAQ/HowTo/FinancialProduct schema.
 
-### Email sequences
+### Phase 3 — Conversion & retention
+**Exit gate: assessment completion ≥25%, lead→purchased ≥50%, coaching trial→paid ≥40%.**
 
-**Sequence A — New lead (assessment completed, not yet matched)**
+| # | Task |
+|---|------|
+| 3.1 | Assessment funnel audit: progress bar, minimal fields, mobile-first — measure start→complete |
+| 3.2 | Lead-quality scoring live (debt amount, state, employment, credit tier, months behind) → route premium leads to highest bidder |
+| 3.3 | Email sequences A (new lead), B (non-qualifying → DIY + coaching), C (provider prospects) via Resend |
+| 3.4 | Exit-intent / save-the-lead capture on assessment abandonment |
+| 3.5 | Provider churn + complaint tracking in CRM |
 
-- Day 0: "Your assessment report is ready" + matched options.
-- Day 1: "3 questions to ask any debt relief company" (trust-building).
-- Day 3: "How debt settlement affects your credit score".
-- Day 7: "DIY debt negotiation script (free download)".
-- Day 14: "Still deciding? Here's a side-by-side fee comparison".
-- Day 21: Coaching trial offer.
-
-**Sequence B — Non-qualifying users (debt too low or wrong state)**
-
-- Day 0: "Your personalized DIY plan".
-- Day 1: Coaching $1 trial.
-- Day 3: Budget template + debt payoff calculator.
-- Weekly: Debt-free tips, credit-building hacks.
-
-**Sequence C — Provider prospects**
-
-- Day 0: "Thanks for joining the provider waitlist".
-- Day 2: "How Settle delivers intent-verified leads".
-- Day 5: Case study / ROI example.
-- Day 10: Book a demo / activate seat.
+### Phase 4 — Scale to $16K and beyond
+- 80–120 leads/mo sold; 8–12 provider seats; 150–300 coaching subs
+- Optional paid accelerator ONLY after organic shows converting traffic (Google Ads high-intent phrase match; Meta retargeting) — **not in the bootstrap baseline**
+- HARO/guest-post backlink engine (5–10/month)
+- Optional Phase 4 (direct settlement revenue share) only after legal review + $50k licensing budget — **do not execute now**
 
 ---
 
-## 5. 30-Day Daily Action Calendar
+## 4. Weekly KPI Scorecard
 
-> Goal of the first 30 days: **turn the existing MVP into a revenue-producing funnel** — launch provider sales, fill the content pipeline, and drive the first 100 assessment completions.
-
-### Week 1 — Foundation & Fast Wins
-
-| Day | Action | Owner / Tool |
-|-----|--------|--------------|
-| 1 | Read this plan; assign one DRI (directly responsible individual) for revenue. | Founder / Ops |
-| 2 | Fix CORS on Render API so the Cloudflare Worker frontend can authenticate in production (ROADMAP next step). | Backend |
-| 3 | Point custom domain `www.settleinpeace.com` at the Cloudflare Worker; verify SSL. | DevOps |
-| 4 | Audit `/assessment` funnel on mobile: reduce fields to the minimum needed for lead scoring; add progress bar. | Frontend / UX |
-| 5 | Implement automated lead-quality scoring (debt amount, state, employment, credit tier, months behind). | Backend |
-| 6 | Build the first consumer-provider matching algorithm: match by state, debt type, debt amount threshold. | Backend |
-| 7 | Write and publish first three SEO articles; set up editorial calendar. | Content |
-
-### Week 2 — Provider Sales & Integrations
-
-| Day | Action | Owner / Tool |
-|-----|--------|--------------|
-| 8 | Compile list of 50 target debt relief / consolidation providers; find BD contacts. | Biz Dev |
-| 9 | Send personalized outreach to first 25 providers: "We have intent-verified leads in your states." | Biz Dev |
-| 10 | Configure Resend production domain and email sequences (already partially verified). | Marketing / Dev |
-| 11 | Set up Google Ads account, conversion tracking on `/assessment` completion, and first campaigns. | Paid Ads |
-| 12 | Integrate / verify Stripe checkout for coaching subscriptions and provider seat billing. | Backend |
-| 13 | Create provider one-pager PDF: "Why Settle beats blind lead networks." | Marketing |
-| 14 | Publish debt settlement calculator and debt payoff calculator; add `/calculators` to main nav. | Frontend / Content |
-
-### Week 3 — Traffic & Lead Volume
-
-| Day | Action | Owner / Tool |
-|-----|--------|--------------|
-| 15 | Launch Meta retargeting + prospecting campaigns with $30/day budget. | Paid Ads |
-| 16 | Publish state-specific guide for the highest-search state (e.g., California or Texas). | Content |
-| 17 | Set up Google Search Console, Bing Webmaster Tools, and analytics dashboards. | SEO |
-| 18 | Write FAQ page and add to main nav; ensure CFPB/FTC disclosures on all money pages. | Content / Legal |
-| 19 | Launch "First month coaching for $1" offer on `/coaching` and in email footer. | Marketing |
-| 20 | Create 7 short-form video scripts and record first 3 (phone is fine). | Social |
-| 21 | First provider demo / sales call; close first paid marketplace seat. | Biz Dev |
-
-### Week 4 — Optimize & Scale
-
-| Day | Action | Owner / Tool |
-|-----|--------|--------------|
-| 22 | Review first week of ad data; kill underperforming keywords; double down on winners. | Paid Ads |
-| 23 | A/B test homepage headline: "Compare vetted debt relief providers" vs "See your real debt relief options". | Growth |
-| 24 | Add exit-intent popup on `/assessment` offering free playbook in exchange for email. | Frontend |
-| 25 | Publish DIY debt negotiation guide + free script PDF; promote via email + social. | Content |
-| 26 | Pitch 3 personal-finance micro-influencers for sponsored posts. | Partnerships |
-| 27 | Hold weekly revenue standup: leads generated, leads purchased, MRR, provider pipeline. | Founder |
-| 28 | Write month-1 recap; update KPI dashboard; decide month-2 budget reallocation. | Ops |
-| 29 | Reach out to 10 more providers; offer launch discount ending in 7 days. | Biz Dev |
-| 30 | Publish "October debt relief report" blog + social campaign; set month-2 OKRs. | Marketing |
-
----
-
-## 6. Phased Roadmap
-
-### Phase 1 — Foundation (Weeks 1–4)
-
-**Revenue target:** $1,000–$2,500/month
-
-- Finish production deployment (domain, CORS, SSL).
-- Close first 1–2 provider marketplace seats.
-- Launch Google Ads + Meta ads at small budget.
-- Publish 8–12 SEO articles and 2 calculators.
-- Launch automated lead scoring + matching.
-- Build email nurture sequences.
-
-### Phase 2 — Growth (Weeks 5–12)
-
-**Revenue target:** $5,000–$10,000/month by week 12
-
-- Scale paid acquisition to $3,000–$5,000/month ad spend.
-- Onboard 5–8 paying providers.
-- Publish 25+ SEO articles; target 10,000 organic visits/month.
-- Launch coaching $1-trial funnel; reach 100+ paying coaching subs.
-- Add premium placement upsells.
-- Begin backlink outreach and HARO responses.
-- Implement retargeting + lookalike audiences.
-
-### Phase 3 — Scale (Months 4–6)
-
-**Revenue target:** $16,000–$25,000/month
-
-- Reach 80–120 qualified leads/month sold to providers.
-- 8–12 active provider seats + premium upgrades.
-- 150–300 coaching subscribers.
-- Launch YouTube content and podcast guest appearances.
-- Introduce affiliate / partner referral payouts for non-provider traffic partners.
-- Optimize funnel conversion through A/B testing.
-
-### Phase 4 — Optimize (Months 7–12)
-
-**Revenue target:** $30,000–$50,000/month; prepare for optional Phase 4 licensing
-
-- 200+ qualified leads/month.
-- 15+ provider seats.
-- 500+ coaching subscribers.
-- Automate provider onboarding and lead distribution.
-- Consider direct debt settlement licensing **only** after legal review and state licensing budget ($50k+) is secured.
-- Build out community / success-story content.
-
----
-
-## 7. API & Integration Access Checklist
-
-These accounts and credentials must be obtained, configured in production, and documented in the Render / Cloudflare dashboards.
-
-### Lead acquisition & distribution
-
-| Integration | Status | Action needed |
-|-------------|--------|---------------|
-| Boberdoo / LeadsPedia / LeadProsper accounts | Not configured | Sign up; set `LEADVENDOR_NAMES`, ping/post URLs, auth keys, and webhook secrets. |
-| Inbound vendor webhook endpoint (`POST /lead-vendors/import/webhook`) | Partial | Requires `LEADVENDOR_<NAME>_WEBHOOK_SECRET` and raw-body preservation in `main.ts`. |
-| Lead quality scoring engine | In progress | Finish automated scoring based on debt amount, state, employment, credit tier, months behind. |
-| Provider matching algorithm | In progress | Match leads to providers by state, debt type, amount thresholds, and capacity. |
-| Provider billing / seat management | Mostly done | Stripe subscriptions for provider seats + per-lead purchases. |
-
-### Consumer data & verification
-
-| Integration | Status | Action needed |
-|-------------|--------|---------------|
-| MyFreeScoreNow (MFSN) | Local verified; Render not set | Copy `MFSN_API_EMAIL`, `MFSN_API_PASSWORD`, `MFSN_API_BASE_URL` to Render; set `MFSN_ENV=production` after dashboard approval. |
-| Credit snapshot / funding snapshot | Aliased to 1B | Confirm real snapshot paths with MFSN and adjust `MFSN_*_PATH` env vars. |
-| Bank account aggregation (Plaid / Yodlee) | Not started | Optional for coaching; evaluate after $10k MRR. |
-
-### Communications
-
-| Integration | Status | Action needed |
-|-------------|--------|---------------|
-| Resend email | Partially verified | Confirm domain verification is fully enabled; set production API key; configure sequences. |
-| Telnyx SMS | Configured for OTP | Add `TELNYX_CONNECTION_ID` + `TELNYX_PUBLIC_KEY` if using outbound call/webhook features. |
-| Firebase Phone Auth | Alternative configured | Keep as fallback; monitor cost. |
-
-### Payments
-
-| Integration | Status | Action needed |
-|-------------|--------|---------------|
-| Stripe | Coaching subscriptions + provider billing done | Verify webhook endpoints and tax settings. |
-| NMI merchant account | Not boarded | High-risk MCC; board acquiring bank via merchant services. Set `NMI_SECURITY_KEY`, `NMI_PUBLIC_KEY`, `NMI_WEBHOOK_SECRET`. |
-| AuthNet gateway | Stub implemented, untested | Set `AUTHNET_API_LOGIN_ID`, `AUTHNET_TRANSACTION_KEY`, etc., only if NMI fails. |
-
-### Compliance & legal
-
-| Item | Status | Action needed |
-|------|--------|---------------|
-| Terms of Service | Done | Review with attorney; update as model changes. |
-| Privacy Policy | Done | Ensure TCPA/lead-sharing language is explicit. |
-| Affiliate / referral disclosure | Required | Add to footer of every page and in assessment results. |
-| CFPB-compliant disclosures | Not started | Add clear cost, credit-impact, tax, and timeline disclosures on `/disclosures` and assessment results. |
-| TCPA consent capture | Done | Verify timestamp + language on lead record; honor opt-outs immediately. |
-| State-specific debt settlement disclosures | Not started | Create state matrix; show required disclaimers before lead is shared. |
-| Provider vetting automation | Not started | Verify AFCC/IAPDA membership, state licenses, BBB rating minimum B, no upfront fees. |
-
-### Infrastructure
-
-| Item | Status | Action needed |
-|------|--------|---------------|
-| Custom domain DNS | Next step | Add route in `wrangler.jsonc` for `www.settleinpeace.com`. |
-| Render API CORS | Next step | Add Worker URL / custom domain to `CORS_ORIGINS`. |
-| Render env vars | Partial | Set AI, MFSN, Telnyx call-control, and lead-vendor variables. |
-| Analytics | Partial | Ensure GA4, Mixpanel, and conversion events on assessment + purchase. |
-
----
-
-## 8. Metrics & Milestones
-
-### North Star metric
-
-**Monthly qualified leads sold × average payout = PPL revenue.** Track daily.
-
-### KPI dashboard
-
-| Metric | Target (Month 1) | Target (Month 3) | Target (Month 6) |
-|--------|------------------|------------------|------------------|
-| Total website visitors | 3,000 | 20,000 | 60,000 |
+| Metric | Month 1 | Month 3 | Month 6 |
+|--------|---------|---------|---------|
+| Targeted visitors | 3,000 | 20,000 | 60,000 |
 | Assessment starts | 600 | 5,000 | 15,000 |
 | Completed leads | 150 | 1,200 | 4,000 |
-| Leads purchased by providers | 30 | 350 | 1,200 |
+| Leads sold | 30 | 350 | 1,200 |
 | PPL revenue | $3,750 | $43,750 | $150,000 |
-| Provider seats active | 2 | 8 | 15 |
-| Provider seat revenue | $2,000 | $8,000 | $15,000 |
-| Coaching subscribers | 25 | 200 | 500 |
-| Coaching MRR | $1,225 | $9,800 | $24,500 |
-| Blended MRR | ~$7,000 | ~$61,000 | ~$189,000 |
+| Provider seats | 2 | 8 | 15 |
+| Coaching subs | 25 | 200 | 500 |
 
-> Note: The $16k goal should be hit in **Month 3–4** primarily through 80–120 leads/month + a few seats + coaching subs.
-
-### Weekly review ritual
-
-Every Monday, review:
-
-1. Leads generated vs. purchased vs. target.
-2. Traffic by source (organic, paid, social, direct).
-3. Assessment start → completion → purchase conversion.
-4. Ad spend and CPL by channel.
-5. Provider pipeline (seats, churn, complaints).
-6. Coaching trial → paid conversion and churn.
-7. Compliance: opt-in rates, opt-outs, provider vetting status.
+**North star:** qualified leads sold × avg payout. Review weekly (revenue-standup skill): leads generated/sold, traffic by source, funnel conversion, affiliate payout settlements, provider pipeline, coaching churn, compliance opt-outs.
 
 ---
 
-## 9. Risk Mitigation & Compliance Notes
+## 5. API & Integration Access Checklist
 
-### Regulatory posture
-
-Settle is **not** a direct debt settlement provider, credit repair organization, or lender. We are a lead-generation and comparison marketplace. This keeps us out of many state licensing requirements **but does not remove all compliance obligations.**
-
-### Must-have legal protections
-
-1. **Clear affiliate/referral disclosure**  
-   - On every page: *"Settle may receive referral compensation from vetted providers. We are not a government agency."*
-   - In assessment results: *"We may share your information with licensed debt relief providers you choose to contact."*
-
-2. **TCPA / telemarketing compliance**  
-   - Capture express written consent before sharing phone numbers.
-   - Store timestamp and exact consent language on the `Lead` record (field already exists).
-   - Honor opt-outs within 24 hours.
-   - Do not call numbers on the National Do Not Call Registry unless consent exists.
-
-3. **CFPB / FTC advertising compliance**  
-   - Do not promise specific dollar savings, guaranteed debt reduction, or instant credit repair.
-   - Disclose that debt settlement may negatively impact credit scores and that forgiven debt may be taxable.
-   - Do not advertise "government" or "official" debt relief programs.
-   - No upfront fees for consumers (providers must be fee-on-performance only).
-
-4. **Provider vetting**  
-   - Require proof of AFCC or IAPDA membership.
-   - Verify state licensing where required.
-   - Minimum BBB rating of B.
-   - Contractually prohibit upfront fees.
-   - Monitor consumer complaints and remove providers with material issues.
-
-5. **Data privacy**  
-   - Encrypt PII at rest and in transit.
-   - Only share consumer data with providers the consumer explicitly selects or consents to match with.
-   - Retain records per state requirements; allow consumer deletion requests.
-
-6. **No government-agency impression**  
-   - Avoid logos, seals, or language that implies government affiliation.
-   - Domain and brand name should signal private marketplace, not public program.
-
-### Risk register
-
-| Risk | Likelihood | Mitigation |
-|------|------------|------------|
-| Low provider demand early | Medium | Offer launch pricing; manually broker first deals; use affiliate networks as backup buyers. |
-| Lead quality complaints | Medium | Score leads before sale; vet providers; clear refund policy for rejected leads. |
-| Ad account bans (debt vertical) | Medium | Use compliant landing pages; avoid "guaranteed" claims; maintain backup ad accounts. |
-| TCPA litigation | Low–Medium | Double opt-in for phone; record consent; honor opt-outs; consult telemarketing counsel. |
-| Provider churn | Medium | Build recurring seat value through analytics + exclusive lead access; monthly check-ins. |
-| Organic SEO takes longer than expected | High | Run paid traffic in parallel; repurpose content for social; build backlinks aggressively. |
+| Integration | Status | Action needed |
+|-------------|--------|---------------|
+| CuraDebt | In Review | User: approve creative, install widget, exit TEST |
+| SmartCredit/PartnerHub | Link live | User: complete Stripe Connect KYC + sign contract |
+| FlexOffers | Blocked | User: submit email passcode |
+| Boberdoo/LeadsPedia/LeadProsper | Not configured | Sign up; set `LEADVENDOR_*` env |
+| Lead-vendor webhook | Partial | `LEADVENDOR_<NAME>_WEBHOOK_SECRET` + raw-body in main.ts |
+| MFSN credit data | Local verified | User: paste env to Render |
+| Resend | Partial | Confirm domain verified; production key |
+| Telnyx SMS | OTP works | Optional: `TELNYX_CONNECTION_ID/PUBLIC_KEY` for calls |
+| Stripe | Built | Verify prod webhooks |
+| NMI/AuthNet | Not boarded | High-risk MCC; only if direct processing needed later |
+| Social platform apps | Missing | User: create X/LinkedIn/FB apps, add secrets |
+| Google Search Console | Not verified | User: verify domain, submit sitemap |
 
 ---
 
-## Appendix: 15 Ready-to-Use Social Media Post Templates
+## 6. Compliance Guardrails (non-negotiable)
 
-Use these across Instagram, Facebook, TikTok, X/Twitter, and LinkedIn. Mix educational, empathetic, and calculator hooks. Always link to `/assessment` or a relevant calculator.
-
----
-
-### 1. The "overwhelmed" hook
-> Staring at $10k+ in credit card debt and feeling like you'll never catch up? You're not alone — and you're not out of options.  
-> **Take the free 2-minute assessment to see your real relief options.**  
-> 👉 [Link in bio]
-
-### 2. The credit-score myth
-> "Debt settlement will destroy your credit forever."  
-> Not always true. In some cases, settling can be the first step toward rebuilding.  
-> **See what debt relief actually looks like for *you*.**  
-> 👉 Free assessment — link in bio.
-
-### 3. The calculator hook
-> 💡 If you have $15,000 in credit card debt at 24% APR, you could pay over $20k just staying on the minimum-payment treadmill.  
-> **Run the numbers with our free Debt Settlement Calculator.**  
-> 👉 Link in bio.
-
-### 4. The "not a loan" angle
-> No loan. No credit check. Just a clear comparison of debt relief options from vetted providers.  
-> **2 minutes. Free. No spam.**  
-> 👉 Start at link in bio.
-
-### 5. Empathy + community
-> Debt doesn't make you a failure. It makes you human.  
-> If you're ready to stop hiding from the bills, we're here to help you map a path forward.  
-> **Free, judgment-free assessment → link in bio.**
-
-### 6. Side-by-side comparison
-> Debt settlement. Debt consolidation. DIY negotiation. Bankruptcy.  
-> Which one saves you the most money *and* fits your life?  
-> **Compare your options in 2 minutes.**  
-> 👉 Link in bio.
-
-### 7. The "what they don't tell you" hook
-> Some debt relief companies charge 20%+ of your enrolled debt. Others don't.  
-> **We show you the real fees side by side before you ever talk to anyone.**  
-> Start free → link in bio.
-
-### 8. The success-story tease
-> "I thought I'd be in debt forever. Then I saw my options laid out clearly for the first time." — Settle user  
-> **Your turn. Free assessment → link in bio.**
-
-### 9. The "government" myth-buster
-> There is no "government debt forgiveness program" that wipes out credit cards.  
-> But there *are* real, legal ways to reduce what you owe.  
-> **See your options (no myths, no hidden fees) → link in bio.**
-
-### 10. Short-form video script (Reels/TikTok)
-> [Hook text on screen] "POV: You finally check how much interest you're paying on your credit cards"  
-> [Voiceover] "If minimum payments feel endless, you have options. Our free calculator shows what debt settlement, consolidation, or DIY could look like for you."  
-> **Link in bio → try the calculator.**
-
-### 11. The "do it yourself" hook
-> Want to negotiate your own debt settlement?  
-> **Download our free DIY Negotiation Script.**  
-> It includes the exact words to say to your creditor.  
-> 👉 Link in bio.
-
-### 12. The partnership / workplace angle
-> Financial stress is the #1 distraction at work.  
-> If your company offers financial wellness benefits, ask them to add Settle.  
-> **DM us "WORKPLACE" for a free partnership kit.**
-
-### 13. The "one number" hook
-> Your debt-to-income ratio is one number that decides almost every relief option you qualify for.  
-> **Find out yours in 30 seconds.**  
-> 👉 Free DTI calculator — link in bio.
-
-### 14. The testimonial-style post
-> "I was skeptical, but seeing all my options in one place made the decision easier. Within minutes I knew which path was right for me."  
-> **Ready to see your options? Free assessment → link in bio.**
-
-### 15. The direct CTA
-> Tired of debt stress?  
-> 1. Click the link in bio.  
-> 2. Answer 6 quick questions.  
-> 3. See your personalized debt relief options.  
-> **No spam. No pressure. Free.**
+1. **Affiliate/referral disclosure** on every page footer + assessment results: *"Settle may receive referral compensation from vetted providers. We are not a government agency."*
+2. **TCPA**: express written consent before sharing phone numbers; timestamp + language on `Lead` record; opt-outs honored <24h.
+3. **CFPB/FTC**: no promised dollar savings, no guaranteed reduction, no "government/official" programs, disclose credit-score + tax impacts, no upfront consumer fees.
+4. **Provider vetting**: AFCC/IAPDA membership, state license where required, BBB ≥ B, contractual no-upfront-fees.
+5. **Data privacy**: share PII only with consumer-selected/consented providers; deletion requests honored.
+6. **No direct settlement** until licensed — we are a marketplace, not a provider.
 
 ---
 
-## How to use this plan
+## 7. Blocked on user (the honest list)
 
-1. **Print or pin this document** in your team workspace.  
-2. **Assign owners** to every item in the 30-day calendar.  
-3. **Run the weekly metrics ritual** religiously.  
-4. **Update assumptions** (CPL, lead payout, conversion rates) with real data after 30 days and reforecast the path to $16k.  
-5. **Do not begin Phase 4 direct settlement** until legal counsel confirms licensing and bonding are complete.
-
-**Next review date:** 30 days from today.
+| # | Action | Unlocks |
+|---|--------|---------|
+| 1 | Render dashboard: raise build-pipeline minutes | All settle-api deploys |
+| 2 | Render dashboard: verify repo connection post-org-rename | Deploys |
+| 3 | Render env: AI + MFSN vars (from `settle-api/.env`) | AI features, credit data |
+| 4 | FlexOffers: submit the 6-digit email passcode | Freedom Debt Relief + thousands of merchants |
+| 5 | SmartCredit: complete Stripe Connect KYC (phone/DOB/SSN/bank) + sign contract | Live $-per-lead payouts |
+| 6 | CuraDebt: confirm creative approval, then we install widget | First real PPL revenue |
+| 7 | Create X + LinkedIn + FB developer apps → secrets | Daily social distribution |
+| 8 | Verify domain in Google Search Console → submit sitemap | Indexation of 51 state pages |
