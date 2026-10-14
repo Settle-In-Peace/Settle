@@ -39,6 +39,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Recently landed
 
+- 2026-10-21 devin — **eligibility checker DEPLOYED** to Cloudflare (worker `52f56a3c`, token was in repo-root `.env.cloudflare`, not settle-web/). Live-verified: `/tools/eligibility-checker` 200, sitemap includes it.
+
 - 2026-10-21 devin-tools `cd8016d` — **debt relief eligibility checker** at `/tools/eligibility-checker` (Phase-2 asset from 16K plan). 6-question client wizard → ranked options (settlement / DMP / bankruptcy consult / DIY) with honest fit+watch-out framing, state-aware SOL note via `content/states.ts`, email capture stored in localStorage (`settle_eligibility_capture` — no newsletter endpoint exists; `/leads/assessment` requires name/phone/TCPA so it wasn't appropriate for email-only capture) handing off to `/debt-relief/[state]` + `/assessment`. Sitemap + footer + hub links; FAQPage+WebApplication JSON-LD. Verified: `pnpm build` clean — route is `○ (Static)`, local `next start` 200. **NOT deployed** — needs `cd settle-web && pnpm cf:build && pnpm cf:deploy`; no `CLOUDFLARE_API_TOKEN` in `settle-web/.env.cloudflare` on this machine.
 - 2026-10-21 devin `3c5b4d5` — **$16K plan refreshed**: verified live state, bootstrap-only execution, phase gates, real pricing, KPI scorecard, blockers list in `docs/16K_MONTHLY_GROWTH_PLAN.md`.
 
