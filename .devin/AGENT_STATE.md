@@ -39,6 +39,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 ## Recently landed
 
 
+
+- 2026-10-20 devin `ba6bb66`+`8514fdc` — **51 state debt-relief guides live + SSG-404 root cause.** `/debt-relief/[state]` (all 50 states + DC) + `/debt-relief` hub: per-state SOL table, community-property callouts (9 states), FAQ JSON-LD, state AG/CFPB/211/NFCC resource links, assessment CTAs, ItemList JSON-LD, footer+sitemap entries. **Found while verifying: every SSG dynamic route 404'd live** — `incrementalCache:'dummy'` in open-next.config can't serve prerendered children, and `dynamicParams=false` made it a hard 404 instead of on-demand render (all `/learn/*` articles were 404 too). Dropped `dynamicParams=false` in both routes → renders on demand. Verified live: /debt-relief/texas 200, /learn/* 200, bogus slugs still 404, sitemap 75 urls.
 - 2026-10-20 devin `9bb9a1d` — **SEO plumbing + fail-loud social.** `sitemap.ts` + `robots.ts` (settleinpeace.com/sitemap.xml was 404) and `feed.xml/route.ts` RSS over learn articles — social-daily `FEED_URL` 404 now resolved after next `cf:deploy`. `social_poster.py` exits 2 + `::error` annotation when due items post to 0 platforms (was green-with-zero-posts); empty queue warns. Deployed + verified live: sitemap 200 (23 urls), robots 200, feed.xml 200. Remaining: platform secrets (only blocker to real posts).
 - 2026-10-13 devin-sec — **RLS lockdown (Supabase security advisory).** Enabled `ROW LEVEL SECURITY` on all public-schema tables lacking it (no policies added = deny-all for anon/authenticated PostgREST; backends unaffected — they connect as `postgres`/service_role which bypass RLS). spatial_ref_sys (PostGIS, Prime) is owner-locked — dismiss that finding in the dashboard.
 
