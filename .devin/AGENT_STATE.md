@@ -38,6 +38,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Recently landed
 
+- 2026-10-21 devin `3c5b4d5` — **$16K plan refreshed**: verified live state, bootstrap-only execution, phase gates, real pricing, KPI scorecard, blockers list in `docs/16K_MONTHLY_GROWTH_PLAN.md`.
+
 
 
 - 2026-10-20 devin `ba6bb66`+`8514fdc` — **51 state debt-relief guides live + SSG-404 root cause.** `/debt-relief/[state]` (all 50 states + DC) + `/debt-relief` hub: per-state SOL table, community-property callouts (9 states), FAQ JSON-LD, state AG/CFPB/211/NFCC resource links, assessment CTAs, ItemList JSON-LD, footer+sitemap entries. **Found while verifying: every SSG dynamic route 404'd live** — `incrementalCache:'dummy'` in open-next.config can't serve prerendered children, and `dynamicParams=false` made it a hard 404 instead of on-demand render (all `/learn/*` articles were 404 too). Dropped `dynamicParams=false` in both routes → renders on demand. Verified live: /debt-relief/texas 200, /learn/* 200, bogus slugs still 404, sitemap 75 urls.
