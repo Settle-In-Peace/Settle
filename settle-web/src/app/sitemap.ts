@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/debt-relief', priority: 0.8 },
     { path: '/compare', priority: 0.8 },
     { path: '/calculators', priority: 0.8 },
+    { path: '/tools/eligibility-checker', priority: 0.8 },
     { path: '/providers', priority: 0.7 },
     { path: '/coaching', priority: 0.7 },
     { path: '/questions', priority: 0.7 },

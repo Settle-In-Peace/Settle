@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-tools | debt relief eligibility checker tool | settle-web/src/app/tools/**, sitemap.ts, Footer.tsx, debt-relief/page.tsx |
 
 
 

@@ -31,6 +31,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-zinc-400">
               <li><Link href="/assessment" className="hover:text-white transition-colors">Free Assessment</Link></li>
               <li><Link href="/calculators" className="hover:text-white transition-colors">Debt Calculators</Link></li>
+              <li><Link href="/tools/eligibility-checker" className="hover:text-white transition-colors">Eligibility Checker</Link></li>
               <li><Link href="/coaching" className="hover:text-white transition-colors">Financial Coaching</Link></li>
               <li><Link href="/compare" className="hover:text-white transition-colors">Compare Providers</Link></li>
               <li><Link href="/debt-relief" className="hover:text-white transition-colors">Debt Relief by State</Link></li>

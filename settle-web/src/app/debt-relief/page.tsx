@@ -59,7 +59,7 @@ export default function DebtReliefHub() {
           ))}
         </div>
 
-        <div className="rounded-2xl bg-blue-600 p-6 sm:p-8 text-white">
+        <div className="rounded-2xl bg-blue-600 p-6 sm:p-8 text-white mb-6">
           <h2 className="text-xl font-bold mb-2">Not sure which path fits?</h2>
           <p className="text-blue-100 mb-5">
             The free assessment compares settlement, consolidation, negotiation and counseling
@@ -70,6 +70,23 @@ export default function DebtReliefHub() {
             className="inline-block rounded-xl bg-white px-6 py-3 font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
           >
             Start the free assessment
+          </Link>
+        </div>
+
+        <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-6 sm:p-8">
+          <h2 className="text-xl font-bold text-black dark:text-white mb-2">
+            Prefer a quick preview first?
+          </h2>
+          <p className="text-zinc-600 dark:text-zinc-400 mb-5">
+            The eligibility checker ranks which relief options may fit your situation in six
+            questions — with honest tradeoffs and notes for your state. Free, no signup, runs in
+            your browser.
+          </p>
+          <Link
+            href="/tools/eligibility-checker"
+            className="inline-block rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            Check your options →
           </Link>
         </div>
       </div>
