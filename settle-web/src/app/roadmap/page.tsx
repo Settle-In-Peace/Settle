@@ -80,7 +80,7 @@ export default function RoadmapPage() {
           Vote on the ideas that matter to you — or suggest one with the Feedback button.
         </p>
         <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-8">
-          Looking for help settling an estate?{' '}
+          Have a question about debt relief?{' '}
           <Link href="/questions" className="text-blue-600 hover:underline">
             Ask a question anonymously →
           </Link>

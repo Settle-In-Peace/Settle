@@ -31,7 +31,7 @@ export default function QuestionsPage() {
 
   // Ask-anonymously form
   const [body, setBody] = useState('');
-  const [category, setCategory] = useState<QaCategory>('probate');
+  const [category, setCategory] = useState<QaCategory>('debts');
   const [contactEmail, setContactEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [asked, setAsked] = useState(false);
@@ -78,7 +78,7 @@ export default function QuestionsPage() {
           ← Back to home
         </Link>
         <h1 className="text-4xl font-black text-black dark:text-white mb-2">
-          Questions about settling an estate
+          Questions about settling debt
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 mb-8">
           Anonymous. Your question is public; your identity is not.
@@ -99,7 +99,7 @@ export default function QuestionsPage() {
             onChange={e => setBody(e.target.value)}
             rows={4}
             maxLength={2000}
-            placeholder="e.g. My mother passed away with credit card debt — am I responsible for paying it?"
+            placeholder="e.g. Is debt settlement better than a debt management plan for $20k of credit card debt?"
             required
             className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
