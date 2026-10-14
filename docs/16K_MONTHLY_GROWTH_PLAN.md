@@ -99,7 +99,7 @@ To produce 80–130 qualified leads/month organically:
 | 1.1 | **CuraDebt**: get creative approved → install widget on approved pages → exit TEST mode; request API key + funnel_ids (user action) |
 | 1.2 | **SmartCredit**: complete Stripe Connect onboarding (user DOB/SSN/bank) → sign partnership contract → activate `?PID=57216` link on money pages |
 | 1.3 | **FlexOffers**: user submits the 6-digit email passcode → apply Freedom Debt Relief ($14.40/lead) + top-5 debt merchants |
-| 1.4 | Server postback receiver for affiliate conversions (`/api/affiliates/postback`) so payouts reconcile — currently no endpoint |
+| 1.4 | ✅ Server postback receiver landed (`65b881e`): `GET/POST /affiliates/postback` (token or HMAC auth), `affiliate_conversions` table + admin list/summary. Remaining: set `AFFILIATE_<NAME>_POSTBACK_SECRET` env vars and hand each network its postback URL; add path to `isRawBodyWebhookRoute` in main.ts for byte-exact HMAC (token mode works today) |
 | 1.5 | Affiliate disclosure in footer + assessment results page (compliance gate, §7) |
 | 1.6 | Verify Stripe webhooks fire in prod for coaching subs + seat billing |
 

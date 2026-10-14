@@ -15,7 +15,6 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
-| devin-settle-audit | live audit + AI/automation feature (affiliate postback receiver per 16K §1.4) | NEW files only (settle-api/src/affiliates/**, migrations, docs) + AGENT_STATE.md; avoiding files w/ uncommitted changes (main.ts, ai.controller.ts, matching, providers, telnyx) |
 
 
 
@@ -40,6 +39,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Recently landed
 
+- 2026-10-14 devin-settle-audit `65b881e` + `58b0ea6` — **affiliate postback receiver + stale-copy fix.** New `settle-api/src/affiliates/**`: `GET/POST /affiliates/postback` (per-network `AFFILIATE_<NAME>_POSTBACK_SECRET` or shared `AFFILIATE_POSTBACK_SECRET`; static-token auth for GET/form postbacks, HMAC-SHA256 `X-Affiliate-Signature` for JSON POSTs; 503 fail-closed when unconfigured; dedupe on (network, transaction_id) partial-unique; raw payload preserved), admin `GET /affiliates/conversions[/summary]` + `PATCH :id` (JWT+Admin). `affiliate_conversions` migration 0038 **applied to prod DB**. Env documented in `.env.example`. Closes 16K §1.4. **Verified locally** (live DB): valid postback 200 + dedupe, bad token/sig 401, admin route 401 unauth, 8 jest specs pass, `nest build` clean. **NOT live yet** — `api.settleinpeace.com` runs on `Obduls-MBP.lan` pm2 (unreachable from this box); needs `git pull` + restart there. Follow-up for whoever lands main.ts next: add `path.startsWith('/affiliates/postback')` to `isRawBodyWebhookRoute` for byte-exact HMAC on POST bodies (token auth + JSON re-serialized HMAC already work without it). Also `58b0ea6`: /questions + /roadmap copy re-framed estate→debt-relief (leftover from pivot); **DEPLOYED** worker `aa7c757b`, live-verified titles/H1.
 - 2026-10-21 devin — **eligibility checker DEPLOYED** to Cloudflare (worker `52f56a3c`, token was in repo-root `.env.cloudflare`, not settle-web/). Live-verified: `/tools/eligibility-checker` 200, sitemap includes it.
 
 - 2026-10-21 devin-tools `cd8016d` — **debt relief eligibility checker** at `/tools/eligibility-checker` (Phase-2 asset from 16K plan). 6-question client wizard → ranked options (settlement / DMP / bankruptcy consult / DIY) with honest fit+watch-out framing, state-aware SOL note via `content/states.ts`, email capture stored in localStorage (`settle_eligibility_capture` — no newsletter endpoint exists; `/leads/assessment` requires name/phone/TCPA so it wasn't appropriate for email-only capture) handing off to `/debt-relief/[state]` + `/assessment`. Sitemap + footer + hub links; FAQPage+WebApplication JSON-LD. Verified: `pnpm build` clean — route is `○ (Static)`, local `next start` 200. **NOT deployed** — needs `cd settle-web && pnpm cf:build && pnpm cf:deploy`; no `CLOUDFLARE_API_TOKEN` in `settle-web/.env.cloudflare` on this machine.
