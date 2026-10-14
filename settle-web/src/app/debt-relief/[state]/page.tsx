@@ -7,7 +7,6 @@ export function generateStaticParams() {
   return getAllStateSlugs().map((state) => ({ state }));
 }
 
-export const dynamicParams = false;
 
 type Props = { params: Promise<{ state: string }> };
 
