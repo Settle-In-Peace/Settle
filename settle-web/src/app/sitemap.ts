@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllArticles } from '../content/articles';
+import { STATES } from '../content/states';
 
 const BASE = 'https://settleinpeace.com';
 
@@ -9,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/assessment', priority: 0.9 },
     { path: '/register', priority: 0.9 },
     { path: '/learn', priority: 0.8 },
+    { path: '/debt-relief', priority: 0.8 },
     { path: '/compare', priority: 0.8 },
     { path: '/calculators', priority: 0.8 },
     { path: '/providers', priority: 0.7 },
@@ -30,5 +32,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...articleRoutes];
+  const stateRoutes: MetadataRoute.Sitemap = STATES.map((s) => ({
+    url: `${BASE}/debt-relief/${s.slug}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...articleRoutes, ...stateRoutes];
 }
