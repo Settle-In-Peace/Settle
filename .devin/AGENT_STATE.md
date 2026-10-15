@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-engage | debt snapshot calculator + 7-day email nurture | `settle-api/src/nurture/` (new), `src/entities/nurture-subscriber.entity.ts` (new), `email.service.ts` (add generic send), migration `1700000000039`, `app.module.ts`/`data-source.ts`/`run-migration.ts` registrations, `settle-web/src/app/debt-snapshot/` (new), `Navigation.tsx` one link |
 
 
 

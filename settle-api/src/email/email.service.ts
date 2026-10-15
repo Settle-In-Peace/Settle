@@ -30,6 +30,30 @@ export class EmailService {
     }
   }
 
+  /** Generic sender for transactional/program email (nurture, digests). */
+  async sendEmail(toEmail: string, subject: string, html: string): Promise<boolean> {
+    if (!this.resend) {
+      this.logger.log(`[DEV EMAIL] To: ${toEmail} | Subject: ${subject}`);
+      return true;
+    }
+    try {
+      const { error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: toEmail,
+        subject,
+        html,
+      });
+      if (error) {
+        this.logger.error(`Failed to send email to ${toEmail}: ${error.message}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      this.logger.error(`Email send error: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
   async sendOtpEmail(toEmail: string, code: string, firstName?: string): Promise<boolean> {
     const subject = 'Your Settle In Peace verification code';
     const html = this.renderOtpTemplate(code, firstName);

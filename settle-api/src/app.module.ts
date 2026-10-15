@@ -83,6 +83,7 @@ import { PaymentProcessorsModule } from './payment-processors/payment-processors
 import { FeedbackModule } from './feedback/feedback.module';
 import { QuestionsModule } from './questions/questions.module';
 import { AffiliatesModule } from './affiliates/affiliates.module';
+import { NurtureModule } from './nurture/nurture.module';
 
 @Module({
   imports: [
@@ -243,6 +244,7 @@ import { AffiliatesModule } from './affiliates/affiliates.module';
     FeedbackModule,
     QuestionsModule,
     AffiliatesModule,
+    NurtureModule,
   ],
   controllers: [AppController],
   providers: [

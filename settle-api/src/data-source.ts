@@ -30,6 +30,7 @@ import { FeatureRequestVote } from './feedback/feature-request-vote.entity';
 import { QaQuestion } from './questions/qa-question.entity';
 import { QaAnswer } from './questions/qa-answer.entity';
 import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
+import { NurtureSubscriber } from './entities/nurture-subscriber.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -72,6 +73,7 @@ export const dataSource = new DataSource({
     QaQuestion,
     QaAnswer,
     AffiliateConversion,
+    NurtureSubscriber,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
