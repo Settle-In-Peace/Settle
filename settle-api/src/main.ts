@@ -14,14 +14,27 @@ async function bootstrap() {
   // Helmet middleware for security headers
   app.use(helmet());
 
-  // Raw body parser for Stripe webhook route (signature verification requires the raw body)
-  app.use(
-    ['/stripe/webhook', '/api/v1/stripe/webhook'],
-    raw({ type: '*/*', limit: '2mb' }),
-  );
+  // Webhook routes that need the raw body for signature verification.
+  // req.path excludes the query string, so these matches are robust.
+  const isRawBodyWebhookRoute = (path: string) =>
+    path === '/stripe/webhook' ||
+    path === '/api/v1/stripe/webhook' ||
+    path.startsWith('/telnyx/webhooks') ||
+    path.startsWith('/lead-vendors/import/webhook') ||
+    path.startsWith('/payment-processors/webhooks') ||
+    path.startsWith('/affiliates/postback');
+
+  // Raw body parser for webhook routes (signature verification requires the raw body)
+  app.use((req, res, next) => {
+    if (isRawBodyWebhookRoute(req.path)) {
+      raw({ type: '*/*', limit: '2mb' })(req, res, next);
+    } else {
+      next();
+    }
+  });
   // JSON body parser for all other routes (1MB limit)
   app.use((req, res, next) => {
-    if (req.url === '/stripe/webhook' || req.url === '/api/v1/stripe/webhook') {
+    if (isRawBodyWebhookRoute(req.path)) {
       // Preserve rawBody for signature verification
       req.rawBody = req.body;
       next();
@@ -31,7 +44,7 @@ async function bootstrap() {
   });
   // URL-encoded body parser (1MB limit) for non-webhook routes
   app.use((req, res, next) => {
-    if (req.url === '/stripe/webhook' || req.url === '/api/v1/stripe/webhook') {
+    if (isRawBodyWebhookRoute(req.path)) {
       next();
     } else {
       urlencoded({ limit: '1mb', extended: true })(req, res, next);
