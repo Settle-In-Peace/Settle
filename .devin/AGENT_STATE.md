@@ -15,7 +15,6 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
-| devin-engage | debt snapshot calculator + 7-day email nurture | `settle-api/src/nurture/` (new), `src/entities/nurture-subscriber.entity.ts` (new), `email.service.ts` (add generic send), migration `1700000000039`, `app.module.ts`/`data-source.ts`/`run-migration.ts` registrations, `settle-web/src/app/debt-snapshot/` (new), `Navigation.tsx` one link |
 
 
 
@@ -39,6 +38,8 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 - **Lead vendor credentials**: no real vendor accounts yet. To enable a vendor (boberdoo / LeadsPedia / LeadProsper / etc.), set `LEADVENDOR_NAMES=<name>` plus `LEADVENDOR_<NAME>_PING_URL`/`_POST_URL`/`_ORDER_URL`/`_KEY` (auth style via `_AUTH`, wire format via `_FORMAT`) on settle-api — see `.env.example`. For inbound delivery, set `LEADVENDOR_<NAME>_WEBHOOK_SECRET` and point the vendor at `POST /lead-vendors/import/webhook?vendor=<name>` with `X-Lead-Vendor-Signature` (HMAC-SHA256 of raw body). Until configured, `/lead-vendors` shows "not configured" and purchase returns 503.
 
 ## Recently landed
+
+- devin-engage `45acc0a` — **Debt snapshot + nurture LIVE.** `nurture_subscribers` table (snapshot jsonb, dayIndex/nextSendAt, unsubscribe token, consent IP/UA); `POST /nurture/subscribe` throttled + `GET /nurture/unsubscribe`; 7-email sequence via Resend (`EmailService.sendEmail`), 15-min `setInterval` sweep (billing pattern, no new dep); `/debt-snapshot` page = multi-debt editor → payoff-vs-settlement side-by-side → email capture. Verified: migration applied on prod, endpoints live+401/400-validating, page 200 on workers.dev + settleinpeace.com. NOTE: devin-settle had uncommitted audit work in tree — left untouched.
 
 - 2026-10-15 devin `b4f3e42` + **DEPLOYED** (worker `baee821b`) — **174 city-level debt-relief pages live.** New `content/cities.ts` (174 US cities → state slugs) + SSG route `/debt-relief/[state]/[city]` mirroring the state template: unique H1/meta/keywords, FAQ JSON-LD, /assessment CTA, sibling-city chips, breadcrumb to state. State pages now link their city guides; sitemap grew 51→225 debt-relief URLs. Verified live: `/debt-relief/{texas/houston,california/los-angeles,florida/miami}` all 200, sitemap 225. SEO play: captures "debt relief in <city>" long-tail feeding the assessment funnel. DEPLOY NOTE: `pnpm cf:deploy` alone deploys STALE `.open-next` — must `node node_modules/@opennextjs/cloudflare/dist/cli/index.js build` first (cf:build's opennext step can die silently on lock/timeouts; check `.open-next/worker.js` exists before deploy; stale `.next/lock` blocks rebuilds — kill zombie `cli/index.js build` procs + rm lock).
 
