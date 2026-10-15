@@ -17,6 +17,39 @@ interface UserProfile {
   createdAt?: string;
 }
 
+interface DebtProgress {
+  summary: {
+    totalDebt: number;
+    totalOriginal: number;
+    totalSaved: number;
+    percentPaidDown: number;
+    debtCount: number;
+    settledCount: number;
+    nextMilestonePct: number | null;
+  };
+  program: {
+    status: string;
+    totalEnrolledDebt: number;
+    totalSettledAmount: number;
+    totalSavedAmount: number;
+    monthlyProgramPayment: number;
+    programLengthMonths: number;
+    monthNumber: number | null;
+    expectedCompletionDate?: string;
+    accountsEnrolled: number;
+    accountsSettled: number;
+    percentSettled: number;
+  } | null;
+  accounts: {
+    id: string;
+    name: string;
+    status: string;
+    balance: number;
+    originalBalance: number;
+    percentPaid: number;
+  }[];
+}
+
 // Non-customer roles belong on their own dashboards — mirrors redirectByRole in login
 function dashboardForRole(role?: string): string | null {
   if (role === 'provider') return '/portal';
@@ -41,8 +74,17 @@ function getUserFromToken(): any | null {
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [progress, setProgress] = useState<DebtProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    const apiCall = getAuthenticatedApi();
+    apiCall<DebtProgress>('/debts/progress', { method: 'GET' })
+      .then(setProgress)
+      .catch(() => setProgress(null));
+  }, [user]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !isAuthenticated()) {
@@ -233,6 +275,123 @@ export default function DashboardPage() {
               </a>
             </div>
           </div>
+        </div>
+
+        {/* Payoff progress — the retention surface: debt shrinking over time */}
+        <div className="mt-8 bg-white dark:bg-zinc-900 rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-black dark:text-white">Your Progress</h2>
+            {progress?.summary.nextMilestonePct ? (
+              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                Next milestone: {progress.summary.nextMilestonePct}% paid down
+              </span>
+            ) : null}
+          </div>
+
+          {!progress ? (
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+              Track your debts to see live progress.{' '}
+              <a href="/debts" className="text-blue-600 dark:text-blue-400">Add your debts →</a>
+              {' '}or{' '}
+              <a href="/debt-snapshot" className="text-blue-600 dark:text-blue-400">run a free snapshot</a>.
+            </p>
+          ) : progress.summary.debtCount === 0 && !progress.program ? (
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+              No debts tracked yet —{' '}
+              <a href="/debts" className="text-blue-600 dark:text-blue-400">add your first account</a>
+              {' '}and watch this bar move.
+            </p>
+          ) : (
+            <div className="space-y-5">
+              {progress.program ? (
+                <div className="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-black dark:text-white">
+                      Settlement program — {progress.program.percentSettled}% settled
+                    </span>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                      {progress.program.monthNumber != null && progress.program.programLengthMonths
+                        ? `Month ${progress.program.monthNumber} of ${progress.program.programLengthMonths}`
+                        : progress.program.status}
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-800">
+                    <div
+                      className="h-2.5 rounded-full bg-blue-600"
+                      style={{ width: `${progress.program.percentSettled}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <span>
+                      ${progress.program.totalSettledAmount.toLocaleString()} settled of ${progress.program.totalEnrolledDebt.toLocaleString()}
+                    </span>
+                    <span>
+                      {progress.program.accountsSettled}/{progress.program.accountsEnrolled} accounts resolved
+                    </span>
+                    {progress.program.totalSavedAmount > 0 ? (
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        ${progress.program.totalSavedAmount.toLocaleString()} saved
+                      </span>
+                    ) : null}
+                    {progress.program.expectedCompletionDate ? (
+                      <span>
+                        Est. completion {new Date(progress.program.expectedCompletionDate).toLocaleDateString()}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {progress.summary.debtCount > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-black dark:text-white">
+                      Overall — {progress.summary.percentPaidDown}% paid down
+                    </span>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                      {progress.summary.settledCount} of {progress.summary.debtCount} accounts settled
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-800">
+                    <div
+                      className="h-2.5 rounded-full bg-emerald-500"
+                      style={{ width: `${progress.summary.percentPaidDown}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                    ${progress.summary.totalDebt.toLocaleString()} remaining of ${progress.summary.totalOriginal.toLocaleString()} original
+                    {progress.summary.totalSaved > 0 ? ` · $${progress.summary.totalSaved.toLocaleString()} eliminated` : ''}
+                  </p>
+
+                  {progress.accounts.length > 0 ? (
+                    <div className="mt-4 space-y-2">
+                      {progress.accounts.slice(0, 5).map((a) => (
+                        <div key={a.id} className="flex items-center gap-3">
+                          <span className="w-32 truncate text-xs text-zinc-600 dark:text-zinc-400">
+                            {a.name}
+                          </span>
+                          <div className="h-1.5 flex-1 rounded-full bg-zinc-200 dark:bg-zinc-800">
+                            <div
+                              className={`h-1.5 rounded-full ${a.status === 'settled' ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                              style={{ width: `${a.percentPaid}%` }}
+                            />
+                          </div>
+                          <span className="w-20 text-right text-xs text-zinc-600 dark:text-zinc-400">
+                            {a.status === 'settled' ? '✓ settled' : `${a.percentPaid}%`}
+                          </span>
+                        </div>
+                      ))}
+                      {progress.accounts.length > 5 ? (
+                        <a href="/debts" className="block text-xs text-blue-600 dark:text-blue-400">
+                          View all {progress.accounts.length} accounts →
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* Recent Activity Section */}

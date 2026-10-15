@@ -28,6 +28,15 @@ export class DebtsController {
     return this.debtsService.getDebtSummary(req.user.sub);
   }
 
+  /**
+   * Client-facing payoff progress — debts rollup + program enrollment
+   * (if the caller is enrolled) + per-account paydown + next milestone.
+   */
+  @Get('progress')
+  async getProgress(@Request() req) {
+    return this.debtsService.getProgress(req.user.sub);
+  }
+
   @Get(':id')
   async getDebtById(@Param('id') id: string, @Request() req) {
     return this.debtsService.getDebtById(id, req.user.sub);
