@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllArticles } from '../content/articles';
 import { STATES } from '../content/states';
+import { getAllCitySlugs } from '../content/cities';
 
 const BASE = 'https://settleinpeace.com';
 
@@ -39,5 +40,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...articleRoutes, ...stateRoutes];
+  const cityRoutes: MetadataRoute.Sitemap = getAllCitySlugs().map(({ state, city }) => ({
+    url: `${BASE}/debt-relief/${state}/${city}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  return [...staticRoutes, ...articleRoutes, ...stateRoutes, ...cityRoutes];
 }
