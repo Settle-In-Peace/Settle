@@ -31,6 +31,7 @@ import { QaQuestion } from './questions/qa-question.entity';
 import { QaAnswer } from './questions/qa-answer.entity';
 import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
 import { NurtureSubscriber } from './entities/nurture-subscriber.entity';
+import { ReviewAsk } from './entities/review-ask.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -74,6 +75,7 @@ export const dataSource = new DataSource({
     QaAnswer,
     AffiliateConversion,
     NurtureSubscriber,
+    ReviewAsk,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

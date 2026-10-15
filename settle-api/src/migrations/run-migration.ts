@@ -39,6 +39,7 @@ import { CreateFeedbackTables1700000000036 } from './1700000000036-CreateFeedbac
 import { CreateQuestionsTables1700000000037 } from './1700000000037-CreateQuestionsTables';
 import { CreateAffiliateConversions1700000000038 } from './1700000000038-CreateAffiliateConversions';
 import { CreateNurtureSubscribers1700000000039 } from './1700000000039-CreateNurtureSubscribers';
+import { CreateReviewAsks1700000000040 } from './1700000000040-CreateReviewAsks';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -82,6 +83,7 @@ const migrations: MigrationConstructor[] = [
   CreateQuestionsTables1700000000037,
   CreateAffiliateConversions1700000000038,
   CreateNurtureSubscribers1700000000039,
+  CreateReviewAsks1700000000040,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

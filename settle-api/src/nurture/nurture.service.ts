@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { EmailService } from '../email/email.service';
 import { DebtSnapshot, NurtureSubscriber } from '../entities/nurture-subscriber.entity';
+import { ReviewAsk } from '../entities/review-ask.entity';
+import { ClientEnrollment } from '../entities/client-enrollment.entity';
+import { User } from '../entities/user.entity';
 import {
   NURTURE_STEP_COUNT,
   NURTURE_STEP_INTERVAL_MS,
@@ -29,6 +32,12 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(NurtureSubscriber)
     private readonly subscribers: Repository<NurtureSubscriber>,
+    @InjectRepository(ReviewAsk)
+    private readonly reviewAsks: Repository<ReviewAsk>,
+    @InjectRepository(ClientEnrollment)
+    private readonly enrollments: Repository<ClientEnrollment>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
     private readonly email: EmailService,
   ) {}
 
@@ -36,9 +45,11 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
     // Same zero-dep scheduling pattern as BillingService — no @nestjs/schedule.
     this.timer = setInterval(() => {
       void this.sendDue().catch((e) => this.logger.error('Nurture sweep failed', e));
+      void this.sendReviewAsks().catch((e) => this.logger.error('Review-ask sweep failed', e));
     }, SWEEP_INTERVAL_MS);
     // First sweep shortly after boot so signups get day-0 promptly.
     setTimeout(() => void this.sendDue().catch(() => undefined), 30_000);
+    setTimeout(() => void this.sendReviewAsks().catch(() => undefined), 60_000);
   }
 
   onModuleDestroy() {
@@ -128,5 +139,61 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
       sub.nextSendAt = new Date(Date.now() + NURTURE_STEP_INTERVAL_MS);
     }
     await this.subscribers.save(sub);
+  }
+
+  /**
+   * Testimonial flywheel — when a program enrollment completes, the client
+   * is at peak goodwill. Ask once per enrollment (review_asks ledger) for
+   * a reply-with-your-story; replies land in the team inbox and feed
+   * site testimonials with permission.
+   */
+  async sendReviewAsks(): Promise<void> {
+    const completed = await this.enrollments
+      .createQueryBuilder('e')
+      .leftJoin(
+        'review_asks',
+        'ra',
+        'ra."enrollmentId"::text = e.id::text',
+      )
+      .where('e.status = :status', { status: 'completed' })
+      .andWhere('ra.id IS NULL')
+      .orderBy('e."updated_at"', 'DESC')
+      .take(20)
+      .getMany();
+
+    for (const enrollment of completed) {
+      const user = await this.users.findOne({ where: { id: enrollment.userId } });
+      if (!user?.email) continue;
+
+      const saved = Number(enrollment.totalSavedAmount || 0);
+      const firstName = user.firstName || 'there';
+      const subject = 'You did it — one ask before you go';
+      const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
+        <div style="max-width:520px;margin:0 auto;padding:32px 16px;background:#ffffff;border-radius:12px;">
+          <h1 style="font-size:20px;color:#0f172a;margin:0 0 12px;">Congratulations, ${firstName} — program complete.</h1>
+          <p style="font-size:14px;color:#334155;line-height:1.7;">
+            ${saved > 0 ? `You finished with <strong>$${saved.toLocaleString()}</strong> less debt than you started with. ` : 'You finished the program. '}
+            That's real — and honestly, it deserves a moment.
+          </p>
+          <p style="font-size:14px;color:#334155;line-height:1.7;">
+            If your experience was good, would you reply to this email with a sentence or two?
+            People sitting where you were — staring at statements, wondering if this works — read
+            those words. It takes 60 seconds and it genuinely helps the next person.
+          </p>
+          <p style="font-size:14px;color:#334155;line-height:1.7;">
+            And if anything fell short, reply and tell us that too — we'd rather hear it.
+          </p>
+          <p style="font-size:13px;color:#64748b;margin-top:24px;">— Obdul Reid, Settle In Peace</p>
+        </div>
+      </body></html>`;
+
+      const sent = await this.email.sendEmail(user.email, subject, html);
+      if (sent) {
+        await this.reviewAsks.save(
+          this.reviewAsks.create({ enrollmentId: enrollment.id }),
+        );
+        this.logger.log(`Review ask sent for enrollment ${enrollment.id}`);
+      }
+    }
   }
 }
