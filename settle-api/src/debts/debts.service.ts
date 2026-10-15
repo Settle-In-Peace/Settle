@@ -2,15 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Debt } from '../entities/debt.entity';
-import { ClientEnrollment } from '../entities/client-enrollment.entity';
 
 @Injectable()
 export class DebtsService {
   constructor(
     @InjectRepository(Debt)
     private debtsRepository: Repository<Debt>,
-    @InjectRepository(ClientEnrollment)
-    private enrollmentsRepository: Repository<ClientEnrollment>,
   ) {}
 
   async createDebt(userId: string, debtData: Partial<Debt>) {
@@ -110,17 +107,24 @@ export class DebtsService {
       };
     });
 
-    const enrollment = await this.enrollmentsRepository.findOne({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-    });
+    // Prod schema: client_enrollments links to a crm_clients row that holds
+    // the auth user_id — the ClientEnrollment entity maps a stale
+    // crm_enrollments table that was never migrated, so query raw.
+    const enrollmentRows = await this.debtsRepository.manager.query(
+      `SELECT e.* FROM client_enrollments e
+       JOIN crm_clients c ON c.id = e.client_id
+       WHERE c.user_id::text = $1
+       ORDER BY e.created_at DESC LIMIT 1`,
+      [userId],
+    ).catch(() => [] as Record<string, unknown>[]);
+    const enrollment = enrollmentRows[0] as Record<string, unknown> | undefined;
 
     let program: Record<string, unknown> | null = null;
     if (enrollment) {
-      const enrolled = Number(enrollment.totalEnrolledDebt || 0);
-      const settled = Number(enrollment.totalSettledAmount || 0);
-      const enrolledDate = enrollment.enrollmentDate
-        ? new Date(enrollment.enrollmentDate)
+      const enrolled = Number(enrollment.total_enrolled_debt || 0);
+      const settled = Number(enrollment.total_settled_amount || 0);
+      const enrolledDate = enrollment.enrollment_date
+        ? new Date(enrollment.enrollment_date as string)
         : null;
       const monthsIn = enrolledDate
         ? Math.max(
@@ -130,18 +134,25 @@ export class DebtsService {
             ) + 1,
           )
         : null;
+      const expectedCompletion =
+        enrolledDate && enrollment.program_length_months
+          ? new Date(
+              enrolledDate.getTime() +
+                Number(enrollment.program_length_months) * 30.44 * 86400_000,
+            )
+          : null;
       program = {
         status: enrollment.status,
-        programType: enrollment.programType,
         totalEnrolledDebt: enrolled,
         totalSettledAmount: settled,
-        totalSavedAmount: Number(enrollment.totalSavedAmount || 0),
-        monthlyProgramPayment: Number(enrollment.monthlyProgramPayment || 0),
-        programLengthMonths: enrollment.programLengthMonths,
+        totalSavedAmount: Number(enrollment.estimated_savings || 0),
+        monthlyProgramPayment: Number(enrollment.monthly_payment_amount || 0),
+        programLengthMonths: enrollment.program_length_months,
         monthNumber: monthsIn,
-        expectedCompletionDate: enrollment.expectedCompletionDate,
-        accountsEnrolled: enrollment.totalAccountsEnrolled,
-        accountsSettled: enrollment.totalAccountsSettled,
+        expectedCompletionDate: expectedCompletion,
+        graduationDate: enrollment.graduation_date,
+        accountsEnrolled: enrollment.total_accounts_enrolled,
+        accountsSettled: enrollment.total_accounts_settled,
         percentSettled:
           enrolled > 0
             ? Math.min(100, Math.round((settled / enrolled) * 100))

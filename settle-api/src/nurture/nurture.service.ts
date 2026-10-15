@@ -5,8 +5,6 @@ import { randomUUID } from 'crypto';
 import { EmailService } from '../email/email.service';
 import { DebtSnapshot, NurtureSubscriber } from '../entities/nurture-subscriber.entity';
 import { ReviewAsk } from '../entities/review-ask.entity';
-import { ClientEnrollment } from '../entities/client-enrollment.entity';
-import { User } from '../entities/user.entity';
 import {
   NURTURE_STEP_COUNT,
   NURTURE_STEP_INTERVAL_MS,
@@ -34,10 +32,6 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
     private readonly subscribers: Repository<NurtureSubscriber>,
     @InjectRepository(ReviewAsk)
     private readonly reviewAsks: Repository<ReviewAsk>,
-    @InjectRepository(ClientEnrollment)
-    private readonly enrollments: Repository<ClientEnrollment>,
-    @InjectRepository(User)
-    private readonly users: Repository<User>,
     private readonly email: EmailService,
   ) {}
 
@@ -49,7 +43,7 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
     }, SWEEP_INTERVAL_MS);
     // First sweep shortly after boot so signups get day-0 promptly.
     setTimeout(() => void this.sendDue().catch(() => undefined), 30_000);
-    setTimeout(() => void this.sendReviewAsks().catch(() => undefined), 60_000);
+    setTimeout(() => void this.sendReviewAsks().catch((e) => this.logger.error('Review-ask sweep failed', e)), 60_000);
   }
 
   onModuleDestroy() {
@@ -148,25 +142,29 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
    * site testimonials with permission.
    */
   async sendReviewAsks(): Promise<void> {
-    const completed = await this.enrollments
-      .createQueryBuilder('e')
-      .leftJoin(
-        'review_asks',
-        'ra',
-        'ra."enrollmentId"::text = e.id::text',
-      )
-      .where('e.status = :status', { status: 'completed' })
-      .andWhere('ra.id IS NULL')
-      .orderBy('e."updated_at"', 'DESC')
-      .take(20)
-      .getMany();
+    // Prod schema: client_enrollments → crm_clients (holds email/first_name).
+    // "Done" = graduated or completed status, or a set graduation_date.
+    const completed = (await this.reviewAsks.manager.query(
+      `SELECT e.id AS "enrollmentId", e.estimated_savings AS "savings",
+              c.email, c.first_name AS "firstName"
+       FROM client_enrollments e
+       JOIN crm_clients c ON c.id = e.client_id
+       LEFT JOIN review_asks ra ON ra."enrollmentId"::text = e.id::text
+       WHERE ra.id IS NULL
+         AND c.email IS NOT NULL
+         AND (e.graduation_date IS NOT NULL OR e.status IN ('completed', 'graduated'))
+       ORDER BY e.updated_at DESC
+       LIMIT 20`,
+    )) as {
+      enrollmentId: string;
+      savings: string | null;
+      email: string;
+      firstName: string | null;
+    }[];
 
     for (const enrollment of completed) {
-      const user = await this.users.findOne({ where: { id: enrollment.userId } });
-      if (!user?.email) continue;
-
-      const saved = Number(enrollment.totalSavedAmount || 0);
-      const firstName = user.firstName || 'there';
+      const saved = Number(enrollment.savings || 0);
+      const firstName = enrollment.firstName || 'there';
       const subject = 'You did it — one ask before you go';
       const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
         <div style="max-width:520px;margin:0 auto;padding:32px 16px;background:#ffffff;border-radius:12px;">
@@ -187,12 +185,12 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
         </div>
       </body></html>`;
 
-      const sent = await this.email.sendEmail(user.email, subject, html);
+      const sent = await this.email.sendEmail(enrollment.email, subject, html);
       if (sent) {
         await this.reviewAsks.save(
-          this.reviewAsks.create({ enrollmentId: enrollment.id }),
+          this.reviewAsks.create({ enrollmentId: enrollment.enrollmentId }),
         );
-        this.logger.log(`Review ask sent for enrollment ${enrollment.id}`);
+        this.logger.log(`Review ask sent for enrollment ${enrollment.enrollmentId}`);
       }
     }
   }
