@@ -49,6 +49,7 @@ export default function Navigation() {
       ]
     : [
         { href: '/assessment', label: 'Free Assessment' },
+        { href: '/debt-snapshot', label: 'Debt Snapshot' },
         { href: '/calculators', label: 'Calculators' },
         { href: '/compare', label: 'Compare Providers' },
         { href: '/providers', label: 'For Providers' },
