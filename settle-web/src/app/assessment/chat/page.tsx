@@ -162,6 +162,28 @@ export default function ChatAssessmentPage() {
       });
       if (!res.ok) throw new Error('Submission failed');
       const lead = await res.json();
+      // Mirror into the central LeadOps store — best-effort, never blocks UX.
+      void (data.email ? import('@/lib/leadCapture') : Promise.reject('no-email'))
+        .then(({ captureLead }) =>
+          captureLead({
+            email: data.email!,
+            name: `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim() || undefined,
+            phone: data.phone,
+            vertical: 'debt',
+            source_page: '/assessment/chat',
+            consent_text: TCPA_CONSENT_LANGUAGE,
+            meta: {
+              funnel: 'assessment-chat',
+              lead_id: lead.id,
+              settle_consent_version: CONSENT_PAGE_VERSION,
+              state: data.state,
+              total_debt: data.totalDebt,
+              months_behind: data.monthsBehind,
+              debt_types: data.debtTypes,
+            },
+          }),
+        )
+        .catch(() => undefined);
       router.push(`/compare?leadId=${lead.id}`);
     } catch {
       setError('Could not submit your assessment. Please use the standard form.');

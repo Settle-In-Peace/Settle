@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
 import Logo from '../../components/Logo';
 import { submitAssessment } from '@/lib/api';
+import { captureLead } from '@/lib/leadCapture';
 
 const STEPS = [
   { id: 'debt_amount', label: 'Debt Amount', icon: '$' },
@@ -111,6 +112,24 @@ export default function AssessmentPage() {
       });
       const returnedLeadId = String(response.id ?? (response.lead as { id?: string } | undefined)?.id ?? '');
       if (!returnedLeadId) throw new Error('Assessment was submitted but no lead ID was returned.');
+      // Mirror into the central LeadOps store — best-effort, never blocks UX.
+      void captureLead({
+        email: form.email,
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        phone: form.phone,
+        vertical: 'debt',
+        source_page: '/assessment',
+        consent_text: TCPA_CONSENT_LANGUAGE,
+        meta: {
+          funnel: 'assessment',
+          lead_id: returnedLeadId,
+          settle_consent_version: CONSENT_PAGE_VERSION,
+          state: form.state,
+          total_debt: form.totalDebt,
+          months_behind: form.monthsBehind,
+          debt_types: form.debtTypes,
+        },
+      }).catch(() => undefined);
       localStorage.setItem('last_assessment_lead_id', returnedLeadId);
       setLeadId(returnedLeadId);
       setSubmitted(true);
