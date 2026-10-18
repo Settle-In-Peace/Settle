@@ -2,7 +2,7 @@
 /**
  * Blog → social queue bridge.
  *
- * Fetches primetransit.com/feed.xml and appends any blog article not already
+ * Fetches settleinpeace.com/feed.xml and appends any blog article not already
  * in content_queue.json as a new queue entry, dated one-per-day after the
  * last queued entry. The existing social-daily workflow then posts them to
  * every configured platform and commits the updated queue.
@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const QUEUE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'content_queue.json');
-const FEED_URL = process.env.FEED_URL || 'https://primetransit.com/feed.xml';
+const FEED_URL = process.env.FEED_URL || 'https://settleinpeace.com/feed.xml';
 
 function parseFeed(xml) {
   const items = [];
