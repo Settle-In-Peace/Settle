@@ -21,7 +21,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Backlog — claimable work
 
-- **Social posting for Settle — infra landed, BLOCKED on accounts** — `tools/social/social_poster.py` synced to the Buffer-capable version (X via Buffer GraphQL, Bluesky/Mastodon/FB/etc direct) + `tools/social/env.example` enumerates every cred. **Human still needs to:** create the project's Buffer org + connect X channel (dashboard-only OAuth), generate the API key, then an agent fills `tools/social/.env` and wires the cron. Optional extras: Bluesky app password + Mastodon app are self-serve.
+- **Social posting for Settle — FULLY WIRED, blocked on one 30-second step** — Buffer token + org `6ad50d34b15361b8758c2877` stored in `tools/social/.env`; Buffer-capable `social_poster.py` synced; `scripts/settle-crons.sh` + `~/settle-deploy` clone + launchd `com.settle.cron-social-daily` (daily 9:00 local) installed; `blog_to_queue.mjs` → settleinpeace.com/feed.xml. **Remaining:** owner connects an X channel inside the settleinpeacenow Buffer org (Settings → Channels → Connect channel → X — 30s). Then cron auto-posts daily; `BUFFER_CHANNEL_IDS` stays empty.
 
 ## Blocked on user
 
