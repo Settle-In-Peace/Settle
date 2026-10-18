@@ -19,6 +19,10 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 
 
+## Backlog — claimable work
+
+- **Social posting for Settle — infra landed, BLOCKED on accounts** — `tools/social/social_poster.py` synced to the Buffer-capable version (X via Buffer GraphQL, Bluesky/Mastodon/FB/etc direct) + `tools/social/env.example` enumerates every cred. **Human still needs to:** create the project's Buffer org + connect X channel (dashboard-only OAuth), generate the API key, then an agent fills `tools/social/.env` and wires the cron. Optional extras: Bluesky app password + Mastodon app are self-serve.
+
 ## Blocked on user
 
 - **Render build pipeline out of minutes (2026-10-11)**: Render canceled a settle-api build — "workspace has run out of build pipeline minutes for the current billing period." **Upgrade the workspace plan or raise the build spend limit**: https://dashboard.render.com/w/tea-d4tnppn5r7bs73fg6oj0/settings#build-pipeline . All settle-api deploys (incl. MFSN rewrite `255bd78`/`3babf06`) are frozen until this clears. This is compounding the org-migration repo-link blocker below.
