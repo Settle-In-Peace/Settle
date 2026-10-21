@@ -121,7 +121,7 @@ export default function SettlementPage() {
             </div>
             <h1 className="text-3xl font-bold text-black dark:text-white mb-4">Debt Settlement Program</h1>
             <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-              You're not enrolled in a debt settlement program yet. Take the free assessment to get matched with a vetted provider who can help you negotiate and settle your debts for less than you owe.
+              You're not enrolled in a debt settlement program yet. Take the free assessment to get matched with a provider who can help you negotiate and settle your debts for less than you owe.
             </p>
           </div>
 
@@ -144,7 +144,7 @@ export default function SettlementPage() {
                 </div>
                 <h3 className="font-semibold text-black dark:text-white mb-2">Get Matched</h3>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  We match you with a vetted debt settlement provider based on your specific situation.
+                  We match you with a debt settlement provider based on your specific situation.
                 </p>
               </div>
               <div>

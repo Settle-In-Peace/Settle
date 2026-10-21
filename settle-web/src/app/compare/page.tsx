@@ -49,28 +49,28 @@ const STARS = (rating?: number) => {
 
 const VETTING_CRITERIA = [
   {
-    title: 'Transparent fees',
-    description: 'Providers must disclose setup costs, monthly fees, and success fees before enrollment. No hidden charges.',
+    title: 'Upfront fee disclosure',
+    description: 'Providers are asked to disclose setup costs, monthly fees, and success fees before you enroll.',
   },
   {
     title: 'AFCC / IAPDA membership',
-    description: 'We verify active membership with the American Fair Credit Council and IAPDA certifications.',
+    description: 'Provider profiles consider membership with the American Fair Credit Council and IAPDA certifications.',
   },
   {
-    title: 'BBB & verified ratings',
-    description: 'Ratings, complaint history, and verified consumer reviews are factored into every profile.',
+    title: 'BBB & consumer ratings',
+    description: 'Ratings, complaint history, and consumer reviews inform provider profiles.',
   },
   {
     title: 'State licensing',
-    description: 'Providers must hold the required state licenses, registrations, and surety bonds where they operate.',
+    description: 'Providers are asked to confirm required licenses, registrations, and surety bonds.',
   },
   {
-    title: 'Proven success metrics',
-    description: 'Average savings percentage, settlement timeline, and program completion rates are tracked and disclosed.',
+    title: 'Reported success metrics',
+    description: 'Providers are asked to share average savings, settlement timelines, and completion rates.',
   },
   {
     title: 'No bait-and-switch',
-    description: 'We audit marketing claims and compare them against real program terms and consumer outcomes.',
+    description: 'Marketing claims are reviewed against program terms and consumer outcomes.',
   },
 ];
 
@@ -173,7 +173,7 @@ function CompareContent() {
           <p className="text-zinc-500 dark:text-zinc-400 mt-3 text-lg max-w-2xl mx-auto">
             {isMatched
               ? "Based on your assessment, here are the providers most likely to help your situation — ranked by match score."
-              : 'Transparent fees, real ratings, and verified success rates — so you choose with confidence.'}
+              : 'Compare fees, ratings, and program details side by side — so you choose with confidence.'}
           </p>
         </div>
 
@@ -194,7 +194,7 @@ function CompareContent() {
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 md:p-12 text-white text-center shadow-xl">
               <h2 className="text-3xl md:text-4xl font-black mb-4">Our provider network is being built</h2>
               <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8">
-                We're onboarding vetted debt relief providers now. Take the free assessment to be first in line when side-by-side comparisons go live.
+                We're onboarding qualified debt relief providers now. Take the free assessment to be first in line when side-by-side comparisons go live.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -256,6 +256,16 @@ function CompareContent() {
                     >
                       {offer.cta} →
                     </a>
+                    {offer.providerLine && (
+                      <p className="mt-4 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+                        {offer.providerLine}
+                      </p>
+                    )}
+                    {offer.disclaimer && (
+                      <p className="mt-2 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+                        {offer.disclaimer}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -265,9 +275,9 @@ function CompareContent() {
             <div>
               <div className="text-center mb-8">
                 <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-2">What makes us different</p>
-                <h2 className="text-3xl font-black text-black dark:text-white">How we vet providers</h2>
+                <h2 className="text-3xl font-black text-black dark:text-white">How providers are evaluated</h2>
                 <p className="text-zinc-500 dark:text-zinc-400 mt-2 max-w-2xl mx-auto">
-                  Every provider on Settle In Peace is screened for transparency, licensing, and proven results.
+                  Provider profiles draw on fee disclosures, licensing, and reported results.
                 </p>
               </div>
 
@@ -289,7 +299,7 @@ function CompareContent() {
               <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">For consumers</h3>
                 <p className="text-zinc-500 dark:text-zinc-400 mb-4">
-                  Join early access. We'll match you with vetted providers as our network grows — no obligation, no credit check.
+                  Join early access. We'll match you with providers as our network grows — no obligation, no credit check.
                 </p>
                 <Link
                   href="/assessment"
@@ -302,7 +312,7 @@ function CompareContent() {
               <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">For debt relief providers</h3>
                 <p className="text-zinc-500 dark:text-zinc-400 mb-4">
-                  Access pre-qualified, intent-driven leads and get listed in a transparent comparison marketplace.
+                  Access intent-driven leads and get listed in an independent comparison marketplace.
                 </p>
                 <Link
                   href="/providers"

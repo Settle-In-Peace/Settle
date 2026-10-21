@@ -33,7 +33,7 @@ export default function Home() {
               </h1>
 
               <p className="text-xl text-blue-100 mb-8 max-w-lg leading-relaxed">
-                We're building the first marketplace for debt relief. Take the free assessment to join early access — we'll match you with vetted providers as our network grows.
+                We're building the first marketplace for debt relief. Take the free assessment to join early access — we'll match you with providers as our network grows.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -126,13 +126,13 @@ export default function Home() {
               {
                 icon: '⚖️',
                 title: 'True Side-by-Side Comparison',
-                desc: 'Once providers join, see multiple offers with transparent fees, average savings, timelines, and verified reviews — all in one place. No more calling 5 different companies.',
+                desc: 'Once providers join, see multiple offers with fees, average savings, timelines, and consumer reviews — all in one place. No more calling 5 different companies.',
                 badge: 'No one else does this',
               },
               {
                 icon: '🔍',
-                title: 'Radical Transparency',
-                desc: 'We show total cost including fees, tax implications on forgiven debt, and credit score impact upfront. No surprises after you sign.',
+                title: 'Full Cost Disclosure',
+                desc: 'Fees, tax implications on forgiven debt, and credit score impact are shown upfront when providers share them. No surprises after you sign.',
                 badge: 'What competitors hide',
               },
               {
@@ -169,7 +169,7 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { step: '1', icon: '📝', title: 'Take the assessment', desc: 'Answer 7 quick questions about your debt. No SSN, no credit check, no obligation.' },
-              { step: '2', icon: '🎯', title: 'Get matched', desc: 'Once providers join, we match your profile to vetted providers for your specific situation.' },
+              { step: '2', icon: '🎯', title: 'Get matched', desc: 'Once providers join, we match your profile to providers for your specific situation.' },
               { step: '3', icon: '⚖️', title: 'Compare offers', desc: 'Compare real fees, timelines, and savings side-by-side as providers come online.' },
               { step: '4', icon: '🕊️', title: 'Choose your path', desc: "Enroll with a provider when ready, or use our coaching tools while you wait." },
             ].map((item, idx) => (
@@ -213,14 +213,14 @@ export default function Home() {
               Compare real providers side by side
             </h2>
             <p className="text-lg text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">
-              Once our first vetted providers are live, you'll see transparent fees, verified ratings, and real timelines all in one place.
+              Once our first providers are live, you'll see fees, consumer ratings, and real timelines all in one place.
             </p>
           </div>
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-zinc-100 dark:border-zinc-800 p-12 text-center max-w-3xl mx-auto">
             <h3 className="text-xl font-bold text-black dark:text-white mb-3">Our provider network is being built</h3>
             <p className="text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto">
-              We're onboarding vetted debt relief providers. Check the{' '}
+              We're onboarding debt relief providers. Check the{' '}
               <Link href="/compare" className="text-blue-600 dark:text-blue-400 underline hover:text-blue-700">
                 marketplace page
               </Link>{' '}
@@ -376,23 +376,23 @@ export default function Home() {
               },
               {
                 q: 'How is this different from other debt relief sites?',
-                a: "Other sites send your info to one company. We show you multiple providers side-by-side with transparent fees, timelines, and success rates — so you choose instead of being sold to.",
+                a: "Other sites send your info to one company. We show you multiple providers side-by-side — fees, timelines, and success rates — so you choose instead of being sold to.",
               },
               {
                 q: 'You\'re a new company. Can I trust you?',
-                a: "Fair question. We're transparent about being new — no fake stats, no high-pressure sales, no hidden fees. We make money when providers pay us for qualified leads, and we disclose that openly.",
+                a: "Fair question. We're upfront about being new — no fake stats, no high-pressure sales, no hidden fees. We make money when providers pay us for leads, and we disclose that openly.",
               },
               {
                 q: 'Will this affect my credit score?',
-                a: 'Debt settlement can negatively impact your credit score short-term. Our providers are transparent about this upfront, and many clients see scores recover after becoming debt-free.',
+                a: 'Debt settlement can negatively impact your credit score short-term. Providers disclose this upfront, and many clients see scores recover after becoming debt-free.',
               },
               {
                 q: 'What if I don\'t qualify for debt settlement?',
                 a: "If your debt is under $7,500 or you don't qualify, we plan to offer a financial coaching subscription with budgeting tools, debt payoff calculators, and credit monitoring.",
               },
               {
-                q: 'Are the providers on your platform vetted?',
-                a: 'Every provider must have active state licensing, a BBB rating of B or above, and be a member of AFCC or IAPDA. We verify success rates and display them transparently.',
+                q: 'Are the providers on your platform screened?',
+                a: 'Providers are asked to confirm state licensing, BBB ratings, and AFCC or IAPDA membership. Reported success rates are shown on their profiles.',
               },
               {
                 q: 'How long does the process take?',

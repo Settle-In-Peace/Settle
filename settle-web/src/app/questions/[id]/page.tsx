@@ -139,7 +139,7 @@ export default function QuestionDetailPage({
                 <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-2">
                   {a.isOfficial ? (
                     <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
-                      ✓ {a.authorLabel} — verified answer
+                      ✓ {a.authorLabel} — team answer
                     </span>
                   ) : (
                     <span>{a.authorLabel}</span>

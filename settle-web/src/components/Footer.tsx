@@ -81,7 +81,7 @@ export default function Footer() {
         {/* Compliance disclaimer */}
         <div className="border-t border-zinc-800 pt-8 space-y-4 text-xs text-zinc-500 leading-relaxed">
           <p>
-            <strong className="text-zinc-400">Disclaimer:</strong> Settle In Peace is not a direct debt settlement provider. We are a marketplace that connects consumers with third-party debt relief companies. We receive compensation from partner providers, which may affect which providers are featured and their order. All fees, ratings, and statistics are disclosed transparently.
+            <strong className="text-zinc-400">Disclaimer:</strong> Settle In Peace is not a direct debt settlement provider. We are a marketplace that connects consumers with third-party debt relief companies. We receive compensation from partner providers, which may affect which providers are featured and their order.
           </p>
           <p>
             <strong className="text-zinc-400">Important:</strong> Debt settlement may negatively impact your credit score. Forgiven debt over $600 may be considered taxable income by the IRS. Results vary based on individual circumstances. Programs typically take 24-48 months. Not all clients complete their program. Not available in all states. Please consult a tax advisor regarding tax implications of debt settlement.

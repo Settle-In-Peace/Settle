@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Settle In Peace — Compare Debt Relief Providers Side-by-Side",
-  description: "The first marketplace for debt relief. Take a free 2-minute assessment, compare vetted providers with transparent fees, and choose your path to financial peace. No pressure, no obligation.",
+  description: "The first marketplace for debt relief. Take a free 2-minute assessment, compare providers and their fees side by side, and choose your path to financial peace. No pressure, no obligation.",
   other: {
     verification: "5d361ea9d4bcfd256e3ef091f845d5d2",
   },

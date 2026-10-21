@@ -43,7 +43,7 @@ export default function CalculatorsPage() {
             Want a personalized plan?
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-8">
-            Take the free 2-minute assessment and get matched with vetted debt relief providers.
+            Take the free 2-minute assessment and get matched with debt relief providers.
             No credit check, no obligation.
           </p>
           <Link

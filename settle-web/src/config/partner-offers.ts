@@ -14,6 +14,10 @@ export interface PartnerOffer {
   blurb: string;
   cta: string;
   url: string;
+  /** Required by the partner: identifies who actually provides the service. */
+  providerLine?: string;
+  /** Required by the partner: eligibility/terms disclaimer next to the widget. */
+  disclaimer?: string;
 }
 
 export const PARTNER_OFFERS: PartnerOffer[] = [
@@ -26,6 +30,10 @@ export const PARTNER_OFFERS: PartnerOffer[] = [
       'Free, no-obligation evaluation for consumers carrying $10,000+ in unsecured debt. Explore settlement options that may reduce what you owe.',
     cta: 'Explore Options',
     url: 'https://lp.curadebt.com/lp/see-debt-relief-options?utm_source=SETTLE&utm_medium=affiliate&utm_campaign=debt_ppl',
+    providerLine:
+      'Debt relief services are provided by CuraDebt Systems, LLC, a third-party company. Settle In Peace is a comparison marketplace — not a debt relief provider.',
+    disclaimer:
+      'CuraDebt works with unsecured debts such as credit cards, medical bills, and personal loans. Federal student loans, mortgages, auto loans, and other secured debts are not eligible. Not available in all states; eligibility and results vary. Debt settlement may negatively affect your credit score, and forgiven debt may be taxable. Fees are charged only on debts enrolled in and settled through the program.',
   },
   {
     id: 'community-tax',

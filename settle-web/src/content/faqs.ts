@@ -25,12 +25,12 @@ export const faqCategories: FAQCategory[] = [
       {
         question: 'What is Settle In Peace?',
         answer:
-          'Settle In Peace is a marketplace that connects consumers struggling with debt to vetted debt relief providers. We are not a debt settlement company ourselves — instead, we let you compare multiple providers side-by-side with transparent fees, timelines, and savings estimates so you can choose the right path with no pressure.',
+          'Settle In Peace is a marketplace that connects consumers struggling with debt to third-party debt relief providers. We are not a debt settlement company ourselves — instead, we let you compare multiple providers side-by-side — fees, timelines, and savings estimates — so you can choose the right path with no pressure.',
       },
       {
         question: 'Is Settle In Peace a debt settlement company?',
         answer:
-          'No. We are a marketplace and comparison platform, not a direct debt settlement provider. We connect you with third-party debt relief companies and help you compare their offers. We receive compensation from partner providers, which we disclose transparently.',
+          'No. We are a marketplace and comparison platform, not a direct debt settlement provider. We connect you with third-party debt relief companies and help you compare their offers. We receive compensation from partner providers, which we disclose openly.',
       },
       {
         question: 'Is the assessment really free?',
@@ -45,7 +45,7 @@ export const faqCategories: FAQCategory[] = [
       {
         question: 'Will using Settle In Peace affect my credit score?',
         answer:
-          'Simply using our site and taking the assessment does not affect your credit — we do not perform a credit check. However, the debt relief options we connect you to (particularly debt settlement) can impact your credit. We disclose the credit impact of every option transparently so you can decide with full information.',
+          'Simply using our site and taking the assessment does not affect your credit — we do not perform a credit check. However, the debt relief options we connect you to (particularly debt settlement) can impact your credit. The credit impact of each option is disclosed so you can decide with full information.',
       },
     ],
   },
@@ -159,7 +159,7 @@ export const faqCategories: FAQCategory[] = [
       {
         question: 'What happens after I complete the assessment?',
         answer:
-          'After you complete the free assessment, we match your profile with vetted debt relief providers licensed in your state. You can then compare their offers — fees, timelines, estimated savings — side by side. You choose whether and when to contact a provider. There is no obligation and no pressure.',
+          'After you complete the free assessment, we match your profile with debt relief providers serving your state. You can then compare their offers — fees, timelines, estimated savings — side by side. You choose whether and when to contact a provider. There is no obligation and no pressure.',
       },
       {
         question: 'How do I enroll with a debt relief provider?',
@@ -200,7 +200,7 @@ export const faqCategories: FAQCategory[] = [
       {
         question: 'Does Settle In Peace charge me anything?',
         answer:
-          'No. Using our marketplace and taking the assessment is completely free for consumers. We are compensated by our partner providers, not by you. We disclose this transparently. You never pay Settle In Peace anything.',
+          'No. Using our marketplace and taking the assessment is completely free for consumers. We are compensated by our partner providers, not by you. We disclose this openly. You never pay Settle In Peace anything.',
       },
       {
         question: 'Is it cheaper to settle debt myself?',

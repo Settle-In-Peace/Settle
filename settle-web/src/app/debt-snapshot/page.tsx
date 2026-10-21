@@ -44,7 +44,7 @@ export default function DebtSnapshotPage() {
             Ready to talk through your options?
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-8">
-            The free assessment matches you with vetted debt relief providers.
+            The free assessment matches you with debt relief providers.
             No credit check, no obligation.
           </p>
           <Link

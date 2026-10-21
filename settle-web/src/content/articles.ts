@@ -358,7 +358,7 @@ export const articles: Article[] = [
       },
       {
         type: 'p',
-        text: 'DIY debt settlement is not easy, but it can save you thousands in fees and put you in full control. If it feels overwhelming, our marketplace lets you compare professional debt relief providers who can handle it for you — transparently and with no obligation.',
+        text: 'DIY debt settlement is not easy, but it can save you thousands in fees and put you in full control. If it feels overwhelming, our marketplace lets you compare professional debt relief providers who can handle it for you — with no obligation.',
       },
     ],
   },
@@ -457,7 +457,7 @@ export const articles: Article[] = [
       { type: 'h2', text: 'The safe way to find debt relief' },
       {
         type: 'p',
-        text: 'The reason we built Settle In Peace is to make this easier. We vet providers, show you their fees and track record transparently, and let you compare them side by side — no pressure, no upfront costs, no robocalls. Take the free assessment to see your options from providers that meet our standards.',
+        text: 'The reason we built Settle In Peace is to make this easier. We list providers, show their fees and track record, and let you compare them side by side — no pressure, no upfront costs, no robocalls. Take the free assessment to see your options from providers that meet our standards.',
       },
     ],
   },

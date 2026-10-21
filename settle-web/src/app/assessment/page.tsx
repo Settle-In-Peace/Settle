@@ -19,7 +19,6 @@ const DEBT_TYPE_OPTIONS = [
   { value: 'credit_card', label: 'Credit Cards', icon: '💳' },
   { value: 'medical', label: 'Medical Bills', icon: '🏥' },
   { value: 'personal_loan', label: 'Personal Loans', icon: '🏦' },
-  { value: 'student_loan', label: 'Student Loans', icon: '🎓' },
   { value: 'business', label: 'Business Debt', icon: '💼' },
   { value: 'other', label: 'Other', icon: '📋' },
 ];
