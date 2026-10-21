@@ -56,3 +56,5 @@ next-env.d.ts
 
 # Command-center task attachments (synced, transient — never commit)
 .devin/attachments/
+.devin/OWNER_FLAGS.md
+.devin/OWNER_TASKS.md

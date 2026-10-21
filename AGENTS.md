@@ -27,7 +27,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Multi-Agent Coordination (mandatory)
 
 - **Before starting any task, read `.devin/AGENT_STATE.md`** — active claims, recent landings, blockers.
-- **Check `.devin/OWNER_FLAGS.md` + `.devin/OWNER_TASKS.md`** — the owner posts live issues and assigns tasks there from the command center (`opsbox`); treat new lines as priority work.
+- **Check `.devin/OWNER_FLAGS.md` + `.devin/OWNER_TASKS.md`** — the owner posts live issues and assigns tasks there from the command center (`opsbox`); treat new lines as priority work. FLAGS is read-only (sync overwrites — record actions in AGENT_STATE.md); for TASKS mark done lines `- [x]` so the sync reports completion.
 - **Human-blocked?** append one line to `.devin/NEEDS_HUMAN.md` (`- <date> | <blocked> | needs: <action> | ref:`) — the owner's command center surfaces these as an action inbox; completed items get `[x]` on sync.
 
 # Project Standardization
