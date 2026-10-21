@@ -24,6 +24,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Backend env var: `FIREBASE_SERVICE_ACCOUNT` (single-line service-account JSON)
 - Frontend env vars: `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`
 
+## Multi-Agent Coordination (mandatory)
+
+- **Before starting any task, read `.devin/AGENT_STATE.md`** — active claims, recent landings, blockers.
+- **Check `.devin/OWNER_FLAGS.md` + `.devin/OWNER_TASKS.md`** — the owner posts live issues and assigns tasks there from the command center (`opsbox`); treat new lines as priority work.
+- **Human-blocked?** append one line to `.devin/NEEDS_HUMAN.md` (`- <date> | <blocked> | needs: <action> | ref:`) — the owner's command center surfaces these as an action inbox; completed items get `[x]` on sync.
+
 # Project Standardization
 
 This project follows the standardization patterns defined in `docs/STANDARDIZATION_GUIDE.md` based on the Prime project architecture.
