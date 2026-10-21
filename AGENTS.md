@@ -149,3 +149,7 @@ pnpm run clean:mac-files
 ```
 
 The git hooks will automatically prevent them from being committed and clean them on every git operation.
+
+## Browser Automation (mandatory)
+
+- **Brave only — never Chrome/Chromium.** Playwright/Puppeteer must launch `executablePath: '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'` (no Chrome channel/Chrome-for-Testing). Clone the Brave profile to a temp dir for sessions; never use the live profile while Brave is running; delete clones after use.
