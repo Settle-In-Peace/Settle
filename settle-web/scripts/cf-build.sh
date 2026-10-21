@@ -16,7 +16,7 @@ find . -name '._*' -not -path './node_modules/*' -type f -delete 2>/dev/null || 
   sleep 2
 done ) &
 CLEANUP_PID=$!
-
+trap 'kill $CLEANUP_PID 2>/dev/null || true' EXIT
 # Step 1: Build the shared-sdk workspace dependency (must come before web build)
 echo "=== Step 1: Build @settle/shared-sdk ==="
 cd ..
