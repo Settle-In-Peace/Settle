@@ -53,3 +53,6 @@ next-env.d.ts
 
 # Self-healing error reports (generated)
 .errors/
+
+# Command-center task attachments (synced, transient — never commit)
+.devin/attachments/
