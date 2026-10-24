@@ -21,6 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/roadmap', priority: 0.5 },
     { path: '/disclosures', priority: 0.3 },
     { path: '/privacy', priority: 0.3 },
+    { path: '/privacy-app', priority: 0.3 },
+    { path: '/refund', priority: 0.3 },
     { path: '/terms', priority: 0.3 },
   ].map((r) => ({
     url: `${BASE}${r.path}`,
