@@ -32,14 +32,18 @@ async function bootstrap() {
       next();
     }
   });
-  // JSON body parser for all other routes (1MB limit)
+  // Routes that legitimately carry large JSON payloads — /esign/sign ships
+  // a fully rendered signed PDF as base64 (up to ~11MB for an 8MB artifact).
+  const isLargeBodyRoute = (path: string) => path.startsWith('/esign');
+
+  // JSON body parser for all other routes (1MB limit, 15MB for large-body routes)
   app.use((req, res, next) => {
     if (isRawBodyWebhookRoute(req.path)) {
       // Preserve rawBody for signature verification
       req.rawBody = req.body;
       next();
     } else {
-      json({ limit: '1mb' })(req, res, next);
+      json({ limit: isLargeBodyRoute(req.path) ? '15mb' : '1mb' })(req, res, next);
     }
   });
   // URL-encoded body parser (1MB limit) for non-webhook routes

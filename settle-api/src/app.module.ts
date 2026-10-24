@@ -56,6 +56,7 @@ import { FeatureRequestVote } from './feedback/feature-request-vote.entity';
 import { QaQuestion } from './questions/qa-question.entity';
 import { QaAnswer } from './questions/qa-answer.entity';
 import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
+import { EsignSignature } from './entities/esign-signature.entity';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { DebtsModule } from './debts/debts.module';
@@ -84,6 +85,7 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { QuestionsModule } from './questions/questions.module';
 import { AffiliatesModule } from './affiliates/affiliates.module';
 import { NurtureModule } from './nurture/nurture.module';
+import { EsignModule } from './esign/esign.module';
 
 @Module({
   imports: [
@@ -157,6 +159,7 @@ import { NurtureModule } from './nurture/nurture.module';
         QaQuestion,
         QaAnswer,
         AffiliateConversion,
+        EsignSignature,
       ],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
@@ -216,6 +219,7 @@ import { NurtureModule } from './nurture/nurture.module';
       QaQuestion,
       QaAnswer,
       AffiliateConversion,
+      EsignSignature,
     ]),
     AuthModule,
     ActivitiesModule,
@@ -245,6 +249,7 @@ import { NurtureModule } from './nurture/nurture.module';
     QuestionsModule,
     AffiliatesModule,
     NurtureModule,
+    EsignModule,
   ],
   controllers: [AppController],
   providers: [

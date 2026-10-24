@@ -32,6 +32,7 @@ import { QaAnswer } from './questions/qa-answer.entity';
 import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
 import { NurtureSubscriber } from './entities/nurture-subscriber.entity';
 import { ReviewAsk } from './entities/review-ask.entity';
+import { EsignSignature } from './entities/esign-signature.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -76,6 +77,7 @@ export const dataSource = new DataSource({
     AffiliateConversion,
     NurtureSubscriber,
     ReviewAsk,
+    EsignSignature,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

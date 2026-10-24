@@ -3,9 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthenticatedApi } from '../../lib/api';
+import { getAuthenticatedApi, getEsignSignatures, fetchSignedPdfObjectUrl, EsignSignatureRecord } from '../../lib/api';
 import { getStoredUser, isAuthenticated } from '../../lib/authUtils';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
+import ESignModal from '../../components/esign/ESignModal';
+
+interface PortalDocument {
+  id: string;
+  documentType: string;
+  title: string;
+  fileUrl: string;
+  fileName?: string;
+  status: string;
+  createdAt: string;
+}
 
 interface Enrollment {
   id: string;
@@ -54,7 +65,25 @@ export default function SettlementPage() {
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [trustAccount, setTrustAccount] = useState<TrustAccount | null>(null);
+  const [documents, setDocuments] = useState<PortalDocument[]>([]);
+  const [signatures, setSignatures] = useState<Record<string, EsignSignatureRecord[]>>({});
+  const [signDoc, setSignDoc] = useState<PortalDocument | null>(null);
+  const [signerName, setSignerName] = useState('');
   const [error, setError] = useState('');
+
+  const loadSignatures = async () => {
+    try {
+      const data = await getEsignSignatures();
+      const map: Record<string, EsignSignatureRecord[]> = {};
+      for (const s of data.signatures || []) {
+        if (!s.documentId) continue;
+        (map[s.documentId] ||= []).push(s);
+      }
+      setSignatures(map);
+    } catch {
+      // Signature metadata is decorative — never block the portal.
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !isAuthenticated()) {
@@ -62,6 +91,7 @@ export default function SettlementPage() {
       return;
     }
     fetchPortalData();
+    loadSignatures();
   }, [router]);
 
   const fetchPortalData = async () => {
@@ -70,6 +100,9 @@ export default function SettlementPage() {
       router.push('/login');
       return;
     }
+    setSignerName(
+      `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || '',
+    );
 
     try {
       const apiCall = getAuthenticatedApi();
@@ -88,6 +121,9 @@ export default function SettlementPage() {
         }
         if (overview?.trustAccount) {
           setTrustAccount(overview.trustAccount);
+        }
+        if (overview?.documents) {
+          setDocuments(overview.documents);
         }
       } catch {
         // No enrollment found — show educational CTA page
@@ -359,10 +395,90 @@ export default function SettlementPage() {
           )}
         </div>
 
+        {/* Documents */}
+        {documents.length > 0 && (
+          <div className="mt-8 bg-white dark:bg-zinc-900 rounded-lg shadow-md p-6">
+            <h2 className="text-lg font-semibold mb-4 text-black dark:text-white">Documents</h2>
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {documents.map((d) => {
+                const sigs = signatures[d.id] || [];
+                const latest = sigs[0];
+                return (
+                  <div key={d.id} className="py-3 flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-medium text-black dark:text-white truncate" title={d.title}>
+                        {d.title}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
+                        {d.documentType?.replace(/_/g, ' ') || 'document'}
+                        {latest ? ` · signed ${formatDate(latest.signedAt)}` : ` · ${d.status}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      {latest && (
+                        <>
+                          <span
+                            className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            title={`Signed ${new Date(latest.signedAt).toLocaleString()}`}
+                          >
+                            Signed{sigs.length > 1 ? ` ×${sigs.length}` : ''}
+                          </span>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const url = await fetchSignedPdfObjectUrl(latest.id);
+                                window.open(url, '_blank', 'noopener');
+                              } catch {
+                                setError('Could not download signed document');
+                              }
+                            }}
+                            className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                          >
+                            Signed PDF
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => setSignDoc(d)}
+                        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                      >
+                        {latest ? 'Sign again' : 'Sign'}
+                      </button>
+                      {d.fileUrl && (
+                        <a
+                          href={d.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                        >
+                          Open
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-8">
           <ComplianceDisclosure />
         </div>
       </div>
+
+      {signDoc && (
+        <ESignModal
+          open
+          onClose={() => setSignDoc(null)}
+          documentTitle={signDoc.title}
+          documentId={signDoc.id}
+          documentRef={signDoc.fileUrl}
+          signerName={signerName}
+          clientId={getStoredUser()?.id}
+          onSigned={() => loadSignatures()}
+        />
+      )}
     </div>
   );
 }

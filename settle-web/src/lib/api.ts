@@ -672,3 +672,71 @@ export function checkCollectionAiCompliance(payload: {
     body: JSON.stringify(payload),
   });
 }
+
+// ── E-signature (self-hosted capture + audit trail) ─────────────────────
+// The browser calls settle-api directly, so the API sees the real client
+// IP/UA — no Next.js proxy hop needed (unlike Prime's proxied version).
+function esignApi() { return authenticatedApi(getToken() ?? ''); }
+
+export interface EsignSignatureRecord {
+  id: string;
+  clientId?: string | null;
+  documentId?: string | null;
+  documentTitle: string;
+  documentRef?: string | null;
+  signerName: string;
+  signatureMethod: 'drawn' | 'typed';
+  documentSha256: string;
+  signedPdfSha256: string;
+  auditSha256: string;
+  signedAt: string;
+  createdAt: string;
+}
+
+export interface EsignSignPayload {
+  documentTitle: string;
+  documentId?: string;
+  documentRef?: string;
+  documentText?: string;
+  signerName: string;
+  signatureMethod: 'drawn' | 'typed';
+  /** base64 / data-URL of the rendered signed PDF. */
+  signedPdfBase64: string;
+  clientId?: string;
+  clientSignedAt?: string;
+}
+
+export function esignSign(payload: EsignSignPayload) {
+  return esignApi()<{ success: boolean; signature: EsignSignatureRecord; downloadUrl: string | null }>(
+    '/esign/sign',
+    { method: 'POST', body: JSON.stringify(payload) },
+  );
+}
+
+export function getEsignSignatures(filter?: { documentId?: string; clientId?: string }) {
+  const params = new URLSearchParams();
+  if (filter?.documentId) params.set('documentId', filter.documentId);
+  if (filter?.clientId) params.set('clientId', filter.clientId);
+  const qs = params.toString();
+  return esignApi()<{ signatures: EsignSignatureRecord[] }>(`/esign/signatures${qs ? `?${qs}` : ''}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Fetch a signed PDF and return a browser object URL. The JSON client can't
+ * handle binary responses, so this does a direct authenticated fetch; the
+ * caller is responsible for revoking the URL.
+ */
+export async function fetchSignedPdfObjectUrl(signatureId: string): Promise<string> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/esign/signatures/${encodeURIComponent(signatureId)}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message || 'Could not download signed document');
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}

@@ -15,6 +15,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
+| devin-esign | port e-signature feature from Prime — DONE (uncommitted in tree, no commit per scope) | settle-api: src/esign/, entities/esign-signature.entity.ts, migrations/1700000000041, app.module.ts, data-source.ts, main.ts · settle-web: src/components/esign/, src/lib/api.ts, src/app/settlement/page.tsx |
 
 
 
