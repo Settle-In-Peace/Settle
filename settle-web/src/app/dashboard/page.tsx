@@ -71,10 +71,18 @@ function getUserFromToken(): any | null {
   }
 }
 
+interface Activity {
+  id: string;
+  type: string;
+  description?: string;
+  createdAt: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [progress, setProgress] = useState<DebtProgress | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -84,6 +92,9 @@ export default function DashboardPage() {
     apiCall<DebtProgress>('/debts/progress', { method: 'GET' })
       .then(setProgress)
       .catch(() => setProgress(null));
+    apiCall<Activity[]>('/activities', { method: 'GET' })
+      .then((items) => setActivities(Array.isArray(items) ? items : []))
+      .catch(() => setActivities([]));
   }, [user]);
 
   useEffect(() => {
@@ -394,12 +405,33 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Recent Activity Section */}
+        {/* Recent Activity Section — backed by GET /activities (auth events
+            are recorded server-side: login, register, profile_update, etc.) */}
         <div className="mt-8 bg-white dark:bg-zinc-900 rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold mb-4 text-black dark:text-white">Recent Activity</h2>
-          <div className="text-zinc-600 dark:text-zinc-400">
-            <p>No recent activity to display.</p>
-          </div>
+          {activities.length === 0 ? (
+            <div className="text-zinc-600 dark:text-zinc-400">
+              <p>No recent activity to display.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {activities.map((activity) => (
+                <li key={activity.id} className="py-3 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-black dark:text-white capitalize">
+                      {activity.type.replace(/_/g, ' ')}
+                    </p>
+                    {activity.description && (
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">{activity.description}</p>
+                    )}
+                  </div>
+                  <time className="text-xs text-zinc-400 whitespace-nowrap" dateTime={activity.createdAt}>
+                    {new Date(activity.createdAt).toLocaleString()}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Compliance disclosures */}

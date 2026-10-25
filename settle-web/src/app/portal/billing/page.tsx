@@ -186,10 +186,18 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Billing history placeholder */}
+        {/* Billing history — Stripe-hosted receipts/invoices live in the
+            billing portal above; a credit-transaction ledger endpoint does
+            not exist yet, so don't claim "no transactions" here. */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-black dark:text-white mb-4">Billing History</h3>
-          <p className="text-sm text-zinc-500">No transactions yet. Your billing history will appear here once you make a purchase.</p>
+          <p className="text-sm text-zinc-500">
+            Receipts and invoices for credit purchases and seat subscriptions are available in
+            Stripe's billing portal (use "Manage in Stripe" above). Need a ledger of credit
+            purchases? Email{' '}
+            <a href="mailto:help@settleinpeace.com" className="text-blue-600 dark:text-blue-400 hover:underline">help@settleinpeace.com</a>{' '}
+            and we'll send a summary.
+          </p>
         </div>
       </div>
     </div>

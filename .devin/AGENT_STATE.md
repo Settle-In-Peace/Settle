@@ -12,6 +12,14 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Active
 
+| devin-ops-audit | **Ops-health audit — IN PROGRESS (audit only, NO code changes).** Cron/scheduler inventory across APIs (outreach, nurture, review-asks, deal ingest, digests), legacy-Render still-running risk vs same prod DBs, GH workflow files check, opsbox pm2 jlist check, NEEDS_HUMAN rollup. | repo-wide read-only + `.devin/AGENT_STATE.md` |
+
+| devin-payments-audit | **Payments/revenue-path audit — IN PROGRESS.** ack flag 4b1a777a9c7e. Coaching $19/mo Stripe Checkout → webhook grant; is cancel actually wired (refund page drafted by legal-docs); subscription.deleted→access loss; failed-payment handling; idempotency; test-key leaks. Read-heavy; commits only clear-cut bugs. Will NOT touch esign files (devin-esign uncommitted work). | `settle-api/src/{payments,billing,stripe,subscriptions,coaching}/**`, `settle-web` checkout/billing surfaces, `.devin/AGENT_STATE.md` |
+
+| devin-perf-audit | **Perf + mobile-responsiveness audit — IN PROGRESS.** Static analysis of settle-web: client-bloat ('use client' pages/layout wrappers), bundle signals (missing dynamic imports for heavy deps), next/image vs raw img, mobile CSS hazards (fixed widths >400px, tap targets <44px, input font-size <16px → iOS zoom), font loading, fetch-in-loop/pagination. Committing ONLY safe fixes (input font-size, obvious overflow, hero next/image swaps) via path-limited commit — no refactors; rest reported. Will NOT touch settle-web esign/settlement page (devin-esign's uncommitted work). | `settle-web/**` (read-mostly + small safe edits), `.devin/AGENT_STATE.md` |
+
+| devin-sec-audit | **Security audit — IN PROGRESS.** Secrets scan, auth-guard gaps/IDOR, injection, webhook sig verification, rate limiting, CORS, file-upload validation. Read-heavy; will commit only clear-cut CRITICAL fixes via scripts/agent-commit.sh or path-limited commit. | repo-wide `*-api/**`, web route handlers (read-mostly), `.devin/AGENT_STATE.md` |
+
 | Agent | Task | Files/areas |
 |---|---|---|
 | devin-settle | full audit + P0/P1 fixes | whole repo |
@@ -19,7 +27,9 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 | devin-legal-audit | legal-protection audit — DONE, no edits needed, UNCOMMITTED state untouched | Settle is the most compliant site: /terms + /privacy + /disclosures (incl. FTC TSR section), ComplianceDisclosure on all funnel pages, footer has TSR/TCPA/state-licensing/affiliate/CFPB disclaimers + copyright. No third-party trackers detected → no cookie banner needed. FLAGGED (owner): no refund/cancellation policy despite $19/mo coaching subscription via Stripe Checkout — terms have zero subscription/cancel language; needs a consumer cancellation+refund statement (attorney/policy decision). | — (no settle-web files changed) |
 | devin-legal-docs | legal doc pages — DONE, UNCOMMITTED (no commit per scope). Drafted `/privacy-app` (mobile app privacy — sensitive debt-assessment data handling, consent-only provider sharing + TCPA, withdrawal, deletion) + `/refund` (fills audit's flag: coaching subscription cancel-anytime/end-of-period, non-refundable except billing error/unauthorized/legal-required/discretion, provider agreements explicitly separate per TSR) + sitemap. Existing /disclosures is comprehensive (not-a-law-firm, no-guarantees, state notices, TSR, TCPA) — untouched. tsc --noEmit clean. FLAGGED (attorney): debt-relief marketing is state-licensing-sensitive — disclaimers should get counsel sign-off before any paid-traffic push; refund page assumes billing-settings cancel exists — verify UI. | settle-web: src/app/{privacy-app,refund}/, src/app/sitemap.ts, .devin/AGENT_STATE.md |
 | devin-funnel-audit | revenue-activation funnel+lead+SEO audit — ack flag 4b1a777a9c7e — DONE, landed `43cd492` + PROD DB hotfixed | see Recently landed |
+| devin-feature-audit | MISSING/INCOMPLETE feature audit — DONE — report `docs/FEATURE_AUDIT_2026-10.md`, fixes committed, new NEEDS_HUMAN lines for orphaned payment-portal/deposit-intake/DNC | settle-web dashboard+portal/billing fixes; settle-api untouched |
 | devin-social | daily social-posting GH workflow hardening — DONE — ack flag 4b1a777a9c7e | .github/workflows/social-daily.yml, tools/social/{social_poster.py,blog_to_queue.mjs,content_queue.json}, .devin/{AGENT_STATE,NEEDS_HUMAN}.md |
+| devin-mobile-settle | **App-store submission prep — IN PROGRESS.** app.json production config (bundle ids, version, splash, FaceID), eas.json build/submit profiles, API base-URL fix (localhost default), delete-account UI (Apple 5.1.1(v)/Play), privacy/data-safety docs, EAS/ASC/Play credential gaps. Will NOT touch settle-api/settle-web uncommitted work. | `settle-mobile/**`, `pnpm-lock.yaml`, `.devin/{AGENT_STATE,NEEDS_HUMAN}.md` |
 
 
 
