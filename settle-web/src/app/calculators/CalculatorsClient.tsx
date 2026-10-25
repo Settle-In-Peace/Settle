@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -400,6 +401,22 @@ export default function CalculatorsClient() {
               </div>
             )}
           </Card>
+        </div>
+
+        {/* Conversion CTA — these pages get organic traffic but previously
+            dead-ended with no path into the funnel. */}
+        <div className="mt-10 rounded-2xl bg-blue-600 p-6 sm:p-8 text-white text-center">
+          <h2 className="text-xl font-bold mb-2">See which relief options fit your numbers</h2>
+          <p className="text-blue-100 mb-5 max-w-xl mx-auto">
+            Take the free 2-minute assessment and get matched with debt relief providers
+            based on your real debt, state, and income.
+          </p>
+          <Link
+            href="/assessment"
+            className="inline-block rounded-xl bg-white px-6 py-3 font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+          >
+            Start the free assessment
+          </Link>
         </div>
 
         <p className="mt-8 text-xs text-center text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">

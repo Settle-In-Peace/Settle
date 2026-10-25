@@ -20,6 +20,8 @@ export default function BillingPage() {
   const [stats, setStats] = useState<any>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState('');
 
   useEffect(() => {
     const token = getStoredToken();
@@ -142,6 +144,47 @@ export default function BillingPage() {
             <p className="text-xs text-zinc-400 mt-3 text-center">Secure payment powered by Stripe</p>
           </div>
         )}
+
+        {/* Manage subscription — Stripe customer portal (seat plans, payment
+            methods, invoices, cancellation). */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-black dark:text-white">Subscription & Payment Methods</h3>
+              <p className="text-sm text-zinc-500 mt-1">
+                Manage your marketplace seat plan, saved cards, invoices, or cancel a subscription in Stripe's secure portal.
+              </p>
+              {portalError && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{portalError}</p>}
+            </div>
+            <button
+              onClick={async () => {
+                setPortalLoading(true);
+                setPortalError('');
+                try {
+                  const token = getStoredToken();
+                  const res = await fetch(`${API_URL}/stripe/billing-portal`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
+                  } else {
+                    setPortalError(data.message || 'No billing account found yet.');
+                    setPortalLoading(false);
+                  }
+                } catch {
+                  setPortalError('Something went wrong. Please try again.');
+                  setPortalLoading(false);
+                }
+              }}
+              disabled={portalLoading}
+              className="px-5 py-2.5 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-xl font-bold hover:bg-blue-50 dark:hover:bg-blue-950 disabled:opacity-40 flex-shrink-0"
+            >
+              {portalLoading ? 'Opening…' : 'Manage in Stripe →'}
+            </button>
+          </div>
+        </div>
 
         {/* Billing history placeholder */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6">

@@ -247,9 +247,16 @@ export class StripeService {
     const userId = user.id;
     if (!userId) throw new BadRequestException('Authenticated user ID is required');
 
+    // Attach a real Stripe customer (persisted on the user row) instead of
+    // customer_email — otherwise the billing-portal session can never find a
+    // customer and subscribers could not manage/cancel their subscription.
+    const dbUser =
+      (await this.usersRepository.findOne({ where: { id: userId } })) ?? user;
+    const customerId = await this.ensureUserCustomer(dbUser);
+
     return this.stripe.checkout.sessions.create({
       mode: 'subscription',
-      customer_email: user.email,
+      customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${returnUrl}/portal/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl}/portal/billing/cancel`,
@@ -297,7 +304,17 @@ export class StripeService {
   async createCoachingBillingPortalSession(userId: string): Promise<Stripe.BillingPortal.Session> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    const customerId = user.stripeCustomerId;
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      // Subscribers who checked out via the old customer_email path never got
+      // a stored customer id — recover it from Stripe by email so they can
+      // still reach the billing portal to cancel/manage.
+      const found = await this.stripe.customers.list({ email: user.email, limit: 1 });
+      customerId = found.data[0]?.id;
+      if (customerId) {
+        await this.usersRepository.update(user.id, { stripeCustomerId: customerId });
+      }
+    }
     if (!customerId) {
       throw new BadRequestException('No billing account found. Please start a subscription first.');
     }
@@ -443,6 +460,9 @@ export class StripeService {
           coachingSubscriptionStatus: status,
           coachingCurrentPeriodEnd: currentPeriodEnd,
           coachingCancelAtPeriodEnd: (subscription as any).cancel_at_period_end ?? false,
+          // Persist the Stripe customer id so the billing portal works even
+          // for sessions created before customer attachment was added.
+          ...(typeof session.customer === 'string' ? { stripeCustomerId: session.customer } : {}),
         });
         await this.upsertCoachingSubscription(userId, subscriptionId, status, new Date());
         this.logger.log(`User ${userId} subscribed to coaching`);

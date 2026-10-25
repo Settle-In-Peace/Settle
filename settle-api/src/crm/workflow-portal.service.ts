@@ -62,6 +62,21 @@ export class WorkflowPortalService {
     private readonly taskRepository: Repository<CrmTask>,
   ) {}
 
+  /** Fetch a CRM client by id — used by portal access checks. */
+  async getClient(clientId: string): Promise<CrmClient | null> {
+    return this.clientRepository.findOne({ where: { id: clientId } });
+  }
+
+  /** Resolve the CRM client belonging to a user account (portal self-access). */
+  async findClientByUserId(userId: string): Promise<CrmClient | null> {
+    return this.clientRepository.findOne({ where: { userId } });
+  }
+
+  /** Fallback: resolve a CRM client by verified account email (leads captured before signup). */
+  async findClientByEmail(email: string): Promise<CrmClient | null> {
+    return this.clientRepository.findOne({ where: { email } });
+  }
+
   // ===========================================================================
   // WORKFLOW ENGINE
   // ===========================================================================

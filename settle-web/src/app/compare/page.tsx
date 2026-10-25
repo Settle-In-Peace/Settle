@@ -133,7 +133,7 @@ function CompareContent() {
     setRequesting(providerId);
     setActionError('');
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
+      const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
       const res = await fetch(`${base}/matching/request-contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -41,6 +41,8 @@ import { CreateAffiliateConversions1700000000038 } from './1700000000038-CreateA
 import { CreateNurtureSubscribers1700000000039 } from './1700000000039-CreateNurtureSubscribers';
 import { CreateReviewAsks1700000000040 } from './1700000000040-CreateReviewAsks';
 import { CreateEsignSignatures1700000000041 } from './1700000000041-CreateEsignSignatures';
+import { AddLeadMlScoringColumns1700000000042 } from './1700000000042-AddLeadMlScoringColumns';
+import { RenameLeadPurchasedByColumn1700000000043 } from './1700000000043-RenameLeadPurchasedByColumn';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -86,6 +88,8 @@ const migrations: MigrationConstructor[] = [
   CreateNurtureSubscribers1700000000039,
   CreateReviewAsks1700000000040,
   CreateEsignSignatures1700000000041,
+  AddLeadMlScoringColumns1700000000042,
+  RenameLeadPurchasedByColumn1700000000043,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

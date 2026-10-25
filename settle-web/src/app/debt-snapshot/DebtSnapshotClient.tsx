@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
@@ -342,6 +343,15 @@ export default function DebtSnapshotClient() {
                   </span>
                 </div>
               </div>
+
+              {/* Assessment CTA — the savings number is the hook; this is the
+                  next funnel step. */}
+              <Link
+                href="/assessment"
+                className="block rounded-xl bg-blue-600 px-5 py-4 text-center font-bold text-white hover:bg-blue-700 transition-colors"
+              >
+                See your real options — free 2-minute assessment →
+              </Link>
 
               {/* Email capture */}
               <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-5">

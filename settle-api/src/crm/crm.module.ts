@@ -5,6 +5,7 @@ import { CrmService } from './crm.service';
 import { DebtSettlementController } from './debt-settlement.controller';
 import { DebtSettlementService } from './debt-settlement.service';
 import { WorkflowPortalController } from './workflow-portal.controller';
+import { ClientPortalController } from './client-portal.controller';
 import { WorkflowPortalService } from './workflow-portal.service';
 import { CrmLead } from '../entities/crm-lead.entity';
 import { CrmDeal } from '../entities/crm-deal.entity';
@@ -54,7 +55,7 @@ import { AuthModule } from '../auth/auth.module';
     ]),
     AuthModule,
   ],
-  controllers: [CrmController, DebtSettlementController, WorkflowPortalController],
+  controllers: [CrmController, DebtSettlementController, WorkflowPortalController, ClientPortalController],
   providers: [CrmService, DebtSettlementService, WorkflowPortalService],
   exports: [CrmService, DebtSettlementService, WorkflowPortalService],
 })

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  createBillingPortalSession,
   createBudget,
   createCoachingCheckoutSession,
   createGoal,
@@ -89,6 +90,24 @@ export default function CoachingPage() {
       window.location.assign(session.url);
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : 'Unable to start coaching checkout.');
+      setSubmitting(false);
+    }
+  };
+
+  const manageBilling = async () => {
+    const token = getToken();
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      setError('');
+      const session = await createBillingPortalSession(token);
+      if (!session.url) throw new Error('Stripe billing portal did not return a redirect URL.');
+      window.location.assign(session.url);
+    } catch (portalError) {
+      setError(portalError instanceof Error ? portalError.message : 'Unable to open the billing portal.');
       setSubmitting(false);
     }
   };
@@ -241,9 +260,21 @@ export default function CoachingPage() {
             <h1 className="text-3xl font-bold text-zinc-950 dark:text-white">Build your path to financial peace</h1>
             <p className="mt-2 text-zinc-600 dark:text-zinc-400">Track your monthly plan, celebrate progress, and stay focused on your goals.</p>
           </div>
-          <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm dark:bg-blue-950/50">
-            <span className="text-zinc-600 dark:text-zinc-400">Coaching status: </span>
-            <span className="font-semibold capitalize text-blue-700 dark:text-blue-300">{dashboard?.subscription.status ?? 'inactive'}</span>
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm dark:bg-blue-950/50">
+              <span className="text-zinc-600 dark:text-zinc-400">Coaching status: </span>
+              <span className="font-semibold capitalize text-blue-700 dark:text-blue-300">{dashboard?.subscription.status ?? 'inactive'}</span>
+            </div>
+            {['active', 'trialing'].includes(dashboard?.subscription.status ?? 'inactive') && (
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => void manageBilling()}
+                className="rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Manage subscription
+              </button>
+            )}
           </div>
         </header>
 
@@ -254,7 +285,7 @@ export default function CoachingPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-bold text-zinc-950 dark:text-white">Monthly Coaching Subscription</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Get ongoing guidance, budgeting tools, and goal tracking for $19/month. Start with a 30-day free trial.</p>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Get ongoing guidance, budgeting tools, and goal tracking for $49/month. Start with a 30-day free trial.</p>
               </div>
               <button type="button" disabled={submitting} onClick={() => void subscribeToCoaching()} className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
                 {submitting ? 'Redirecting...' : 'Subscribe to Coaching'}

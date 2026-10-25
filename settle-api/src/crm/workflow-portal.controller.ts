@@ -228,46 +228,7 @@ export class WorkflowPortalController {
     return this.wpService.signDocument(id, signatureIp, signatureUserAgent);
   }
 
-  // ===========================================================================
-  // CLIENT PORTAL
-  // ===========================================================================
-
-  @Get('portal/:clientId/overview')
-  async getClientPortalOverview(@Param('clientId') clientId: string) {
-    return this.wpService.getClientPortalOverview(clientId);
-  }
-
-  @Get('portal/:clientId/settlements')
-  async getClientSettlements(@Param('clientId') clientId: string) {
-    return this.wpService.getClientSettlements(clientId);
-  }
-
-  @Get('portal/:clientId/payments')
-  async getClientPayments(@Param('clientId') clientId: string, @Query('limit') limit?: number) {
-    return this.wpService.getClientPayments(clientId, limit ?? 50);
-  }
-
-  @Get('portal/:clientId/milestones')
-  async getClientMilestones(@Param('clientId') clientId: string) {
-    return this.wpService.getClientMilestones(clientId);
-  }
-
-  @Get('portal/:clientId/documents')
-  async getClientDocuments(@Param('clientId') clientId: string) {
-    return this.wpService.getClientDocuments(clientId);
-  }
-
-  @Get('portal/:clientId/notifications')
-  async getClientNotifications(
-    @Param('clientId') clientId: string,
-    @Query('isRead') isRead?: string,
-  ) {
-    const readBool = isRead === 'true' ? true : isRead === 'false' ? false : undefined;
-    return this.wpService.getClientNotifications(clientId, readBool);
-  }
-
-  @Get('portal/:clientId/trust-account')
-  async getClientTrustAccount(@Param('clientId') clientId: string) {
-    return this.wpService.getClientTrustAccount(clientId);
-  }
+  // CLIENT PORTAL routes moved to client-portal.controller.ts —
+  // @Controller('crm/portal'). They were unreachable here: the class-level
+  // AdminGuard blocked the consumers they were built for.
 }

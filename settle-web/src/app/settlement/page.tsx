@@ -107,9 +107,12 @@ export default function SettlementPage() {
     try {
       const apiCall = getAuthenticatedApi();
 
-      // Try to fetch enrollment data — if no enrollment, we show the CTA page
+      // Try to fetch enrollment data — if no enrollment, we show the CTA page.
+      // /crm/portal/me/overview resolves the caller's CRM client record from
+      // the JWT (consumers don't know their crm_clients.id, and the old
+      // user.id-based call was both wrong and admin-gated — it always 403'd).
       try {
-        const overview = await apiCall<any>(`/crm/portal/${user.id}/overview`, { method: 'GET' });
+        const overview = await apiCall<any>(`/crm/portal/me/overview`, { method: 'GET' });
         if (overview?.enrollment) {
           setEnrollment(overview.enrollment);
         }
