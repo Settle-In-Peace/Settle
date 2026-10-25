@@ -112,3 +112,12 @@ export async function getProfile(token: string): Promise<User> {
 export async function logout(): Promise<void> {
   await removeToken();
 }
+
+// Required by Apple App Review guideline 5.1.1(v) and Google Play's
+// account-deletion policy: users must be able to delete their account
+// from inside the app.
+export async function deleteAccount(): Promise<{ success: boolean; message?: string }> {
+  const response = await api.delete<{ success: boolean; message?: string }>('/auth/account');
+  await removeToken();
+  return response.data;
+}

@@ -1,7 +1,8 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { logout, User } from '../services/auth';
+import { deleteAccount, logout, User } from '../services/auth';
 import { colors } from '../theme/colors';
 
 interface ProfileScreenProps {
@@ -18,9 +19,37 @@ function getDisplayName(user: User | null): string {
 }
 
 export default function ProfileScreen({ user, setUser }: ProfileScreenProps) {
+  const [deleting, setDeleting] = useState(false);
+
   async function handleLogout() {
     await logout();
     setUser(null);
+  }
+
+  async function confirmDelete() {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      setUser(null);
+    } catch (err: any) {
+      Alert.alert(
+        'Could not delete account',
+        err?.message || 'Something went wrong. Please try again or contact support@settleinpeace.com.'
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your Settle In Peace account and associated debt data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: confirmDelete },
+      ]
+    );
   }
 
   return (
@@ -39,6 +68,15 @@ export default function ProfileScreen({ user, setUser }: ProfileScreenProps) {
       </Card>
 
       <Button title="Log Out" onPress={handleLogout} variant="outline" />
+
+      <View style={styles.deleteWrap}>
+        <Button
+          title={deleting ? 'Deleting...' : 'Delete Account'}
+          onPress={handleDeleteAccount}
+          variant="outline"
+          disabled={deleting}
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -70,5 +108,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: colors.text,
+  },
+  deleteWrap: {
+    marginTop: 12,
   },
 });

@@ -1,7 +1,11 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:4025';
+// EXPO_PUBLIC_* vars are inlined by Metro at bundle time.
+// Dev override: set EXPO_PUBLIC_API_URL=http://localhost:4025 in settle-mobile/.env
+// Production builds fall back to the live API.
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || 'https://api.settleinpeace.com';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
