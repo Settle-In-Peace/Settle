@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SalesGuard } from '../auth/guards/sales.guard';
 import { PortfolioService } from './portfolio.service';
 import {
   CreatePortfolioDto,
@@ -20,7 +21,7 @@ import {
 } from './portfolio.service';
 
 @Controller('portfolios')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SalesGuard)
 export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}
 
