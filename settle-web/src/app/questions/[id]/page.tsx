@@ -168,7 +168,7 @@ export default function QuestionDetailPage({
             maxLength={2000}
             placeholder="Your answer — general information only, not legal advice."
             required
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
           {!authed && (
             <input
@@ -177,7 +177,7 @@ export default function QuestionDetailPage({
               onChange={e => setContactEmail(e.target.value)}
               placeholder="Email (required to answer anonymously — never shown)"
               required
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           )}
           {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}

@@ -355,7 +355,7 @@ export default function CrmPage() {
                 <select
                   value={boardFilter}
                   onChange={(e) => setBoardFilter(e.target.value)}
-                  className="text-sm px-3 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white"
+                  className="text-base px-3 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white"
                 >
                   <option value="">All stages</option>
                   {LEAD_STATUSES.map((s) => (

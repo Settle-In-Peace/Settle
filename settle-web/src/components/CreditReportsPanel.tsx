@@ -33,7 +33,7 @@ const PRODUCTS = [
 ] as const;
 
 const inputCls =
-  'w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm';
+  'w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base';
 const labelCls = 'block text-xs text-zinc-500 dark:text-zinc-400 mb-1';
 
 export default function CreditReportsPanel({ accountId }: { accountId: string }) {

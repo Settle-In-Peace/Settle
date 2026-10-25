@@ -329,7 +329,7 @@ export default function DebtsPage() {
                               value={editingDebt.creditor}
                               onChange={(e) => setEditingDebt({ ...editingDebt, creditor: e.target.value })}
                               required
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-base"
                             />
                           </div>
                           <div>
@@ -340,7 +340,7 @@ export default function DebtsPage() {
                               value={editingDebt.balance}
                               onChange={(e) => setEditingDebt({ ...editingDebt, balance: Number(e.target.value) })}
                               required
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-base"
                             />
                           </div>
                           <div>
@@ -350,7 +350,7 @@ export default function DebtsPage() {
                               step="0.01"
                               value={editingDebt.interestRate || ''}
                               onChange={(e) => setEditingDebt({ ...editingDebt, interestRate: e.target.value ? Number(e.target.value) : undefined })}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-base"
                             />
                           </div>
                           <div>
@@ -358,7 +358,7 @@ export default function DebtsPage() {
                             <select
                               value={editingDebt.type}
                               onChange={(e) => setEditingDebt({ ...editingDebt, type: e.target.value })}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-base"
                             >
                               <option value="credit_card">Credit Card</option>
                               <option value="personal_loan">Personal Loan</option>
@@ -374,7 +374,7 @@ export default function DebtsPage() {
                             value={editingDebt.notes || ''}
                             onChange={(e) => setEditingDebt({ ...editingDebt, notes: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-sm"
+                            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white text-base"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -412,7 +412,7 @@ export default function DebtsPage() {
                             <select
                               value={debt.status}
                               onChange={(e) => handleStatusChange(debt.id, e.target.value)}
-                              className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer capitalize ${
+                              className={`text-base font-medium rounded-full px-2 py-1 border-0 cursor-pointer capitalize ${
                                 debt.status === 'active' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' :
                                 debt.status === 'in_progress' ? 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300' :
                                 debt.status === 'settled' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' :

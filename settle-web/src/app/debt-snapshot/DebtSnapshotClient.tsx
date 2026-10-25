@@ -161,7 +161,7 @@ export default function DebtSnapshotClient() {
   }
 
   const inputCls =
-    'w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+    'w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-base text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   return (
     <section className="py-12 px-4">

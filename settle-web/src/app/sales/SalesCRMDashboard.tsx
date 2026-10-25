@@ -513,14 +513,14 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
             <div className="flex flex-col md:flex-row gap-3 mb-6 items-center justify-between">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <input type="text" placeholder="Search leads..." value={search} onChange={(e) => setSearch(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm w-full sm:w-64" />
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base w-full sm:w-64" />
                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm">
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base">
                   <option value="">All Statuses</option>
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                 </select>
                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'newest' | 'debt' | 'quality')}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm">
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base">
                   <option value="newest">Newest First</option>
                   <option value="debt">Highest Debt</option>
                   <option value="quality">Highest Quality</option>
@@ -693,7 +693,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Call Result</label>
                     <select value={callResult} onChange={(e) => setCallResult(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm">
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base">
                       <option value="">Select result...</option>
                       <option value="completed">Completed (connected)</option>
                       <option value="no_answer">No answer</option>
@@ -705,7 +705,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Call Notes</label>
                     <textarea value={callLogNotes} onChange={(e) => setCallLogNotes(e.target.value)} rows={3}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base"
                       placeholder="Notes from the call..." />
                   </div>
                   <button onClick={handleLogCall} disabled={!callResult}
@@ -752,7 +752,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Template</label>
                     <select value={emailTemplate} onChange={(e) => handleTemplateChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm">
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base">
                       <option value="intro">Introduction</option>
                       <option value="follow_up">Follow-up</option>
                       <option value="quote">Quote / Options</option>
@@ -762,12 +762,12 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Subject</label>
                     <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm" />
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base" />
                   </div>
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Message (HTML)</label>
                     <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={10}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm font-mono" />
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base font-mono" />
                   </div>
                   <button onClick={handleSendEmail} disabled={emailSending || !emailSubject || !emailBody}
                     className="w-full py-2 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50">
@@ -858,12 +858,12 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Date & Time</label>
                     <input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm" />
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base" />
                   </div>
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Type</label>
                     <select value={scheduleType} onChange={(e) => setScheduleType(e.target.value as 'call' | 'email' | 'meeting')}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm">
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base">
                       <option value="call">Phone Call</option>
                       <option value="email">Email</option>
                       <option value="meeting">Meeting</option>
@@ -872,7 +872,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                   <div>
                     <label className="block mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">Notes</label>
                     <textarea value={scheduleNotes} onChange={(e) => setScheduleNotes(e.target.value)} rows={2}
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-base"
                       placeholder="What's this follow-up about?" />
                   </div>
                   <button onClick={handleSchedule} disabled={!scheduleDate}

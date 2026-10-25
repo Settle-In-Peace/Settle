@@ -101,14 +101,14 @@ export default function QuestionsPage() {
             maxLength={2000}
             placeholder="e.g. Is debt settlement better than a debt management plan for $20k of credit card debt?"
             required
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={category}
               onChange={e => setCategory(e.target.value as QaCategory)}
               aria-label="Question category"
-              className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {(Object.keys(CATEGORY_LABELS) as QaCategory[]).map(c => (
                 <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
@@ -119,7 +119,7 @@ export default function QuestionsPage() {
               value={contactEmail}
               onChange={e => setContactEmail(e.target.value)}
               placeholder="Email (optional — only if you want a private follow-up)"
-              className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}

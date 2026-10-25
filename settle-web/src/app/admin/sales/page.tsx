@@ -255,7 +255,7 @@ export default function AdminSalesPage() {
                         <select
                           value={selectedLead === l.id ? selectedAgent : ''}
                           onChange={(e) => { setSelectedLead(l.id); setSelectedAgent(e.target.value); }}
-                          className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 dark:text-white text-sm"
+                          className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 dark:text-white text-base"
                         >
                           <option value="">Select agent</option>
                           {salesAgents.map(a => <option key={a.id} value={a.id}>{a.firstName} {a.lastName} ({a.email})</option>)}

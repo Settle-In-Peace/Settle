@@ -878,12 +878,12 @@ export default function CollectionsDashboardPage() {
             placeholder="Search account number or notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+            className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base"
           />
           <select
             value={segmentFilter}
             onChange={(e) => setSegmentFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+            className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base"
           >
             {SEGMENTS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -894,7 +894,7 @@ export default function CollectionsDashboardPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+            className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base"
           >
             <option value="">All Statuses</option>
             {STATUS_OPTIONS.map((s) => (
@@ -907,7 +907,7 @@ export default function CollectionsDashboardPage() {
             <select
               value={assignedToFilter}
               onChange={(e) => setAssignedToFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+              className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-base"
             >
               <option value="">All Reps</option>
               <option value="unassigned">Unassigned</option>
@@ -1083,7 +1083,7 @@ export default function CollectionsDashboardPage() {
                 <select
                   value={pauseReason}
                   onChange={(e) => setPauseReason(e.target.value)}
-                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                 >
                   <option value="">Select a reason</option>
                   {VULNERABILITY_REASONS.map((r) => (
@@ -1097,7 +1097,7 @@ export default function CollectionsDashboardPage() {
                   value={pauseNotes}
                   onChange={(e) => setPauseNotes(e.target.value)}
                   placeholder="e.g. Debtor mentioned job loss, cannot manage payments."
-                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                   rows={3}
                 />
               </div>
@@ -1128,25 +1128,25 @@ export default function CollectionsDashboardPage() {
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg max-w-lg w-full p-6">
             <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">New Collection Account</h2>
             <form onSubmit={handleCreateAccount} className="space-y-4">
-              <input name="crmClientId" required placeholder="CRM Client ID" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
-              <input name="accountNumber" placeholder="Account Number" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+              <input name="crmClientId" required placeholder="CRM Client ID" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
+              <input name="accountNumber" placeholder="Account Number" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
               <div className="grid grid-cols-2 gap-3">
-                <input name="originalBalance" type="number" step="0.01" placeholder="Original Balance" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
-                <input name="currentBalance" type="number" step="0.01" placeholder="Current Balance" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+                <input name="originalBalance" type="number" step="0.01" placeholder="Original Balance" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
+                <input name="currentBalance" type="number" step="0.01" placeholder="Current Balance" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <select name="status" defaultValue="new" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm">
+                <select name="status" defaultValue="new" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base">
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <select name="priority" defaultValue="2" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm">
+                <select name="priority" defaultValue="2" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base">
                   <option value="1">Low</option>
                   <option value="2">Medium</option>
                   <option value="3">High</option>
                   <option value="4">Critical</option>
                 </select>
               </div>
-              <input name="delinquencyDays" type="number" placeholder="Delinquency Days" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
-              <textarea name="notes" placeholder="Notes" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+              <input name="delinquencyDays" type="number" placeholder="Delinquency Days" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
+              <textarea name="notes" placeholder="Notes" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
               <div className="flex justify-end gap-3">
                 <button type="button" onClick={() => setNewAccountOpen(false)} className="px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:underline text-sm">Cancel</button>
                 <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Creating...' : 'Create Account'}</button>
@@ -1162,11 +1162,11 @@ export default function CollectionsDashboardPage() {
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg max-w-lg w-full p-6">
             <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">New Debt Portfolio</h2>
             <form onSubmit={handleCreatePortfolio} className="space-y-4">
-              <input name="name" required placeholder="Portfolio name" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
-              <input name="seller" placeholder="Seller / originator" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+              <input name="name" required placeholder="Portfolio name" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
+              <input name="seller" placeholder="Seller / originator" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
               <div className="grid grid-cols-2 gap-3">
-                <input name="purchasePrice" type="number" step="0.01" required placeholder="Purchase price" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
-                <input name="faceValue" type="number" step="0.01" required placeholder="Face value" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm" />
+                <input name="purchasePrice" type="number" step="0.01" required placeholder="Purchase price" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
+                <input name="faceValue" type="number" step="0.01" required placeholder="Face value" className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base" />
               </div>
               <div className="flex justify-end gap-3">
                 <button type="button" onClick={() => setNewPortfolioOpen(false)} className="px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:underline text-sm">Cancel</button>
@@ -1189,7 +1189,7 @@ export default function CollectionsDashboardPage() {
               value={importAccountsJson}
               onChange={(e) => setImportAccountsJson(e.target.value)}
               placeholder='[{"accountNumber":"ACCT-001","originalBalance":1500,"currentBalance":1500,"debtorName":"John Doe","debtorPhone":"+15551234567"}]'
-              className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm font-mono"
+              className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base font-mono"
               rows={8}
             />
             <div className="flex justify-end gap-3 mt-4">
@@ -1361,7 +1361,7 @@ export default function CollectionsDashboardPage() {
                     <select
                       value={selectedAccount.assignedTo || ''}
                       onChange={(e) => handleAssignAccount(selectedAccount.id, e.target.value)}
-                      className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                      className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                     >
                       <option value="">Unassigned</option>
                       {salesAgents.map((a) => (
@@ -1421,7 +1421,7 @@ export default function CollectionsDashboardPage() {
                           type="date"
                           value={outreachDate}
                           onChange={(e) => setOutreachDate(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                         />
                       </div>
                       <div>
@@ -1430,7 +1430,7 @@ export default function CollectionsDashboardPage() {
                           type="time"
                           value={outreachTime}
                           onChange={(e) => setOutreachTime(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                         />
                       </div>
                     </div>
@@ -1440,7 +1440,7 @@ export default function CollectionsDashboardPage() {
                         <select
                           value={outreachTimeZone}
                           onChange={(e) => setOutreachTimeZone(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                         >
                           {US_TIMEZONES.map((tz) => (
                             <option key={tz} value={tz}>{tz}</option>
@@ -1452,7 +1452,7 @@ export default function CollectionsDashboardPage() {
                         <select
                           value={outreachChannel}
                           onChange={(e) => setOutreachChannel(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                         >
                           <option value="sms">SMS</option>
                           <option value="call">Call</option>
@@ -1466,7 +1466,7 @@ export default function CollectionsDashboardPage() {
                         value={outreachMessage}
                         onChange={(e) => setOutreachMessage(e.target.value)}
                         placeholder="e.g. Hi, this is about your overdue balance. Can we set up a payment plan?"
-                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                         rows={3}
                       />
                     </div>
@@ -1489,7 +1489,7 @@ export default function CollectionsDashboardPage() {
                           max={7}
                           value={outreachFrequencyCap}
                           onChange={(e) => setOutreachFrequencyCap(parseInt(e.target.value, 10) || 3)}
-                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                          className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                         />
                       </div>
                     </div>
@@ -1661,7 +1661,7 @@ export default function CollectionsDashboardPage() {
                         value={newPlanTotal}
                         onChange={(e) => setNewPlanTotal(e.target.value)}
                         placeholder={selectedAccount.currentBalance.toFixed(2)}
-                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                       />
                     </div>
                     <div>
@@ -1672,7 +1672,7 @@ export default function CollectionsDashboardPage() {
                         value={newPlanDownPayment}
                         onChange={(e) => setNewPlanDownPayment(e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                       />
                     </div>
                     <div>
@@ -1681,7 +1681,7 @@ export default function CollectionsDashboardPage() {
                         type="number"
                         value={newPlanNumberOfPayments}
                         onChange={(e) => setNewPlanNumberOfPayments(parseInt(e.target.value, 10) || 6)}
-                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                       />
                     </div>
                     <div>
@@ -1689,7 +1689,7 @@ export default function CollectionsDashboardPage() {
                       <select
                         value={newPlanFrequency}
                         onChange={(e) => setNewPlanFrequency(e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                       >
                         <option value="weekly">Weekly</option>
                         <option value="biweekly">Bi-weekly</option>
@@ -1702,7 +1702,7 @@ export default function CollectionsDashboardPage() {
                         type="date"
                         value={newPlanStartDate}
                         onChange={(e) => setNewPlanStartDate(e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                        className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                       />
                     </div>
                   </div>
@@ -1748,7 +1748,7 @@ export default function CollectionsDashboardPage() {
                             step="0.01"
                             value={planMonthlyPayment}
                             onChange={(e) => setPlanMonthlyPayment(e.target.value)}
-                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                           />
                         </div>
                         <div>
@@ -1757,7 +1757,7 @@ export default function CollectionsDashboardPage() {
                             type="number"
                             value={planMonths}
                             onChange={(e) => setPlanMonths(parseInt(e.target.value, 10) || 6)}
-                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                           />
                         </div>
                       </div>
@@ -1768,7 +1768,7 @@ export default function CollectionsDashboardPage() {
                             type="date"
                             value={planStartDate}
                             onChange={(e) => setPlanStartDate(e.target.value)}
-                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                           />
                         </div>
                         <div>
@@ -1776,7 +1776,7 @@ export default function CollectionsDashboardPage() {
                           <select
                             value={planPaymentMethod}
                             onChange={(e) => setPlanPaymentMethod(e.target.value)}
-                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                            className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                           >
                             <option value="bank_debit">Bank Debit</option>
                             <option value="card">Card</option>
@@ -1803,7 +1803,7 @@ export default function CollectionsDashboardPage() {
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add a note..."
-                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                   rows={3}
                 />
                 <button
@@ -1830,7 +1830,7 @@ export default function CollectionsDashboardPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone / identifier for skip trace"
-                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+                  className="w-full px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-base"
                 />
                 <button
                   onClick={handleRunSkipTrace}
