@@ -361,7 +361,8 @@ export class StripeService {
 
   async handleWebhookEvent(event: Stripe.Event): Promise<void> {
     switch (event.type) {
-      case 'checkout.session.completed': {
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded': {
         const session = event.data.object as Stripe.Checkout.Session;
         await this.handleCheckoutCompleted(session);
         break;
@@ -399,20 +400,58 @@ export class StripeService {
   private async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
     const type = session.metadata?.type;
 
+    // One-time payment fulfillments must never run on an unpaid session.
+    // Async payment methods (bank debits etc.) complete the session with
+    // payment_status='unpaid' and settle later via
+    // checkout.session.async_payment_succeeded — granting on the first
+    // event would hand out value before money arrives.
+    const unpaidOneTime =
+      session.mode === 'payment' && session.payment_status !== 'paid';
+
     switch (type) {
       case 'credit_package': {
+        if (unpaidOneTime) {
+          this.logger.log(`credit_package session ${session.id} unpaid — awaiting async settlement`);
+          break;
+        }
         const providerId = session.metadata?.providerId;
         const credits = parseInt(session.metadata?.credits || '0', 10);
-        if (providerId && credits > 0) {
-          await this.providersService.addCredit(providerId, credits);
-          this.logger.log(`Added ${credits} credits to provider ${providerId}`);
-        } else {
+        if (!providerId || credits <= 0) {
           this.logger.warn(`credit_package checkout missing metadata: ${JSON.stringify(session.metadata)}`);
+          break;
         }
+        // Idempotency: Stripe redelivers events (retries, dashboard resend).
+        // The creditBalance increment is unconditional, so mark the session
+        // itself — re-fetch to get the latest metadata rather than trusting
+        // the event snapshot.
+        try {
+          const fresh = await this.stripe.checkout.sessions.retrieve(session.id);
+          if (fresh.metadata?.credits_granted === '1') {
+            this.logger.log(`credit_package session ${session.id} already granted — skipping duplicate delivery`);
+            break;
+          }
+        } catch (err) {
+          // If we can't verify dedup state, still fulfill — the failure mode
+          // of skipping a real grant is worse than a rare double-credit.
+          this.logger.warn(`credit dedup check failed for ${session.id}: ${err instanceof Error ? err.message : err}`);
+        }
+        await this.providersService.addCredit(providerId, credits);
+        try {
+          await this.stripe.checkout.sessions.update(session.id, {
+            metadata: { ...session.metadata, credits_granted: '1' },
+          });
+        } catch (err) {
+          this.logger.warn(`could not mark credit session ${session.id} granted: ${err instanceof Error ? err.message : err}`);
+        }
+        this.logger.log(`Added ${credits} credits to provider ${providerId}`);
         break;
       }
 
       case 'lead_purchase': {
+        if (unpaidOneTime) {
+          this.logger.log(`lead_purchase session ${session.id} unpaid — awaiting async settlement`);
+          break;
+        }
         const leadId = session.metadata?.leadId;
         const providerId = session.metadata?.providerId;
         const salePrice = parseFloat(session.metadata?.salePrice || '0');
@@ -581,7 +620,16 @@ export class StripeService {
   }
 
   private async handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-    const subscriptionId = typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : undefined;
+    // API 2026-06-24.dahlia moves the sub ref to
+    // invoice.parent.subscription_details.subscription — the legacy
+    // top-level invoice.subscription is absent, so every payment-failure
+    // was skipping with "no subscription id" and dunning emails never sent.
+    const parentSub = (invoice as any).parent?.subscription_details?.subscription;
+    const legacySub = (invoice as any).subscription;
+    const subscriptionId =
+      (typeof parentSub === 'string' ? parentSub : parentSub?.id) ??
+      (typeof legacySub === 'string' ? legacySub : legacySub?.id) ??
+      undefined;
     const customerId = typeof invoice.customer === 'string' ? invoice.customer : undefined;
     if (!subscriptionId) {
       this.logger.warn(`invoice.payment_failed with no subscription id: ${invoice.id}`);
