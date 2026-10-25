@@ -79,7 +79,7 @@ async function main() {
       link: a.link,
       platforms: {
         reddit: {
-          subreddit: 'PrimeTransit',
+          subreddit: 'settleinpeace',
           title: a.title.slice(0, 290),
         },
       },

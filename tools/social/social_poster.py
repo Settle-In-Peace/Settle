@@ -742,7 +742,7 @@ def save_state(state: dict) -> None:
     STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
-def main() -> None:
+def main() -> int:
     p = argparse.ArgumentParser(description="Post queued content to social platforms")
     p.add_argument("--queue", default=str(QUEUE_FILE))
     p.add_argument("--date", help="Force post for this date (YYYY-MM-DD)")
@@ -779,8 +779,9 @@ def main() -> None:
         key=lambda i: i["date"],
     )[-1:]
     if not due:
-        print("Nothing due today.")
-        return
+        print("Nothing due today — queue exhausted or empty.")
+        print("::warning title=social::0 posts due — seed tools/social/content_queue.json")
+        return 0
 
     sent = skipped = failed = 0
     for item in due:
@@ -862,6 +863,12 @@ def main() -> None:
                 save_state(state)
 
     print(f"\nDone: {sent} posted, {skipped} skipped (no creds), {failed} failed")
+    if sent == 0 and (skipped or failed):
+        print("::error title=social::0 posts published — configure platform credentials or fix failures above")
+        return 2
+    if skipped:
+        print(f"::warning title=social::{skipped} platform post(s) skipped — credentials not configured")
+    return 0
 
 
 if __name__ == "__main__":

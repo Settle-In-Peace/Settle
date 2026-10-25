@@ -1,14 +1,41 @@
 name: Daily Social Post
 
-# Self-hosted social autoposter ($0 — no Buffer/Hootsuite). Posts the queue
-# item due today to every configured platform, renders a branded 1200x630
-# card, commits posted_state.json so tomorrow knows what's sent.
-# Configure per-platform secrets — unset platforms are skipped cleanly.
+# Self-hosted social autoposter ($0 — no Buffer/Hootsuite subscription).
+# Posts the queue item due today to every configured platform, renders a
+# branded 1200x630 card, commits posted_state.json so tomorrow knows
+# what's sent. Configure per-platform secrets — unset platforms are
+# skipped cleanly, but a run that publishes 0 posts fails red.
+#
+# Content: debt-relief education, credit tips, settlement explainers —
+# "Settle In Peace" voice, linking settleinpeace.com (/learn/*,
+# /debt-relief/[state], /calculators, /assessment). Queue lives in
+# tools/social/content_queue.json; blog_to_queue.mjs auto-appends new
+# /learn articles from feed.xml.
+#
+# REQUIRED GitHub repo secrets for real posting (values already exist in
+# tools/social/.env on the ops box — paste them into repo Secrets):
+#   BUFFER_ACCESS_TOKEN, BUFFER_ORG_ID   — Buffer org 6ad50d34b15361b8758c2877;
+#     X/FB/IG post through Buffer channels (BUFFER_CHANNEL_IDS optional CSV,
+#     blank = all connected channels). NOTE: the Buffer org still needs an
+#     X channel connected at publish.buffer.com → Channels, or Buffer posts
+#     to nothing.
+# Optional direct-platform secrets: BLUESKY_*, MASTODON_*, FB_PAGE_*,
+# LINKEDIN_*, REDDIT_*, X_*, TUMBLR_*, NEXTDOOR_* (see tools/social/env.example).
+#
+# A launchd job (scripts/settle-crons.sh social-daily, 9:00 local on the ops
+# box) runs the same poster as a backup — posted_state.json dedupes, so
+# whichever runs first wins and the other no-ops.
 
 on:
   schedule:
     - cron: '15 14 * * *'
   workflow_dispatch:
+
+# Never run two posting cycles at once — delayed scheduled runs would
+# otherwise overlap and double-post.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -44,6 +71,9 @@ jobs:
       - name: Post due content
         env:
           POSTER_UA: Settle-SocialPoster/1.0
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          BUFFER_ORG_ID: ${{ secrets.BUFFER_ORG_ID }}
+          BUFFER_CHANNEL_IDS: ${{ secrets.BUFFER_CHANNEL_IDS }}
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
@@ -61,6 +91,16 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          TUMBLR_BLOG: ${{ secrets.TUMBLR_BLOG }}
+          TUMBLR_CLIENT_ID: ${{ secrets.TUMBLR_CLIENT_ID }}
+          TUMBLR_CLIENT_SECRET: ${{ secrets.TUMBLR_CLIENT_SECRET }}
+          TUMBLR_ACCESS_TOKEN: ${{ secrets.TUMBLR_ACCESS_TOKEN }}
+          TUMBLR_REFRESH_TOKEN: ${{ secrets.TUMBLR_REFRESH_TOKEN }}
+          NEXTDOOR_CLIENT_ID: ${{ secrets.NEXTDOOR_CLIENT_ID }}
+          NEXTDOOR_CLIENT_SECRET: ${{ secrets.NEXTDOOR_CLIENT_SECRET }}
+          NEXTDOOR_ACCESS_TOKEN: ${{ secrets.NEXTDOOR_ACCESS_TOKEN }}
+          NEXTDOOR_REFRESH_TOKEN: ${{ secrets.NEXTDOOR_REFRESH_TOKEN }}
+          NEXTDOOR_PROFILE_ID: ${{ secrets.NEXTDOOR_PROFILE_ID }}
         run: python tools/social/social_poster.py
 
       - name: Commit posting state
@@ -69,4 +109,7 @@ jobs:
           git config user.email "bot@settleinpeace.com"
           git add tools/social/posted_state.json tools/social/content_queue.json tools/social/cards/
           git diff --cached --quiet || git commit -m "chore(social): posted state [skip ci]"
+          # Rebase onto main first — the launchd backup cron and manual
+          # pushes can move the branch between checkout and push.
+          git pull --rebase origin main
           git push
