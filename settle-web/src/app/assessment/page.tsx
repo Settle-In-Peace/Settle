@@ -165,6 +165,12 @@ export default function AssessmentPage() {
             >
               Create an account to track your progress
             </button>
+            <Link
+              href="/coaching"
+              className="block w-full py-3 px-6 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40"
+            >
+              Or get 1:1 coaching — $49/mo, first 30 days free
+            </Link>
           </div>
         </div>
       </div>
