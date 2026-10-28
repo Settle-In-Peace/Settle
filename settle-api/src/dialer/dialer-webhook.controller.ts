@@ -60,11 +60,17 @@ export class DialerWebhookController {
       throw new UnauthorizedException('Invalid Telnyx webhook signature');
     }
 
-    const eventType = body?.data?.event_type ?? 'unknown';
+    let parsed: TelnyxWebhookEvent | undefined;
+    try {
+      parsed = Buffer.isBuffer(body) ? JSON.parse(body.toString('utf8')) : body;
+    } catch {
+      parsed = undefined;
+    }
+    const eventType = parsed?.data?.event_type ?? 'unknown';
     this.logger.log(`Received dialer Telnyx webhook: ${eventType}`);
 
     try {
-      const event = this.telnyxProvider.ingestWebhook(body);
+      const event = this.telnyxProvider.ingestWebhook(parsed);
       if (event) {
         await this.dialerService.applyWebhookEvent('telnyx', event);
       }

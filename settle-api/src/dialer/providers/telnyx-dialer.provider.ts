@@ -330,7 +330,8 @@ export class TelnyxDialerProvider implements DialerProvider {
       return Array.isArray(value) ? value[0] : value;
     };
     const signatureHeader = header('telnyx-signature-ed25519');
-    const timestampHeader = header('telnyx-timestamp-ed25519');
+    const timestampHeader =
+      header('telnyx-timestamp-ed25519') ?? header('telnyx-timestamp');
 
     if (!signatureHeader || !timestampHeader) {
       this.logger.error('Telnyx webhook rejected — signature/timestamp header missing.');

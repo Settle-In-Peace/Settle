@@ -20,6 +20,7 @@ async function bootstrap() {
     path === '/stripe/webhook' ||
     path === '/api/v1/stripe/webhook' ||
     path.startsWith('/telnyx/webhooks') ||
+    path.startsWith('/dialer/webhooks') ||
     path.startsWith('/lead-vendors/import/webhook') ||
     path.startsWith('/payment-processors/webhooks') ||
     path.startsWith('/affiliates/postback');
