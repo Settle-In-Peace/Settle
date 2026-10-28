@@ -8,6 +8,8 @@ import { Provider } from '../entities/provider.entity';
 import { Lead } from '../entities/lead.entity';
 import { User } from '../entities/user.entity';
 import { CoachingSubscription } from '../entities/coaching-subscription.entity';
+import { Org } from '../seats/org.entity';
+import { SeatPlan } from '../seats/seat-plan.entity';
 import { EmailService } from '../email/email.service';
 
 export interface CreditPackage {
@@ -57,6 +59,8 @@ export class StripeService {
     private providersRepository: Repository<Provider>,
     @InjectRepository(CoachingSubscription)
     private coachingSubscriptionsRepository: Repository<CoachingSubscription>,
+    @InjectRepository(Org)
+    private orgsRepository: Repository<Org>,
   ) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!secretKey) {
@@ -283,6 +287,85 @@ export class StripeService {
   }
 
   // ---------------------------------------------------------------------------
+  // DaaS seat subscriptions — per-seat org licensing (collection agencies)
+  // ---------------------------------------------------------------------------
+
+  private async ensureOrgCustomer(org: Org): Promise<string> {
+    if (org.stripeCustomerId) return org.stripeCustomerId;
+    const email = org.billingEmail || `org-${org.id}@seat-billing.settleinpeace.com`;
+    const customer = await this.stripe.customers.create({
+      email,
+      name: org.name,
+      metadata: { orgId: org.id },
+    });
+    await this.orgsRepository.update(org.id, { stripeCustomerId: customer.id });
+    return customer.id;
+  }
+
+  /**
+   * Per-seat subscription checkout — quantity = number of seats on the
+   * chosen plan. Uses inline recurring price_data so no dashboard price
+   * objects are required (plans live in the seat_plans table).
+   */
+  async createSeatCheckoutSession(
+    org: Org,
+    plan: SeatPlan,
+    seats: number,
+    returnUrl?: string,
+  ): Promise<Stripe.Checkout.Session> {
+    const customerId = await this.ensureOrgCustomer(org);
+    const frontendUrl =
+      returnUrl ||
+      `${this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3025'}/dashboard/org`;
+
+    return this.stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Settle DaaS — ${plan.name} seat`,
+              description: `Dialer-as-a-Software seat license (${plan.includedMinutes < 0 ? 'unlimited' : plan.includedMinutes} included min/seat/mo)`,
+            },
+            unit_amount: plan.priceCents,
+            recurring: { interval: 'month', interval_count: 1 },
+          },
+          quantity: seats,
+        },
+      ],
+      metadata: {
+        type: 'seat_subscription',
+        orgId: org.id,
+        planCode: plan.code,
+        seats: seats.toString(),
+      },
+      subscription_data: {
+        metadata: {
+          type: 'seat_subscription',
+          orgId: org.id,
+          planCode: plan.code,
+          seats: seats.toString(),
+        },
+      },
+      success_url: `${frontendUrl}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}?checkout=cancel`,
+    });
+  }
+
+  async createOrgBillingPortalSession(org: Org): Promise<Stripe.BillingPortal.Session> {
+    if (!org.stripeCustomerId) {
+      throw new BadRequestException('No billing account found. Please purchase seats first.');
+    }
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3025';
+    return this.stripe.billingPortal.sessions.create({
+      customer: org.stripeCustomerId,
+      return_url: `${frontendUrl}/dashboard/org`,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Billing portal — let customers manage their subscription
   // ---------------------------------------------------------------------------
 
@@ -481,6 +564,27 @@ export class StripeService {
         break;
       }
 
+      case 'seat_subscription': {
+        // DaaS per-seat billing — grant the purchased seats to the org.
+        const orgId = session.metadata?.orgId;
+        const planCode = session.metadata?.planCode;
+        const seats = parseInt(session.metadata?.seats || '0', 10);
+        if (orgId && seats > 0) {
+          await this.orgsRepository.update(orgId, {
+            stripeSubscriptionId:
+              typeof session.subscription === 'string' ? session.subscription : undefined,
+            ...(typeof session.customer === 'string' ? { stripeCustomerId: session.customer } : {}),
+            planCode,
+            seatsPurchased: seats,
+            subscriptionStatus: 'active',
+          });
+          this.logger.log(`Org ${orgId} subscribed: ${seats} x ${planCode} seats`);
+        } else {
+          this.logger.warn(`seat_subscription checkout missing metadata: ${JSON.stringify(session.metadata)}`);
+        }
+        break;
+      }
+
       case 'coaching_subscription': {
         const userId = session.metadata?.userId;
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : undefined;
@@ -545,6 +649,22 @@ export class StripeService {
       return;
     }
 
+    if (type === 'seat_subscription') {
+      const orgId = subscription.metadata?.orgId;
+      if (!orgId) return;
+      const seats = parseInt(subscription.metadata?.seats || '0', 10);
+      // Seat quantity changes (upgrade/downgrade via portal) come through as
+      // subscription item quantity — prefer it over checkout-time metadata.
+      const quantity = subscription.items?.data?.[0]?.quantity;
+      await this.orgsRepository.update(orgId, {
+        subscriptionStatus: subscription.status,
+        planCode: subscription.metadata?.planCode,
+        seatsPurchased: quantity && quantity > 0 ? quantity : seats || undefined,
+      });
+      this.logger.log(`Org ${orgId} seat subscription updated: ${subscription.status}`);
+      return;
+    }
+
     if (type === 'coaching_subscription') {
       const userId = subscription.metadata?.userId;
       if (!userId) return;
@@ -590,6 +710,16 @@ export class StripeService {
       } catch (err) {
         this.logger.error(`Failed to send subscription cancelled email: ${err instanceof Error ? err.message : String(err)}`);
       }
+      return;
+    }
+
+    if (type === 'seat_subscription') {
+      const orgId = subscription.metadata?.orgId;
+      if (!orgId) return;
+      await this.orgsRepository.update(orgId, {
+        subscriptionStatus: 'canceled',
+      });
+      this.logger.log(`Org ${orgId} seat subscription canceled`);
       return;
     }
 

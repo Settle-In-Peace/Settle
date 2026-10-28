@@ -11,7 +11,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { SalesGuard } from '../auth/guards/sales.guard';
+import { DialerAccessGuard } from './dialer-access.guard';
 import { DialerService } from './dialer.service';
 import { PlaceCallDto } from './dto/place-call.dto';
 
@@ -20,11 +20,12 @@ interface AuthenticatedRequest extends Request {
 }
 
 /**
- * Dialer REST API — JWT + sales/admin guarded, same as collections.
- * Webhooks live on DialerWebhookController (signature-verified, no JWT).
+ * Dialer REST API — JWT + DialerAccessGuard (platform sales/admin, or a
+ * DaaS agent holding an active seat). Webhooks live on
+ * DialerWebhookController (signature-verified, no JWT).
  */
 @Controller('dialer')
-@UseGuards(JwtAuthGuard, SalesGuard)
+@UseGuards(JwtAuthGuard, DialerAccessGuard)
 export class DialerController {
   constructor(private readonly dialerService: DialerService) {}
 

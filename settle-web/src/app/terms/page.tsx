@@ -71,6 +71,22 @@ export default function TermsPage() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-bold text-black dark:text-white mb-3">6A. Dialer-as-a-Software (DaaS) for Collection Agencies</h2>
+            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              Settle In Peace also licenses a per-seat software platform (&quot;DaaS&quot;) to collection agencies, law firms, and similar organizations (&quot;Customers&quot;). DaaS subscriptions are billed monthly per seat, and outbound calling may incur usage-based charges (per-minute overage) at the rates published in the Customer&apos;s plan. Seat licenses are assigned to individual agents within the Customer&apos;s organization and may be reassigned or suspended by the Customer&apos;s administrators.
+            </p>
+            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-3">
+              <strong>Settle In Peace is a software vendor only.</strong> We are not a debt collector, collection agency, debt buyer, or law firm, and we do not engage in debt collection on behalf of any party. The Customer is solely the FDCPA-licensed collector of record and is solely responsible for: (a) its own compliance with the Fair Debt Collection Practices Act, the Telephone Consumer Protection Act, the Fair Credit Reporting Act, Regulation F, state collection/licensing laws, and all other applicable law; (b) obtaining and documenting any consumer consent required before placing calls or texts through the platform, and honoring do-not-call requests; (c) the conduct of its agents and the content of its communications. Compliance features in the platform (DNC screening, consent checks, calling-window indicators, AI-drafted scripts) are assistive tools only — they do not guarantee compliance and do not constitute legal advice.
+            </p>
+            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-3">
+              AI-generated outputs (suggested actions, scripts, offer letters, compliance flags) are advisory drafts that require review and approval by a qualified human before any consumer-facing use. Nothing on the platform is legal advice; Customers should consult their own counsel.
+            </p>
+            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-3">
+              <strong>Dispute resolution for DaaS Customers.</strong> Any dispute between Settle In Peace, Inc. and a DaaS Customer arising out of or relating to the DaaS subscription shall be resolved by binding individual arbitration administered by the American Arbitration Association under its Commercial Arbitration Rules, seated in Delaware. The parties waive any right to participate in a class action, class arbitration, or other representative proceeding, and waive trial by jury, to the fullest extent permitted by law. This clause applies to business Customers only and does not affect consumers&apos; rights under the remainder of these Terms.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-bold text-black dark:text-white mb-3">7. No Guarantees</h2>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
               Debt settlement and debt consolidation programs may negatively impact your credit score. Forgiven debt exceeding $600 may be considered taxable income by the IRS. Results vary based on individual circumstances. Not all clients complete their programs. Not all services are available in all states. We make no guarantees regarding the outcome of any debt relief program.

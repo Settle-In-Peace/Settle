@@ -43,6 +43,7 @@ import { CreateReviewAsks1700000000040 } from './1700000000040-CreateReviewAsks'
 import { CreateEsignSignatures1700000000041 } from './1700000000041-CreateEsignSignatures';
 import { AddLeadMlScoringColumns1700000000042 } from './1700000000042-AddLeadMlScoringColumns';
 import { RenameLeadPurchasedByColumn1700000000043 } from './1700000000043-RenameLeadPurchasedByColumn';
+import { CreateOrgSeatTables1700000000044 } from './1700000000044-CreateOrgSeatTables';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -90,6 +91,7 @@ const migrations: MigrationConstructor[] = [
   CreateEsignSignatures1700000000041,
   AddLeadMlScoringColumns1700000000042,
   RenameLeadPurchasedByColumn1700000000043,
+  CreateOrgSeatTables1700000000044,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

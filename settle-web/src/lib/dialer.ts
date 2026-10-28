@@ -97,3 +97,105 @@ export function hangupDialerCall(id: string) {
     method: 'POST',
   });
 }
+
+// ── Agent work queue + stats (settle-api seats module) ────────────────────
+
+export interface QueueCompliance {
+  blocked: boolean;
+  reasons: string[];
+  dnc: boolean;
+  doNotCall: boolean;
+  consentOnFile: boolean;
+  fdcpa: {
+    status: 'ok' | 'outside' | 'unknown';
+    localHour?: number;
+    timeZone?: string;
+    state?: string;
+  };
+}
+
+export interface QueueItem {
+  type: 'account' | 'lead';
+  /** accountId for type='account', leadId for type='lead' */
+  id: string;
+  clientId?: string;
+  name: string;
+  phone?: string;
+  status: string;
+  balance?: number;
+  priority?: number;
+  delinquencyDays?: number;
+  lastContactAt?: string;
+  compliance: QueueCompliance;
+}
+
+export interface AgentStatsBucket {
+  calls: number;
+  answered: number;
+  avgDurationSeconds: number;
+  dispositions: Record<string, number>;
+}
+
+export interface TeamAgentStats {
+  userId: string;
+  orgRole: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  today: AgentStatsBucket;
+  week: AgentStatsBucket;
+}
+
+export function getDialerQueue() {
+  return dialerApi()<{ generatedAt: string; items: QueueItem[] }>('/dialer/queue', {
+    method: 'GET',
+  });
+}
+
+export function getDialerMyStats() {
+  return dialerApi()<{ agentId: string; today: AgentStatsBucket; week: AgentStatsBucket }>(
+    '/dialer/my-stats',
+    { method: 'GET' },
+  );
+}
+
+export function getDialerTeamStats() {
+  return dialerApi()<{
+    orgId: string;
+    agents: TeamAgentStats[];
+    liveCalls: {
+      id: string;
+      agentId?: string;
+      agentName?: string;
+      phoneNumber: string;
+      status: string;
+      startedAt?: string;
+      createdAt: string;
+    }[];
+  }>('/dialer/team-stats', { method: 'GET' });
+}
+
+export function setDialerCallDisposition(callId: string, disposition: string, notes?: string) {
+  return dialerApi()<DialerCall>(`/dialer/calls/${callId}/disposition`, {
+    method: 'POST',
+    body: JSON.stringify({ disposition, notes }),
+  });
+}
+
+// ── Collection AI (script pane) ────────────────────────────────────────────
+
+export interface NextActionResult {
+  accountId: string;
+  action: 'call' | 'email' | 'sms' | 'letter' | 'settle' | 'escalate';
+  reason: string;
+  scriptSnippet?: string;
+  requiresReview: true;
+  generatedAt: string;
+}
+
+export function getNextAction(accountId: string) {
+  return dialerApi()<NextActionResult>('/collection-ai/next-action', {
+    method: 'POST',
+    body: JSON.stringify({ accountId }),
+  });
+}

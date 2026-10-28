@@ -57,6 +57,11 @@ import { QaQuestion } from './questions/qa-question.entity';
 import { QaAnswer } from './questions/qa-answer.entity';
 import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
 import { EsignSignature } from './entities/esign-signature.entity';
+import { Org } from './seats/org.entity';
+import { OrgMember } from './seats/org-member.entity';
+import { Seat } from './seats/seat.entity';
+import { SeatUsage } from './seats/seat-usage.entity';
+import { SeatPlan } from './seats/seat-plan.entity';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { DebtsModule } from './debts/debts.module';
@@ -86,6 +91,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { AffiliatesModule } from './affiliates/affiliates.module';
 import { NurtureModule } from './nurture/nurture.module';
 import { EsignModule } from './esign/esign.module';
+import { SeatsModule } from './seats/seats.module';
 
 @Module({
   imports: [
@@ -160,6 +166,11 @@ import { EsignModule } from './esign/esign.module';
         QaAnswer,
         AffiliateConversion,
         EsignSignature,
+        Org,
+        OrgMember,
+        Seat,
+        SeatUsage,
+        SeatPlan,
       ],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
@@ -220,6 +231,11 @@ import { EsignModule } from './esign/esign.module';
       QaAnswer,
       AffiliateConversion,
       EsignSignature,
+      Org,
+      OrgMember,
+      Seat,
+      SeatUsage,
+      SeatPlan,
     ]),
     AuthModule,
     ActivitiesModule,
@@ -250,6 +266,7 @@ import { EsignModule } from './esign/esign.module';
     AffiliatesModule,
     NurtureModule,
     EsignModule,
+    SeatsModule,
   ],
   controllers: [AppController],
   providers: [

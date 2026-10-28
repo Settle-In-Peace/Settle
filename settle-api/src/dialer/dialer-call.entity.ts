@@ -45,6 +45,11 @@ export class DialerCall {
   @Index()
   agentId?: string;
 
+  /** orgs.id — DaaS tenant the placing agent belonged to at call time. */
+  @Column({ name: 'org_id', nullable: true })
+  @Index()
+  orgId?: string;
+
   /** E.164 normalized destination. */
   @Column({ name: 'phone_number', length: 30 })
   phoneNumber: string;
@@ -110,6 +115,16 @@ export class DialerCall {
 
   @Column({ name: 'hangup_cause', length: 100, nullable: true })
   hangupCause?: string;
+
+  /**
+   * Post-call outcome set by the agent (rpc, promise_to_pay, no_contact,
+   * wrong_number, callback, dispute, refused, dnc_request, deceased, other).
+   */
+  @Column({ length: 50, nullable: true })
+  disposition?: string;
+
+  @Column({ name: 'disposition_at', type: 'timestamp', nullable: true })
+  dispositionAt?: Date;
 
   @Column({ type: 'text', nullable: true })
   notes?: string;

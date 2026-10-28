@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { isAuthenticated, getStoredUser, clearAuth } from '../lib/authUtils';
+import { hasOrgMemberFlag } from '../lib/org';
 import Logo from './Logo';
 
 export default function Navigation() {
@@ -77,6 +78,11 @@ export default function Navigation() {
       roleItems.push({ href: '/crm', label: 'CRM Center' });
       roleItems.push({ href: '/leads', label: 'Leads' });
       roleItems.push({ href: '/collections', label: 'Collections' });
+    }
+    // DaaS — platform staff or users with a cached org membership flag.
+    if (user.role === 'sales' || user.role === 'admin' || hasOrgMemberFlag()) {
+      roleItems.push({ href: '/dashboard/dialer', label: 'Dialer' });
+      roleItems.push({ href: '/dashboard/org', label: 'My Org' });
     }
   }
 

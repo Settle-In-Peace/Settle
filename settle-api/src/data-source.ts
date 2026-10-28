@@ -33,6 +33,11 @@ import { AffiliateConversion } from './affiliates/affiliate-conversion.entity';
 import { NurtureSubscriber } from './entities/nurture-subscriber.entity';
 import { ReviewAsk } from './entities/review-ask.entity';
 import { EsignSignature } from './entities/esign-signature.entity';
+import { Org } from './seats/org.entity';
+import { OrgMember } from './seats/org-member.entity';
+import { Seat } from './seats/seat.entity';
+import { SeatUsage } from './seats/seat-usage.entity';
+import { SeatPlan } from './seats/seat-plan.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -78,6 +83,11 @@ export const dataSource = new DataSource({
     NurtureSubscriber,
     ReviewAsk,
     EsignSignature,
+    Org,
+    OrgMember,
+    Seat,
+    SeatUsage,
+    SeatPlan,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

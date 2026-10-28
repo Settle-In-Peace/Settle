@@ -19,6 +19,7 @@ import { DialerCall } from './dialer-call.entity';
 import { DncEntry } from '../entities/dnc-entry.entity';
 import { ConsentLog, ConsentType } from '../entities/consent-log.entity';
 import { DebtorProfile } from '../entities/debtor-profile.entity';
+import { Seat, SeatStatus } from '../seats/seat.entity';
 import {
   TelnyxDialerProvider,
   TelnyxNotConfiguredError,
@@ -50,6 +51,8 @@ export class DialerService {
     private readonly consentRepository: Repository<ConsentLog>,
     @InjectRepository(DebtorProfile)
     private readonly debtorProfilesRepository: Repository<DebtorProfile>,
+    @InjectRepository(Seat)
+    private readonly seatsRepository: Repository<Seat>,
   ) {
     this.providers = new Map<string, DialerProvider>([
       ['telnyx', telnyxProvider],
@@ -182,12 +185,19 @@ export class DialerService {
       );
     }
 
+    // Tenant attribution — the agent's active seat determines which org
+    // this call bills to (DaaS). Null for platform staff without a seat.
+    const seat = await this.seatsRepository.findOne({
+      where: { userId: agentId, status: SeatStatus.ACTIVE },
+    });
+
     // Persist first so client_state can carry the dialer_calls id.
     const call = this.dialerCallsRepository.create({
       contactId: dto.contactId,
       debtId: dto.debtId,
       collectionAccountId: dto.collectionAccountId,
       agentId,
+      orgId: seat?.orgId,
       phoneNumber: normalizedTo,
       fromNumber: dto.from,
       direction: DialerDirection.OUTBOUND,
