@@ -22,6 +22,11 @@ export class CreateOrgDto {
   @IsEmail()
   @IsOptional()
   billingEmail?: string;
+
+  /** Platform admin only — provision the org for another user. Ignored otherwise. */
+  @IsUUID()
+  @IsOptional()
+  ownerUserId?: string;
 }
 
 export class UpdateOrgDto {

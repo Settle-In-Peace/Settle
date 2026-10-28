@@ -52,7 +52,7 @@ export class OrgsController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
-  createOrg(@Req() req: AuthenticatedRequest, @Body() dto: CreateOrgDto & { ownerUserId?: string }) {
+  createOrg(@Req() req: AuthenticatedRequest, @Body() dto: CreateOrgDto) {
     const isAdmin = req.user.role === 'admin';
     const ownerId = isAdmin && dto.ownerUserId ? dto.ownerUserId : req.user.sub;
     return this.seatsService.createOrg(ownerId, dto, isAdmin);
