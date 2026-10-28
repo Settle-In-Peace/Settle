@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { OrgMember, OrgMemberStatus, OrgRole } from './org-member.entity';
 import { OrgContext } from './org-role.guard';
 import { DialerCall } from '../dialer/dialer-call.entity';
