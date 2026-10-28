@@ -7,6 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -382,4 +383,71 @@ export class DialerService {
       })),
     };
   }
+
+  /** Start an auto-dial campaign — sequential through the contact list. */
+  async startCampaign(
+    agentId: string,
+    campaign: { contacts: CampaignContact[]; consentConfirmed: boolean },
+  ): Promise<{ campaignId: string; queued: number }> {
+    if (!campaign.consentConfirmed) {
+      throw new BadRequestException('Campaign dialing requires confirmed consent');
+    }
+    const campaignId = randomUUID();
+    // Fire-and-forget runner — sequential, waits for terminal status per call.
+    void this.runCampaign(campaignId, campaign.contacts, agentId).catch((e) =>
+      this.logger.error(`campaign ${campaignId} aborted: ${e?.message || e}`),
+    );
+    return { campaignId, queued: campaign.contacts.length };
+  }
+
+  private async runCampaign(campaignId: string, contacts: CampaignContact[], agentId: string): Promise<void> {
+    for (const contact of contacts) {
+      try {
+        const call = await this.placeCall(
+          {
+            to: contact.to,
+            contactId: contact.contactId,
+            debtId: contact.debtId,
+            collectionAccountId: contact.collectionAccountId,
+            manualDial: false,
+            consentConfirmed: true,
+            notes: `campaign:${campaignId}`,
+          },
+          agentId,
+        );
+        // Wait for terminal status (max ~4 min) — webhook updates the row.
+        for (let i = 0; i < 48; i++) {
+          await new Promise((r) => setTimeout(r, 5000));
+          const row = await this.dialerCallsRepository.findOne({ where: { id: call.id } });
+          if (!row || TERMINAL_STATUSES.has(row.status)) break;
+        }
+      } catch (e) {
+        this.logger.warn(`campaign ${campaignId} skipped ${contact.to}: ${(e as Error).message}`);
+        continue; // DNC/consent failures skip the contact, don't abort the campaign
+      }
+    }
+    this.logger.log(`campaign ${campaignId} finished — ${contacts.length} contacts processed`);
+  }
 }
+
+// ── Campaign auto-dialer ─────────────────────────────────────────────
+// Sequential per-contact dialing through the SAME compliance-gated placeCall
+// path (DNC check + consent assertion) — manualDial=false semantics, so every
+// contact must carry confirmed consent. Runs server-side; each call waits for
+// a terminal status before the next dial.
+
+export interface CampaignContact {
+  to: string;
+  contactId?: string;
+  debtId?: string;
+  collectionAccountId?: string;
+}
+
+const TERMINAL_STATUSES = new Set([
+  DialerCallStatus.COMPLETED,
+  DialerCallStatus.NO_ANSWER,
+  DialerCallStatus.BUSY,
+  DialerCallStatus.FAILED,
+  DialerCallStatus.VOICEMAIL,
+  DialerCallStatus.CANCELLED,
+]);

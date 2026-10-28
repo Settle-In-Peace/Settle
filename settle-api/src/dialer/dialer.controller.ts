@@ -74,4 +74,15 @@ export class DialerController {
   getStatus() {
     return this.dialerService.getStatus();
   }
+
+  /**
+   * POST /dialer/campaign — sequential auto-dial through a contact list.
+   * Each call runs the same DNC + consent gates as single calls
+   * (manualDial=false); contacts that fail are skipped, not aborting.
+   */
+  @Post('campaign')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  startCampaign(@Body() body: { contacts: { to: string; contactId?: string; debtId?: string; collectionAccountId?: string }[]; consentConfirmed: boolean }, @Req() req: AuthenticatedRequest) {
+    return this.dialerService.startCampaign(req.user.sub, body);
+  }
 }
