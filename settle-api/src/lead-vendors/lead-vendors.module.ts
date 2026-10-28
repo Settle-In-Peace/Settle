@@ -4,13 +4,19 @@ import { Lead } from '../entities/lead.entity';
 import { LeadVendorAccount } from '../entities/lead-vendor-account.entity';
 import { LeadImportBatch } from '../entities/lead-import-batch.entity';
 import { LeadPurchase } from '../entities/lead-purchase.entity';
+import { CrmLead } from '../entities/crm-lead.entity';
+import { DncEntry } from '../entities/dnc-entry.entity';
+import { ConsentLog } from '../entities/consent-log.entity';
+import { SkipTraceResult } from '../entities/skip-trace-result.entity';
 import { CrmModule } from '../crm/crm.module';
 import { CollectionsModule } from '../collections/collections.module';
+import { DialerModule } from '../dialer/dialer.module';
 import { LeadVendorsController } from './lead-vendors.controller';
 import { LeadVendorWebhookController } from './lead-vendor-webhook.controller';
 import { LeadVendorsService } from './lead-vendors.service';
 import { LeadVendorRegistry } from './vendor-registry.service';
 import { VendorLeadScoringService } from './vendor-lead-scoring.service';
+import { StubSkipTraceProvider } from './stub-skip-trace.provider';
 
 /**
  * Lead-vendor / lead-purchase integration layer.
@@ -41,12 +47,27 @@ import { VendorLeadScoringService } from './vendor-lead-scoring.service';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Lead, LeadVendorAccount, LeadImportBatch, LeadPurchase]),
+    TypeOrmModule.forFeature([
+      Lead,
+      LeadVendorAccount,
+      LeadImportBatch,
+      LeadPurchase,
+      CrmLead,
+      DncEntry,
+      ConsentLog,
+      SkipTraceResult,
+    ]),
     CrmModule,
     CollectionsModule,
+    DialerModule,
   ],
   controllers: [LeadVendorsController, LeadVendorWebhookController],
-  providers: [LeadVendorsService, LeadVendorRegistry, VendorLeadScoringService],
+  providers: [
+    LeadVendorsService,
+    LeadVendorRegistry,
+    VendorLeadScoringService,
+    StubSkipTraceProvider,
+  ],
   exports: [LeadVendorsService, LeadVendorRegistry],
 })
 export class LeadVendorsModule {}

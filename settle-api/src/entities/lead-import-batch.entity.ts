@@ -10,6 +10,7 @@ import {
 export enum LeadImportBatchSource {
   WEBHOOK = 'webhook',
   CSV = 'csv',
+  XLSX = 'xlsx',
   PING_POST = 'ping_post',
   API_ORDER = 'api_order',
 }
@@ -64,6 +65,17 @@ export class LeadImportBatch {
 
   @Column({ type: 'int', default: 0 })
   invalid: number;
+
+  /** Rows skipped because their phone is on the internal DNC list. */
+  @Column({ name: 'dnc_blocked', type: 'int', default: 0 })
+  dncBlocked: number;
+
+  /**
+   * Feeder-chain metadata: dedupe detail (which rows matched which table),
+   * DNC block detail, skip-trace run summaries, and the last campaign launch.
+   */
+  @Column('jsonb', { name: 'metadata', nullable: true })
+  metadata?: Record<string, unknown>;
 
   /** Total paid for leads delivered in this batch, when known. */
   @Column({

@@ -8,6 +8,10 @@ export interface NormalizedLead {
   lastName: string;
   email?: string;
   phone?: string; // E.164
+  /** Additional phones found on the row — E.164, deduped, primary excluded. */
+  altPhones?: string[];
+  streetAddress?: string;
+  city?: string;
   state?: string;
   zipCode?: string;
   totalDebt?: number;
@@ -40,6 +44,14 @@ const FIELD_ALIASES: Record<string, keyof Omit<NormalizedLead, 'extra'>> = {
   mobile: 'phone',
   phone1: 'phone',
   telephone: 'phone',
+  address: 'streetAddress',
+  street: 'streetAddress',
+  street_address: 'streetAddress',
+  addr: 'streetAddress',
+  addr1: 'streetAddress',
+  address1: 'streetAddress',
+  city: 'city',
+  town: 'city',
   state: 'state',
   st: 'state',
   zip: 'zipCode',
@@ -72,6 +84,19 @@ const FIELD_ALIASES: Record<string, keyof Omit<NormalizedLead, 'extra'>> = {
   external_id: 'vendorLeadId',
   reference: 'vendorLeadId',
 };
+
+/**
+ * Secondary-phone columns — any number of these may appear on a row; all are
+ * collected into `altPhones` (normalized, deduped, primary excluded).
+ */
+const ALT_PHONE_ALIASES = new Set([
+  'phone2',
+  'phone_2',
+  'mobile2',
+  'cell',
+  'work_phone',
+  'alt_phone',
+]);
 
 /** Normalize a US phone to E.164. Returns null when unusable. */
 export function normalizePhone(raw: unknown): string | null {
@@ -135,9 +160,15 @@ export function normalizeVendorLead(input: Record<string, unknown>): {
   const problems: string[] = [];
   const extra: Record<string, unknown> = {};
   const out: Record<string, unknown> = {};
+  const altRaw: unknown[] = [];
 
   for (const [key, value] of Object.entries(input ?? {})) {
-    const canonical = FIELD_ALIASES[key.trim().toLowerCase().replace(/[\s\-]+/g, '_')];
+    const normalizedKey = key.trim().toLowerCase().replace(/[\s\-]+/g, '_');
+    if (ALT_PHONE_ALIASES.has(normalizedKey)) {
+      altRaw.push(value);
+      continue;
+    }
+    const canonical = FIELD_ALIASES[normalizedKey];
     if (canonical) {
       out[canonical] = value;
     } else if (value !== undefined && value !== null && value !== '') {
@@ -165,11 +196,23 @@ export function normalizeVendorLead(input: Record<string, unknown>): {
   const state = String(out.state ?? '').trim().toUpperCase();
   if (state && !STATE_RE.test(state)) problems.push('invalid state');
 
+  // Secondary phones — normalized, deduped, primary excluded.
+  const altPhones = Array.from(
+    new Set(
+      altRaw
+        .map((v) => normalizePhone(v))
+        .filter((p): p is string => !!p && p !== phone),
+    ),
+  );
+
   const lead: NormalizedLead = {
     firstName: firstName || 'Unknown',
     lastName: lastName || 'Lead',
     email: email ?? undefined,
     phone: phone ?? undefined,
+    altPhones: altPhones.length ? altPhones : undefined,
+    streetAddress: String(out.streetAddress ?? '').trim() || undefined,
+    city: String(out.city ?? '').trim() || undefined,
     state: STATE_RE.test(state) ? state : undefined,
     zipCode: String(out.zipCode ?? '').trim() || undefined,
     totalDebt: asDebt(out.totalDebt),

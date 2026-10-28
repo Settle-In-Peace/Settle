@@ -67,6 +67,33 @@ describe('normalizeVendorLead', () => {
     const { problems } = normalizeVendorLead({ firstName: 'No', lastName: 'Contact' });
     expect(problems).toContain('no usable phone or email');
   });
+
+  it('maps address fields (address/street/city/town aliases)', () => {
+    const { lead } = normalizeVendorLead({
+      name: 'Jane Doe',
+      phone: '5551234567',
+      'Street Address': '123 Main St',
+      town: 'Austin',
+      state: 'TX',
+      zip: '78701',
+    });
+    expect(lead.streetAddress).toBe('123 Main St');
+    expect(lead.city).toBe('Austin');
+    expect(lead.zipCode).toBe('78701');
+  });
+
+  it('collects secondary phones into altPhones — normalized, deduped, primary excluded', () => {
+    const { lead } = normalizeVendorLead({
+      name: 'Jane Doe',
+      phone: '555-123-4567',
+      phone2: '(555) 987-6543',
+      cell: '555-123-4567', // same as primary — excluded
+      work_phone: '5551112222',
+      alt_phone: 'bad',
+    });
+    expect(lead.phone).toBe('+15551234567');
+    expect(lead.altPhones).toEqual(['+15559876543', '+15551112222']);
+  });
 });
 
 describe('parseCsv', () => {

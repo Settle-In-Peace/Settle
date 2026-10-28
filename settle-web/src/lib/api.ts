@@ -2,7 +2,7 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { clearAuth, getStoredRefreshToken, storeRefreshToken } from './authUtils';
 import { getToken, setToken } from './auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
 
 type ApiData = Record<string, unknown>;
 
@@ -448,15 +448,31 @@ export interface LeadVendorStatus {
 export interface LeadImportBatch {
   id: string;
   vendorName: string;
-  source: 'webhook' | 'csv' | 'ping_post' | 'api_order';
+  source: 'webhook' | 'csv' | 'xlsx' | 'ping_post' | 'api_order';
   filename?: string;
   status: 'processing' | 'completed' | 'failed';
   totalRows: number;
   imported: number;
   duplicates: number;
   invalid: number;
+  dncBlocked: number;
   totalCost?: number;
   rowErrors?: { row: number; reason: string }[];
+  metadata?: {
+    dedupe?: { row: number; matched: 'leads' | 'crm_leads'; matchedId: string }[];
+    dnc?: { row: number; phone: string }[];
+    skipTrace?: {
+      provider: string;
+      processed: number;
+      found: number;
+      manual: number;
+      failed: number;
+      estimatedCost: number;
+      at: string;
+    };
+    campaign?: { campaignId: string | null; queued: number; skipped: number; at: string };
+    [k: string]: unknown;
+  };
   error?: string;
   createdAt: string;
 }
@@ -467,6 +483,10 @@ export interface VendorLead {
   lastName: string;
   email?: string;
   phone?: string;
+  altPhones?: string[];
+  streetAddress?: string;
+  city?: string;
+  needsSkipTrace?: boolean;
   state?: string;
   totalDebt?: number;
   debtTypes?: string[];
@@ -543,6 +563,52 @@ export function importVendorCsv(vendor: string, csv: string, filename?: string) 
   return leadVendorsApi()<{ batch: LeadImportBatch }>('/lead-vendors/import/csv', {
     method: 'POST',
     body: JSON.stringify({ vendor, csv, filename }),
+  });
+}
+/**
+ * Raw file upload — works for CSV (text/csv) and Excel (.xlsx workbooks
+ * sent as binary; the API picks the parser by content-type/extension).
+ */
+export function importVendorFile(vendor: string, file: File) {
+  const qs = `?vendor=${encodeURIComponent(vendor)}&filename=${encodeURIComponent(file.name)}`;
+  return leadVendorsApi()<{ batch: LeadImportBatch }>(`/lead-vendors/import/csv${qs}`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file,
+  });
+}
+export interface BatchSkipTraceRun {
+  batchId: string;
+  provider: string;
+  processed: number;
+  found: number;
+  manual: number;
+  failed: number;
+  skipped: { leadId: string; reason: string }[];
+  estimatedCost: number;
+  results: { leadId: string; resultId: string; status: string; phonesFound: number }[];
+}
+export function skipTraceImportBatch(batchId: string, maxLookups?: number) {
+  return leadVendorsApi()<BatchSkipTraceRun>(`/lead-vendors/import/${batchId}/skip-trace`, {
+    method: 'POST',
+    body: JSON.stringify(maxLookups ? { maxLookups } : {}),
+  });
+}
+export function getImportBatchSkipTraces(batchId: string) {
+  return leadVendorsApi()<{ batchId: string; results: any[] }>(
+    `/lead-vendors/import/${batchId}/skip-trace`,
+    { method: 'GET' },
+  );
+}
+export interface BatchCampaignResult {
+  campaignId: string | null;
+  queued: number;
+  skipped: { leadId: string; reason: string }[];
+}
+export function startBatchCampaign(batchId: string, consentConfirmed: boolean) {
+  return leadVendorsApi()<BatchCampaignResult>(`/lead-vendors/import/${batchId}/campaign`, {
+    method: 'POST',
+    body: JSON.stringify({ consentConfirmed }),
   });
 }
 export function getVendorLeads(filter: {

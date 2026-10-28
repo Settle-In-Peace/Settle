@@ -20,9 +20,33 @@ export class SkipTraceResult {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'collection_account_id' })
+  /**
+   * Nullable: batch skip-trace jobs run against imported leads that have no
+   * collections account yet — those rows link via leadId/importBatchId.
+   */
+  @Column({ name: 'collection_account_id', nullable: true })
   @Index()
-  collectionAccountId: string;
+  collectionAccountId?: string;
+
+  /** Imported-lead link for batch skip-trace jobs (leads.id). */
+  @Column({ name: 'lead_id', nullable: true })
+  @Index()
+  leadId?: string;
+
+  /** Import batch this lookup belongs to (lead_import_batches.id). */
+  @Column({ name: 'import_batch_id', nullable: true })
+  @Index()
+  importBatchId?: string;
+
+  /** Vendor-side cost estimate per lookup (USD) — metering for billing. */
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 4,
+    name: 'estimated_cost',
+    nullable: true,
+  })
+  estimatedCost?: number;
 
   @Column({ name: 'requested_by', nullable: true })
   @Index()

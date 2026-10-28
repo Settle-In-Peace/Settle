@@ -79,6 +79,10 @@ export default function Navigation() {
       roleItems.push({ href: '/leads', label: 'Leads' });
       roleItems.push({ href: '/collections', label: 'Collections' });
     }
+    // Bulk import — sales/admin only (SalesGuard on the API).
+    if (user.role === 'sales' || user.role === 'admin') {
+      roleItems.push({ href: '/dashboard/import', label: 'Import' });
+    }
     // DaaS — platform staff or users with a cached org membership flag.
     if (user.role === 'sales' || user.role === 'admin' || hasOrgMemberFlag()) {
       roleItems.push({ href: '/dashboard/dialer', label: 'Dialer' });

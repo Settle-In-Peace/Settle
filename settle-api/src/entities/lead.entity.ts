@@ -160,4 +160,19 @@ export class Lead {
 
   @Column({ type: 'uuid', name: 'collection_account_id', nullable: true })
   collectionAccountId?: string; // handoff link after assign-to-collections
+
+  // ── Bulk-import feeder (address + alt phones + skip-trace flag) ──────
+  @Column({ type: 'varchar', length: 255, name: 'street_address', nullable: true })
+  streetAddress?: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  city?: string;
+
+  /** Extra phones from the source file — E.164, deduped, primary excluded. */
+  @Column({ type: 'jsonb', name: 'alt_phones', nullable: true })
+  altPhones?: string[];
+
+  /** Set when the row imported without a usable phone — queue for skip-trace. */
+  @Column({ type: 'boolean', name: 'needs_skip_trace', default: false })
+  needsSkipTrace!: boolean;
 }

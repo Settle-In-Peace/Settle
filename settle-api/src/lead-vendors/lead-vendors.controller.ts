@@ -20,8 +20,10 @@ import { PurchaseLeadsDto } from './dto/purchase-leads.dto';
 import { ImportCsvDto } from './dto/import-csv.dto';
 import { ListImportedLeadsDto } from './dto/list-imported-leads.dto';
 import { UpsertVendorAccountDto } from './dto/upsert-vendor-account.dto';
+import { BatchSkipTraceDto } from './dto/batch-skip-trace.dto';
+import { BatchCampaignDto } from './dto/batch-campaign.dto';
 
-const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB (xlsx compresses worse than csv)
 
 interface AuthenticatedRequest extends Request {
   user: { sub: string; id: string; role: string; email: string };
@@ -92,9 +94,11 @@ export class LeadVendorsController {
   }
 
   /**
-   * CSV import. Accepts either:
-   *   - application/json { vendor, filename?, csv }  (file contents in `csv`)
-   *   - text/csv (or application/octet-stream) raw file bytes with
+   * CSV + Excel (.xlsx) import. Accepts:
+   *   - application/json { vendor, filename?, csv }  (file text in `csv`;
+   *     for a `.xlsx` filename, `csv` may carry base64 workbook bytes)
+   *   - text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+   *     or application/octet-stream raw file bytes with
    *     ?vendor=<name>&filename=<name> query params
    */
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -106,13 +110,22 @@ export class LeadVendorsController {
     @Query('filename') filenameQuery?: string,
   ) {
     const contentType = req.headers['content-type'] ?? '';
-    let vendor = vendorQuery || body?.vendor;
-    let filename = filenameQuery || body?.filename;
-    let csv = body?.csv;
+    const vendor = vendorQuery || body?.vendor;
+    const filename = filenameQuery || body?.filename;
 
-    if (!contentType.includes('application/json')) {
+    let file: Buffer;
+    if (contentType.includes('application/json')) {
+      const payload = body?.csv;
+      if (!payload || !payload.trim()) {
+        throw new BadRequestException('file content is empty');
+      }
+      // JSON path: .xlsx filenames carry base64 workbook bytes, else CSV text.
+      file = /\.xlsx$/i.test(filename ?? '')
+        ? Buffer.from(payload, 'base64')
+        : Buffer.from(payload, 'utf8');
+    } else {
       // Raw file body — read the stream ourselves (the JSON parser skipped it).
-      csv = await this.readRawBody(req);
+      file = await this.readRawBody(req);
       if (!vendor) {
         throw new BadRequestException(
           'vendor is required (query param or JSON field)',
@@ -120,13 +133,58 @@ export class LeadVendorsController {
       }
     }
     if (!vendor) throw new BadRequestException('vendor is required');
-    if (!csv || !csv.trim()) throw new BadRequestException('csv content is empty');
+    if (!file.length) throw new BadRequestException('file content is empty');
 
-    return this.leadVendorsService.importCsv(
+    return this.leadVendorsService.importFile(
       vendor,
-      csv,
+      file,
       filename,
+      contentType,
       req.user.sub,
+    );
+  }
+
+  /**
+   * Skip-trace queue for a batch's phoneless leads — creates pending
+   * skip_trace_results rows and runs them through the configured provider
+   * (stub → status 'manual' until a real vendor is wired). Max 500/run.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('import/:batchId/skip-trace')
+  queueBatchSkipTrace(
+    @Param('batchId') batchId: string,
+    @Body() dto: BatchSkipTraceDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.leadVendorsService.queueBatchSkipTrace(
+      batchId,
+      req.user.sub,
+      dto ?? {},
+    );
+  }
+
+  /** Skip-trace results for a batch — the manual review queue. */
+  @Get('import/:batchId/skip-trace')
+  listBatchSkipTraces(@Param('batchId') batchId: string) {
+    return this.leadVendorsService.listBatchSkipTraces(batchId);
+  }
+
+  /**
+   * Chain the batch into a dialer campaign — resolves each lead's first
+   * dialable phone (primary → altPhones), skips phoneless/DNC rows, and
+   * hands contacts to the same DNC + consent-gated campaign runner.
+   */
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('import/:batchId/campaign')
+  startBatchCampaign(
+    @Param('batchId') batchId: string,
+    @Body() dto: BatchCampaignDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.leadVendorsService.startBatchCampaign(
+      batchId,
+      req.user.sub,
+      dto,
     );
   }
 
@@ -156,16 +214,16 @@ export class LeadVendorsController {
     return this.leadVendorsService.assignToCollections(id, req.user.sub);
   }
 
-  private async readRawBody(req: Request): Promise<string> {
+  private async readRawBody(req: Request): Promise<Buffer> {
     const chunks: Buffer[] = [];
     let size = 0;
     for await (const chunk of req) {
       size += (chunk as Buffer).length;
-      if (size > MAX_CSV_BYTES) {
-        throw new BadRequestException('CSV too large (max 5MB)');
+      if (size > MAX_FILE_BYTES) {
+        throw new BadRequestException('File too large (max 10MB)');
       }
       chunks.push(chunk as Buffer);
     }
-    return Buffer.concat(chunks).toString('utf8');
+    return Buffer.concat(chunks);
   }
 }

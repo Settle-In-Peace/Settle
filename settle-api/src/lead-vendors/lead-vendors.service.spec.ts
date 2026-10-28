@@ -70,6 +70,33 @@ function makeService(opts: {
     findOne: jest.fn(),
   };
 
+  const config = { get: jest.fn((_k: string, d?: any) => d) };
+  const dialerService = {
+    startCampaign: jest.fn(async (_a: string, c: any) => ({
+      campaignId: 'camp-1',
+      queued: c.contacts.length,
+    })),
+  };
+  const stubSkipTrace = {
+    name: 'stub',
+    isConfigured: () => true,
+    lookup: jest.fn(async () => ({ status: 'manual', estimatedCost: 0 })),
+  };
+  const crmLeadsRepo = makeRepo();
+  crmLeadsRepo.createQueryBuilder.mockReturnValue({
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    getOne: jest.fn(async () => null),
+  });
+  const dncRepo = makeRepo();
+  dncRepo.createQueryBuilder.mockReturnValue({
+    where: jest.fn().mockReturnThis(),
+    getMany: jest.fn(async () => []),
+    getOne: jest.fn(async () => null),
+  });
+  const consentRepo = makeRepo();
+  const skipTraceRepo = makeRepo();
+
   const service = new LeadVendorsService(
     registry as any,
     scoring as any,
@@ -79,6 +106,13 @@ function makeService(opts: {
     accountsRepo as any,
     crmService as any,
     collectionsService as any,
+    config as any,
+    dialerService as any,
+    stubSkipTrace as any,
+    crmLeadsRepo as any,
+    dncRepo as any,
+    consentRepo as any,
+    skipTraceRepo as any,
   );
 
   return { service, leadsRepo, batchesRepo, purchasesRepo, registry, qb };
