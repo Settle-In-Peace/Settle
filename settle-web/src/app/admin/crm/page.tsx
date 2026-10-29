@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getStoredToken, getStoredUser } from '@/lib/authUtils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
-
+import { API_URL } from '@/lib/apiUrl';
 type Tab = 'pipeline' | 'leads' | 'clients';
 
 interface CrmLead {

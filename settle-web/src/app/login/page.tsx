@@ -11,9 +11,8 @@ import ErrorMessage from '../../components/ErrorMessage';
 import Logo from '../../components/Logo';
 import PasswordInput from '../../components/PasswordInput';
 
+import { API_URL } from '@/lib/apiUrl';
 type AuthMode = 'password' | 'otp' | 'passkey';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
 const redirectByRole = (role?: string) => {
   if (role === 'admin') return '/admin';

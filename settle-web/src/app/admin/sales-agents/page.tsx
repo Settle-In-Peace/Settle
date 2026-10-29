@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getStoredToken, getStoredUser } from '@/lib/authUtils';
 import PasswordInput from '../../../components/PasswordInput';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
-
+import { API_URL } from '@/lib/apiUrl';
 interface User {
   id: string;
   email: string;

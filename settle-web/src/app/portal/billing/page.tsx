@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getStoredToken, getStoredUser } from '@/lib/authUtils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
-
+import { API_URL } from '@/lib/apiUrl';
 const CREDIT_PACKAGES = [
   { credits: 500, price: 50, bonus: 0, label: 'Starter', popular: false },
   { credits: 1000, price: 90, bonus: 0, label: 'Professional', popular: true },

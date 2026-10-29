@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '../../../components/Logo';
 
+import { API_URL } from '@/lib/apiUrl';
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -41,8 +42,6 @@ const REQUIRED_FIELDS: (keyof AssessmentData)[] = [
   'phone',
   'tcpaConsent',
 ];
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
 
 // Must match the disclosure text used in the standard assessment form so the
 // stored consent record is consistent regardless of which flow the consumer

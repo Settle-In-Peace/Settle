@@ -7,6 +7,7 @@ import ComplianceDisclosure from '../../components/ComplianceDisclosure';
 import { PARTNER_OFFERS } from '../../config/partner-offers';
 import { compareProviders, getProviders } from '@/lib/api';
 import { getToken } from '@/lib/auth';
+import { API_URL } from '@/lib/apiUrl';
 
 interface Provider {
   id: string;
@@ -133,7 +134,7 @@ function CompareContent() {
     setRequesting(providerId);
     setActionError('');
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
+      const base = API_URL;
       const res = await fetch(`${base}/matching/request-contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

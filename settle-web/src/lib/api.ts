@@ -2,7 +2,8 @@ import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { clearAuth, getStoredRefreshToken, storeRefreshToken } from './authUtils';
 import { getToken, setToken } from './auth';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
+import { API_URL } from './apiUrl';
+export { API_URL };
 
 type ApiData = Record<string, unknown>;
 

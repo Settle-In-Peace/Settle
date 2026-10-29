@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getFirebaseAuth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase';
+import { API_URL } from '@/lib/apiUrl';
 
 interface FirebasePhoneVerifyProps {
   phone: string;
@@ -67,7 +68,7 @@ export default function FirebasePhoneVerify({ phone, token, onVerified }: Fireba
       const credential = await confirmationRef.current.confirm(code);
       const idToken = await credential.user.getIdToken();
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
+      const apiUrl = API_URL;
       const digits = phone.replace(/\D/g, '');
       const e164Phone = phone.startsWith('+') ? phone : digits.startsWith('1') ? `+${digits}` : `+1${digits}`;
 

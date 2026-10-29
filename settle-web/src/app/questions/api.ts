@@ -1,11 +1,10 @@
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { getToken } from '@/lib/auth';
 
+import { API_URL } from '@/lib/apiUrl';
 // Anonymous Q&A board API helpers. Public reads need no token; the client
 // still forwards a Bearer token when one is stored so staff identities are
 // attached server-side. Mirrors the pattern in src/lib/api.ts.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
-
 function api() {
   return createJsonApiClient({
     getBaseUrl: () => API_URL,

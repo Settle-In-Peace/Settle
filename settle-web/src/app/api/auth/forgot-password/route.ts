@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_URL } from "@/lib/apiUrl";
 
 export const dynamic = "force-dynamic";
-
-const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "https://api.settleinpeace.com"
-).replace(/\/+$/, "");
 
 /**
  * Send a password-reset email directly via the Resend REST API.

@@ -1,10 +1,9 @@
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { getToken } from '@/lib/auth';
 
+import { API_URL } from '@/lib/apiUrl';
 // Community/feature-board API helpers. Mirrors the client pattern in
 // src/lib/api.ts (kept here so shared files stay untouched by other agents).
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
-
 function api() {
   return createJsonApiClient({
     getBaseUrl: () => API_URL,

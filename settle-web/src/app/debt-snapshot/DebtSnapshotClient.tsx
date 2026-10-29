@@ -2,9 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com';
+import { API_URL } from '@/lib/apiUrl';
 
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',

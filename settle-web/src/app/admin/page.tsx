@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { clearAuth, getStoredToken, getStoredUser } from '@/lib/authUtils';
 import Logo from '@/components/Logo';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
-
+import { API_URL } from '@/lib/apiUrl';
 interface AdminProvider {
   id: string;
   companyName: string;

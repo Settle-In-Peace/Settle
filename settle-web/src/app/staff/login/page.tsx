@@ -9,8 +9,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 import PasswordInput from '../../../components/PasswordInput';
 import Logo from '../../../components/Logo';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
-
+import { API_URL } from '@/lib/apiUrl';
 const STAFF_ROLES = ['admin', 'sales', 'provider', 'lender', 'referral_manager'];
 
 const ROLE_DASHBOARDS: Record<string, string> = {

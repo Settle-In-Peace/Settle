@@ -11,8 +11,7 @@ import ErrorMessage from '../../components/ErrorMessage';
 import Logo from '../../components/Logo';
 import PasswordInput from '../../components/PasswordInput';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4025';
-
+import { API_URL } from '@/lib/apiUrl';
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');

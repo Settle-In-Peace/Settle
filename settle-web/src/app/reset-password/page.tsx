@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import PasswordInput from '../../components/PasswordInput';
+import { API_URL } from '@/lib/apiUrl';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -36,7 +37,7 @@ function ResetPasswordForm() {
 
     try {
       const apiCall = createJsonApiClient({
-        getBaseUrl: () => process.env.NEXT_PUBLIC_API_URL || 'https://api.settleinpeace.com',
+        getBaseUrl: () => API_URL,
         getToken: () => null,
       });
 
