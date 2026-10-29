@@ -12,7 +12,7 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 
 ## Active
 
-| devin-apiurl-fix | **Prod login broken — localhost:4025 baked into deploy.** Fix: extract API_URL to side-effect-free `src/lib/apiUrl.ts` (prod-URL default + trailing-slash strip), `lib/api.ts` re-exports, 20 files pointed at it. Deploying after commit. | `settle-web/src/lib/{apiUrl,api}.ts` + 19 files under `src/app` + `src/components/FirebasePhoneVerify.tsx` |
+| devin-apiurl-fix | **LANDED `4440bca` + DEPLOYED to prod (worker 65dc8bc2), live-verified.** Prod login was dead — last deploy skipped cf-build.sh's NEXT_PUBLIC_API_URL export → 14 files' `http://localhost:4025` fallback baked into the client bundle → CSP `connect-src https:` blocked every /auth/login. New `src/lib/apiUrl.ts` = single API_URL (prod-URL default + trailing-slash strip); `lib/api.ts` re-exports; 20 consumers converted (both the broken localhost fallbacks and the duplicated prod-URL ones). Bundle verified: login chunks now reference api.settleinpeace.com only. Deploy note for ops: `pnpm cf:deploy` alone is NOT safe — cf-build.sh must run first or the wrong env gets baked. | `settle-web/src/lib/{apiUrl,api}.ts` + 19 files under `src/app` + `src/components/FirebasePhoneVerify.tsx` |
 
 | devin-xss-audit | **DONE — landed `e3711a6`, pushed.** XSS-first sweep. See Recently landed. | (moved to Recently landed) |
 
