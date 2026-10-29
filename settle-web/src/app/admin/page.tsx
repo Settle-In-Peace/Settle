@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { clearAuth, getStoredToken, getStoredUser } from '@/lib/authUtils';
-import Logo from '@/components/Logo';
+import { getStoredToken, getStoredUser } from '@/lib/authUtils';
 
 import { API_URL } from '@/lib/apiUrl';
 interface AdminProvider {
@@ -321,10 +320,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    clearAuth();
-    router.push('/');
-  };
 
   if (loading) {
     return (
@@ -347,24 +342,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Top bar */}
-      <div className="border-b border-zinc-800 bg-zinc-900/60">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl">
-              <Logo />
-            </Link>
-            <span className="rounded-full border border-violet-500/30 bg-violet-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-violet-400">Admin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/admin/crm" className="text-sm font-medium text-emerald-400 hover:text-emerald-300">CRM</Link>
-            <Link href="/admin/sales" className="text-sm font-medium text-emerald-400 hover:text-emerald-300">Sales CRM</Link>
-            <span className="text-sm text-zinc-500 hidden sm:block">{user?.email}</span>
-            <button onClick={handleLogout} className="text-sm text-zinc-500 hover:text-red-500">Logout</button>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-zinc-100 mb-6">Admin Dashboard</h1>
 

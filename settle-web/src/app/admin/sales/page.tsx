@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clearAuth, getStoredToken, getStoredUser } from '@/lib/authUtils';
 import PasswordInput from '../../../components/PasswordInput';
-import Logo from '../../../components/Logo';
 
 import { API_URL } from '@/lib/apiUrl';
 interface SalesAgent {
@@ -125,25 +124,11 @@ export default function AdminSalesPage() {
     }
   };
 
-  const handleLogout = () => { clearAuth(); router.push('/'); };
 
   if (loading) return <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center text-zinc-500">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="border-b border-zinc-800 bg-zinc-900/60">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl"><Logo /></Link>
-            <Link href="/admin" className="text-sm text-zinc-500 hover:text-emerald-400">← Admin</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-zinc-500 hidden sm:block">{user?.email}</span>
-            <button onClick={handleLogout} className="text-sm text-zinc-500 hover:text-red-500">Logout</button>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-zinc-100 mb-6">Sales Agents & Lead Assignment</h1>
 
