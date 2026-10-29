@@ -90,6 +90,16 @@ export default function Navigation() {
     }
   }
 
+  // Single primary workspace link per role — the full staff list stays
+  // in the avatar dropdown so the top bar never gets cluttered.
+  let primaryRoleLink: { href: string; label: string } | null = null;
+  if (authenticated && user) {
+    if (user.role === 'admin') primaryRoleLink = { href: '/admin', label: 'Admin' };
+    else if (user.role === 'sales') primaryRoleLink = { href: '/sales', label: 'Sales CRM' };
+    else if (user.role === 'provider') primaryRoleLink = { href: '/portal', label: 'Provider Portal' };
+    else if (hasOrgMemberFlag()) primaryRoleLink = { href: '/dashboard/dialer', label: 'Dialer' };
+  }
+
   const isActive = (href: string) => pathname === href;
 
   return (
@@ -141,22 +151,19 @@ export default function Navigation() {
               </button>
             )}
 
-            {/* Role-gated links (provider/admin) */}
-            {authenticated && roleItems.length > 0 && (
-              <div className="hidden sm:flex sm:items-center sm:space-x-4">
-                {roleItems.map(item => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`text-sm font-medium transition-colors ${
-                      isActive(item.href)
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+            {/* Primary workspace link only — rest live in the dropdown */}
+            {authenticated && primaryRoleLink && (
+              <div className="hidden sm:flex sm:items-center">
+                <Link
+                  href={primaryRoleLink.href}
+                  className={`text-sm font-medium transition-colors ${
+                    isActive(primaryRoleLink.href) || pathname.startsWith(primaryRoleLink.href + '/')
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  {primaryRoleLink.label}
+                </Link>
               </div>
             )}
 
@@ -223,6 +230,11 @@ export default function Navigation() {
                     ))}
 
                     {/* Role-gated links in dropdown */}
+                    {roleItems.length > 0 && (
+                      <div className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                        Workspace
+                      </div>
+                    )}
                     {roleItems.map(item => (
                       <Link
                         key={item.href}
