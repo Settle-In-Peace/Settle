@@ -10,7 +10,22 @@ Multiple agents work on this repo at once. **Read this file before starting any 
 4. **When done**: move your line to "Recently landed" with the commit hash, and remove stale claims.
 5. **Blockers that need the human**: put them in "Blocked on user" so any agent can surface them.
 
+
+## Game Plan — ranked roadmap (updated 2026-10-29)
+
+Ranking: **P0** = revenue blocker (money can't flow until done) · **P1** = fastest to first revenue · **P2** = conversion→profit (completion, retention) · **P3** = growth/new ideas (rank by expected $/effort).
+Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 the same morning.
+- **P0** Provider inventory — the marketplace has leads but needs partner providers enrolled to monetize (dead without this)
+- **P0** Admin command-center redesign (in progress per AGENT_STATE) — finish + ship
+- **P1** Awin affiliates (World Businesses for Sale adv 116725 review staged — accept/triage invites = free rev share)
+- **P1** Lead→provider match → transaction flow verified end-to-end (revenue happens at match, not signup)
+- **P2** AI chat fix — box Ollama has qwen2.5:3b but env asks qwen3:8b → pull model or fix env (audit finding)
+- **P2** Eligibility-checker + assessment funnel → provider match conversion
+- **P3** LeadOps resale pipeline (export tool exists — needs compliant buyers/channels)
+
 ## Active
+
+| devin-admin-command-center | **IN PROGRESS** — /admin command-center redesign: KPI row (leads/calls/conversion/agents/pending-providers/credits), pipeline funnel, quick actions, activity feed, restyled providers/leads/matches/transactions tabs; fixes paginated-response parse bug (`data.data` not `data.leads`) that zeroed all counters. Light consistency pass on crm/sales/sales-agents + shared AdminChrome nav. | `settle-web/src/app/admin/**`, `settle-web/src/components/admin/AdminChrome.tsx` |
 
 | devin-apiurl-fix | **LANDED `4440bca` + DEPLOYED to prod (worker 65dc8bc2), live-verified.** Prod login was dead — last deploy skipped cf-build.sh's NEXT_PUBLIC_API_URL export → 14 files' `http://localhost:4025` fallback baked into the client bundle → CSP `connect-src https:` blocked every /auth/login. New `src/lib/apiUrl.ts` = single API_URL (prod-URL default + trailing-slash strip); `lib/api.ts` re-exports; 20 consumers converted (both the broken localhost fallbacks and the duplicated prod-URL ones). Bundle verified: login chunks now reference api.settleinpeace.com only. Deploy note for ops: `pnpm cf:deploy` alone is NOT safe — cf-build.sh must run first or the wrong env gets baked. | `settle-web/src/lib/{apiUrl,api}.ts` + 19 files under `src/app` + `src/components/FirebasePhoneVerify.tsx` |
 
