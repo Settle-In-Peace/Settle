@@ -69,29 +69,49 @@ const LEAD_SOURCES = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400',
-  contacted: 'bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400',
-  qualified: 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400',
-  proposal: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400',
-  negotiation: 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-400',
-  nurturing: 'bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-400',
-  closed_won: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400',
-  closed_lost: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400',
-  active: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400',
-  won: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400',
-  lost: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400',
-  on_hold: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
+  new: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  contacted: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+  qualified: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+  proposal: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  negotiation: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  nurturing: 'bg-teal-500/15 text-teal-400 border-teal-500/30',
+  closed_won: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  closed_lost: 'bg-red-500/15 text-red-400 border-red-500/30',
+  active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  won: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  lost: 'bg-red-500/15 text-red-400 border-red-500/30',
+  on_hold: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
+};
+
+const FUNNEL_DOTS: Record<string, string> = {
+  new: 'bg-blue-500',
+  contacted: 'bg-cyan-500',
+  qualified: 'bg-violet-500',
+  proposal: 'bg-amber-500',
+  negotiation: 'bg-orange-500',
+  nurturing: 'bg-teal-500',
+  closed_won: 'bg-emerald-500',
+  closed_lost: 'bg-red-500',
 };
 
 function Badge({ status }: { status?: string }) {
   if (!status) return null;
   return (
     <span
-      className={`text-xs font-bold px-2 py-1 rounded-full ${
-        STATUS_COLORS[status] || 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize tracking-wide ${
+        STATUS_COLORS[status] || 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30'
       }`}
     >
       {status.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function Avatar({ first, last }: { first?: string; last?: string }) {
+  const initials = `${(first || '?')[0]}${(last || '')[0] || ''}`.toUpperCase();
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-zinc-300 border border-zinc-700">
+      {initials}
     </span>
   );
 }
@@ -254,124 +274,183 @@ export default function AdminCrmPage() {
 
   const money = (n?: number) => (n == null ? '—' : `$${Number(n).toLocaleString()}`);
 
+  const openDeals = deals.filter((d) => d.status === 'active');
+  const openValue = openDeals.reduce((s, d) => s + (Number(d.value) || 0), 0);
+  const wonCount = pipeline['closed_won'] ?? 0;
+  const totalInPipeline = LEAD_STATUSES.reduce((s, k) => s + (pipeline[k] ?? 0), 0);
+
   if (!ready) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-        <p className="text-zinc-500">Loading…</p>
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <p className="text-sm text-zinc-500">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      {/* Header */}
+      <div className="border-b border-zinc-800 bg-zinc-900/60 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
-            <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">CRM</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-bold tracking-tight">CRM Center</h1>
+              <Badge status={tab === 'pipeline' ? 'active' : undefined} />
+            </div>
+            <p className="mt-0.5 text-xs text-zinc-500">
               Settlement leads, clients, and the deal pipeline.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowLeadForm(true)}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
             >
-              + Lead
+              + New Lead
             </button>
-            <Link href="/admin" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200">
+            <Link
+              href="/admin"
+              className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200"
+            >
               ← Admin
             </Link>
           </div>
         </div>
 
-        <div className="mt-8 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
-          {(
-            [
-              ['pipeline', 'Pipeline'],
-              ['leads', 'Leads'],
-              ['clients', 'Clients'],
-            ] as [Tab, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
-                tab === key
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900'
-                  : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        {/* Tabs */}
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex gap-1">
+            {(
+              [
+                ['pipeline', 'Pipeline', totalInPipeline],
+                ['leads', 'Leads', leads.length || null],
+                ['clients', 'Clients', clients.length || null],
+              ] as [Tab, string, number | null][]
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`relative px-4 pb-3 pt-1 text-sm font-medium transition ${
+                  tab === key ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {label}
+                {count != null && count > 0 && (
+                  <span className="ml-1.5 rounded-full bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold text-zinc-400">
+                    {count}
+                  </span>
+                )}
+                {tab === key && (
+                  <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-emerald-500" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {error && (
-          <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-            {error}
+      <main className="mx-auto max-w-6xl px-6 py-6">
+        {(error || success) && (
+          <div
+            className={`mb-5 rounded-lg border px-4 py-3 text-sm ${
+              error
+                ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+            }`}
+          >
+            {error || success}
           </div>
         )}
-        {success && (
-          <div className="mt-6 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-            {success}
-          </div>
-        )}
-        {loading && <p className="mt-6 text-sm text-zinc-500">Loading…</p>}
+        {loading && <p className="text-sm text-zinc-500">Loading…</p>}
 
+        {/* ===================== PIPELINE ===================== */}
         {tab === 'pipeline' && !loading && (
-          <div className="mt-6 space-y-6">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {LEAD_STATUSES.slice(0, 8).map((s) => (
-                <div
-                  key={s}
-                  className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                    {s.replace(/_/g, ' ')}
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                    {pipeline[s] ?? 0}
-                  </p>
-                </div>
-              ))}
+          <div className="space-y-6">
+            {/* Funnel strip */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <div className="flex items-end justify-between gap-1">
+                {LEAD_STATUSES.map((s) => {
+                  const n = pipeline[s] ?? 0;
+                  const max = Math.max(1, ...LEAD_STATUSES.map((k) => pipeline[k] ?? 0));
+                  return (
+                    <div key={s} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                      <span className="text-lg font-bold tabular-nums text-zinc-100">{n}</span>
+                      <div className="h-16 w-full max-w-[28px] rounded-sm bg-zinc-800/60 relative overflow-hidden">
+                        <div
+                          className={`absolute bottom-0 left-0 right-0 ${FUNNEL_DOTS[s]} transition-all`}
+                          style={{ height: `${Math.max(4, (n / max) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-center text-[10px] font-medium uppercase tracking-wide text-zinc-500 leading-tight">
+                        {s.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-              <h2 className="px-4 pt-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                Open deals
-              </h2>
-              <div className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
-                {deals
-                  .filter((d) => d.status === 'active')
-                  .map((d) => (
-                    <div key={d.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                      <div>
-                        <span className="font-medium text-zinc-900 dark:text-zinc-100">{d.title}</span>
-                        <span className="ml-2 text-xs text-zinc-500">
-                          {d.stage.replace(/_/g, ' ')} · {d.probability}%
-                        </span>
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Open pipeline</p>
+                <p className="mt-1.5 text-2xl font-bold text-zinc-50">{money(openValue)}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Active deals</p>
+                <p className="mt-1.5 text-2xl font-bold text-zinc-50">{openDeals.length}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Closed won</p>
+                <p className="mt-1.5 text-2xl font-bold text-emerald-400">{wonCount}</p>
+              </div>
+            </div>
+
+            {/* Deals table */}
+            <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
+              <div className="border-b border-zinc-800 px-5 py-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Open deals</h2>
+              </div>
+              {openDeals.length > 0 ? (
+                <div className="divide-y divide-zinc-800/60">
+                  {openDeals.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between px-5 py-3.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-zinc-100">{d.title}</p>
+                        <p className="mt-0.5 text-xs capitalize text-zinc-500">
+                          {d.stage.replace(/_/g, ' ')} · {d.probability}% likely
+                        </p>
                       </div>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className="ml-4 shrink-0 text-sm font-semibold tabular-nums text-zinc-100">
                         {money(d.value)}
                       </span>
                     </div>
                   ))}
-                {deals.filter((d) => d.status === 'active').length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-zinc-500">No active deals.</p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="px-5 py-12 text-center">
+                  <p className="text-sm font-medium text-zinc-400">No active deals</p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Deals appear here when leads reach the proposal stage.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
+        {/* ===================== LEADS ===================== */}
         {tab === 'leads' && !loading && (
-          <div className="mt-6">
-            <div className="mb-4 flex gap-3">
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm text-zinc-500">
+                {leads.length} lead{leads.length === 1 ? '' : 's'}
+                {statusFilter ? ` · ${statusFilter.replace(/_/g, ' ')}` : ''}
+              </p>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 outline-none focus:border-emerald-600"
               >
                 <option value="">All statuses</option>
                 {LEAD_STATUSES.map((s) => (
@@ -381,114 +460,137 @@ export default function AdminCrmPage() {
                 ))}
               </select>
             </div>
-            <div className="space-y-3">
-              {leads.map((l) => (
-                <div
-                  key={l.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {l.firstName} {l.lastName}
-                      </span>
-                      <Badge status={l.status} />
-                      {l.grade && (
-                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                          {l.grade}
-                        </span>
+
+            {leads.length > 0 ? (
+              <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
+                <div className="divide-y divide-zinc-800/60">
+                  {leads.map((l) => (
+                    <div key={l.id} className="flex items-center gap-4 px-5 py-3.5">
+                      <Avatar first={l.firstName} last={l.lastName} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium text-zinc-100">
+                            {l.firstName} {l.lastName}
+                          </span>
+                          <Badge status={l.status} />
+                          {l.grade && (
+                            <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold text-zinc-400">
+                              {l.grade}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-zinc-500">
+                          {l.email}
+                          {l.source ? ` · ${l.source.replace(/_/g, ' ')}` : ''}
+                          {l.estimatedValue ? ` · ${money(l.estimatedValue)}` : ''}
+                        </p>
+                      </div>
+                      {!['closed_won', 'closed_lost'].includes(l.status) && (
+                        <div className="flex shrink-0 gap-1.5">
+                          <button
+                            onClick={() => leadAction(l.id, 'advance')}
+                            disabled={busy === l.id + 'advance'}
+                            className="rounded-md bg-emerald-600/90 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-40"
+                          >
+                            Advance
+                          </button>
+                          <button
+                            onClick={() => leadAction(l.id, 'nurture')}
+                            disabled={busy === l.id + 'nurture'}
+                            className="rounded-md border border-zinc-700 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+                          >
+                            Nurture
+                          </button>
+                          <button
+                            onClick={() => leadAction(l.id, 'promote')}
+                            disabled={busy === l.id + 'promote'}
+                            className="rounded-md border border-teal-600/50 px-2.5 py-1.5 text-[11px] font-semibold text-teal-400 transition hover:bg-teal-500/10 disabled:opacity-40"
+                          >
+                            → Client
+                          </button>
+                          <button
+                            onClick={() => leadAction(l.id, 'lose')}
+                            disabled={busy === l.id + 'lose'}
+                            className="rounded-md border border-red-600/40 px-2.5 py-1.5 text-[11px] font-semibold text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
+                          >
+                            Lose
+                          </button>
+                        </div>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      {l.email} {l.source ? `· ${l.source.replace(/_/g, ' ')}` : ''}
-                      {l.estimatedValue ? ` · ${money(l.estimatedValue)}` : ''}
-                    </p>
-                  </div>
-                  {!['closed_won', 'closed_lost'].includes(l.status) && (
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => leadAction(l.id, 'advance')}
-                        disabled={busy === l.id + 'advance'}
-                        className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      >
-                        Advance
-                      </button>
-                      <button
-                        onClick={() => leadAction(l.id, 'nurture')}
-                        disabled={busy === l.id + 'nurture'}
-                        className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                      >
-                        Nurture
-                      </button>
-                      <button
-                        onClick={() => leadAction(l.id, 'promote')}
-                        disabled={busy === l.id + 'promote'}
-                        className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
-                      >
-                        → Client
-                      </button>
-                      <button
-                        onClick={() => leadAction(l.id, 'lose')}
-                        disabled={busy === l.id + 'lose'}
-                        className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:hover:bg-red-950"
-                      >
-                        Lose
-                      </button>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-              {leads.length === 0 && (
-                <p className="py-8 text-center text-sm text-zinc-500">No leads match.</p>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-zinc-800 py-16 text-center">
+                <p className="text-sm font-medium text-zinc-400">No leads match</p>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Leads from the assessment funnel and imports land here.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
+        {/* ===================== CLIENTS ===================== */}
         {tab === 'clients' && !loading && (
-          <div className="mt-6 space-y-3">
-            {clients.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {c.firstName} {c.lastName}
-                    </span>
-                    <Badge status={c.status} />
-                  </div>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {c.email} {c.lifecycleStage ? `· ${c.lifecycleStage.replace(/_/g, ' ')}` : ''}
-                  </p>
+          <div>
+            <p className="mb-4 text-sm text-zinc-500">
+              {clients.length} client{clients.length === 1 ? '' : 's'}
+            </p>
+            {clients.length > 0 ? (
+              <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
+                <div className="divide-y divide-zinc-800/60">
+                  {clients.map((c) => (
+                    <div key={c.id} className="flex items-center gap-4 px-5 py-3.5">
+                      <Avatar first={c.firstName} last={c.lastName} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-zinc-100">
+                            {c.firstName} {c.lastName}
+                          </span>
+                          <Badge status={c.status} />
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-zinc-500">
+                          {c.email}
+                          {c.lifecycleStage ? ` · ${c.lifecycleStage.replace(/_/g, ' ')}` : ''}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-100">
+                        {money(c.totalValue)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  {money(c.totalValue)}
-                </span>
               </div>
-            ))}
-            {clients.length === 0 && (
-              <p className="py-8 text-center text-sm text-zinc-500">
-                No clients yet — promote a qualified lead.
-              </p>
+            ) : (
+              <div className="rounded-xl border border-dashed border-zinc-800 py-16 text-center">
+                <p className="text-sm font-medium text-zinc-400">No clients yet</p>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Promote a qualified lead to start building the client book.
+                </p>
+              </div>
             )}
           </div>
         )}
       </main>
 
+      {/* Lead form modal */}
       {showLeadForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
           onClick={() => setShowLeadForm(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+            className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Add lead</h2>
-              <button onClick={() => setShowLeadForm(false)} className="text-zinc-400 hover:text-zinc-600">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-base font-bold text-zinc-50">New lead</h2>
+              <button
+                onClick={() => setShowLeadForm(false)}
+                className="text-zinc-500 transition hover:text-zinc-300"
+              >
                 ✕
               </button>
             </div>
@@ -501,20 +603,20 @@ export default function AdminCrmPage() {
                 ['company', 'Company', 'text', false],
               ].map(([name, label, type, req]) => (
                 <label key={name as string} className="block text-sm">
-                  <span className="mb-1 block text-zinc-600 dark:text-zinc-400">{label}</span>
+                  <span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>
                   <input
                     name={name as string}
                     type={type as string}
                     required={req as boolean}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-emerald-600"
                   />
                 </label>
               ))}
               <label className="block text-sm">
-                <span className="mb-1 block text-zinc-600 dark:text-zinc-400">Source</span>
+                <span className="mb-1 block text-xs font-medium text-zinc-400">Source</span>
                 <select
                   name="source"
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-600"
                 >
                   {LEAD_SOURCES.map((s) => (
                     <option key={s} value={s}>
@@ -526,7 +628,7 @@ export default function AdminCrmPage() {
               <button
                 type="submit"
                 disabled={busy === 'form'}
-                className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 font-semibold text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
               >
                 {busy === 'form' ? 'Saving…' : 'Add lead'}
               </button>
