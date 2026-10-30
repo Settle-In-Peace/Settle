@@ -12,6 +12,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import http from 'node:http';
+import https from 'node:https';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -38,16 +40,50 @@ const MODEL = process.env.AI_MODEL || 'qwen3:8b';
 
 const CATEGORIES = ['Debt Settlement', 'Credit Repair', 'Budgeting', 'Debt Relief Options', 'Collections'];
 
-async function chat(messages, json = true) {
-  const res = await fetch(`${BASE.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', authorization: `Bearer ${KEY}` },
-    body: JSON.stringify({ model: MODEL, messages, temperature: 0.7, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
-    // Local Ollama inference is slow — give it up to 15 min per call.
-    signal: AbortSignal.timeout(15 * 60 * 1000),
+// Raw http(s) request — fetch/undici kills slow local Ollama calls at its
+// built-in 5-min headers timeout. Socket timeout only fires on inactivity.
+const REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
+
+function postJson(urlString, payload) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(urlString);
+    const mod = u.protocol === 'https:' ? https : http;
+    const req = mod.request(
+      u,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${KEY}`,
+          'Content-Length': Buffer.byteLength(payload),
+        },
+        timeout: REQUEST_TIMEOUT_MS,
+      },
+      (res) => {
+        let body = '';
+        res.on('data', (c) => (body += c));
+        res.on('end', () => {
+          if (res.statusCode >= 400) {
+            reject(new Error(`AI ${res.statusCode}: ${body.slice(0, 300)}`));
+          } else {
+            resolve(body);
+          }
+        });
+      },
+    );
+    req.on('timeout', () => req.destroy(new Error('AI request timed out (15m)')));
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
   });
-  if (!res.ok) throw new Error(`AI ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
+}
+
+async function chat(messages, json = true) {
+  const body = await postJson(
+    `${BASE.replace(/\/$/, '')}/chat/completions`,
+    JSON.stringify({ model: MODEL, messages, temperature: 0.7, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
+  );
+  const data = JSON.parse(body);
   return data.choices?.[0]?.message?.content ?? '';
 }
 
