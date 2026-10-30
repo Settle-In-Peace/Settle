@@ -91,6 +91,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { AffiliatesModule } from './affiliates/affiliates.module';
 import { NurtureModule } from './nurture/nurture.module';
 import { EsignModule } from './esign/esign.module';
+import { SkiptraceModule } from './skiptrace/skiptrace.module';
 import { SeatsModule } from './seats/seats.module';
 
 @Module({
@@ -266,6 +267,7 @@ import { SeatsModule } from './seats/seats.module';
     AffiliatesModule,
     NurtureModule,
     EsignModule,
+    SkiptraceModule,
     SeatsModule,
   ],
   controllers: [AppController],
