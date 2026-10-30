@@ -295,6 +295,28 @@ export default function AdminPage() {
     }
   };
 
+  const traceLead = async (leadId: string) => {
+    const token = getToken();
+    if (!token) return;
+    setActionLoading(`trace-${leadId}`);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch(`${API_URL}/skiptrace/leads/${leadId}`, {
+        method: 'POST',
+        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Skip trace failed');
+      setSuccessMsg(`Traced — ${data.callable ?? 0} callable number(s) added to the lead${data.litigator ? ' · ⚠ litigator flag' : ''}.`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const assignLead = async (leadId: string, providerId: string) => {
     const token = getToken();
     if (!token || !providerId) return;
@@ -543,12 +565,21 @@ export default function AdminPage() {
                           {l.debtTypes?.map(t => DEBT_LABELS[t] || t).join(', ') || '—'}
                         </td>
                         <td className="p-4 text-right">
-                          <button
-                            onClick={() => setAssignModal(l)}
-                            className="px-3 py-1.5 text-xs font-bold border border-emerald-600/50 text-emerald-400 rounded-lg hover:bg-emerald-500/10"
-                          >
-                            Assign
-                          </button>
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => traceLead(l.id)}
+                              disabled={actionLoading === `trace-${l.id}`}
+                              className="px-3 py-1.5 text-xs font-bold border border-violet-600/50 text-violet-400 rounded-lg hover:bg-violet-500/10 disabled:opacity-50"
+                            >
+                              {actionLoading === `trace-${l.id}` ? '...' : 'Trace'}
+                            </button>
+                            <button
+                              onClick={() => setAssignModal(l)}
+                              className="px-3 py-1.5 text-xs font-bold border border-emerald-600/50 text-emerald-400 rounded-lg hover:bg-emerald-500/10"
+                            >
+                              Assign
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
