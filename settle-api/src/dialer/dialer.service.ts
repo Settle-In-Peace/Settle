@@ -20,6 +20,7 @@ import { DialerCall } from './dialer-call.entity';
 import { DncEntry } from '../entities/dnc-entry.entity';
 import { ConsentLog, ConsentType } from '../entities/consent-log.entity';
 import { DebtorProfile } from '../entities/debtor-profile.entity';
+import { Org } from '../seats/org.entity';
 import { Seat, SeatStatus } from '../seats/seat.entity';
 import {
   TelnyxDialerProvider,
@@ -54,6 +55,8 @@ export class DialerService {
     private readonly debtorProfilesRepository: Repository<DebtorProfile>,
     @InjectRepository(Seat)
     private readonly seatsRepository: Repository<Seat>,
+    @InjectRepository(Org)
+    private readonly orgsRepository: Repository<Org>,
   ) {
     this.providers = new Map<string, DialerProvider>([
       ['telnyx', telnyxProvider],
@@ -191,6 +194,24 @@ export class DialerService {
     const seat = await this.seatsRepository.findOne({
       where: { userId: agentId, status: SeatStatus.ACTIVE },
     });
+
+    // Caller-ID allowlist — a custom `from` must be a number the org owns
+    // (org_phone_numbers → allowed_caller_ids). The platform's default
+    // TELNYX_FROM_NUMBER is always permitted as the provider fallback.
+    if (dto.from) {
+      const platformFrom = this.config.get<string>('TELNYX_FROM_NUMBER');
+      if (dto.from !== platformFrom) {
+        const org = seat?.orgId
+          ? await this.orgsRepository.findOne({ where: { id: seat.orgId } })
+          : null;
+        const allowed = org?.allowedCallerIds ?? [];
+        if (!allowed.includes(dto.from)) {
+          throw new ForbiddenException(
+            `Caller ID ${dto.from} is not on this org's allowed list — order it under Org → Phone Numbers first.`,
+          );
+        }
+      }
+    }
 
     // Persist first so client_state can carry the dialer_calls id.
     const call = this.dialerCallsRepository.create({

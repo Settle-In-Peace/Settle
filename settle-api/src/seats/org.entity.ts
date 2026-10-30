@@ -51,6 +51,10 @@ export class Org {
   @Column({ name: 'stripe_subscription_id', length: 255, nullable: true })
   stripeSubscriptionId?: string;
 
+  /** Caller IDs (E.164) this org is permitted to dial from — org-owned numbers. */
+  @Column({ name: 'allowed_caller_ids', type: 'jsonb', nullable: true })
+  allowedCallerIds?: string[];
+
   /** Stripe subscription status mirror (active, past_due, canceled, trialing). */
   @Column({ name: 'subscription_status', length: 50, nullable: true })
   subscriptionStatus?: string;
