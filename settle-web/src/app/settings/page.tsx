@@ -38,6 +38,7 @@ export default function SettingsPage() {
   const [phoneVerifyError, setPhoneVerifyError] = useState('');
   const [phoneVerifying, setPhoneVerifying] = useState(false);
   const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeys, setPasskeys] = useState<Array<{ id: string; deviceName?: string; transports?: string[]; backedUp?: boolean; lastUsedAt?: string; createdAt?: string }>>([]);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [passkeyMessage, setPasskeyMessage] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -51,6 +52,10 @@ export default function SettingsPage() {
       const apiCall = getApiCall();
       const res = await apiCall<{ hasPasskey: boolean }>('/auth/passkey/status');
       setHasPasskey(res.hasPasskey);
+      try {
+        const creds = await apiCall<typeof passkeys>('/webauthn/credentials');
+        setPasskeys(Array.isArray(creds) ? creds : []);
+      } catch { setPasskeys([]); }
     } catch {
       // Endpoint may not exist yet — silently ignore
     }
@@ -184,6 +189,7 @@ export default function SettingsPage() {
       });
       if (result.verified) {
         setHasPasskey(true);
+        checkPasskeyStatus();
         setPasskeyMessage('Passkey registered successfully! You can now use it to log in.');
       } else {
         setPasskeyMessage('Failed to register passkey. Please try again.');
@@ -199,13 +205,23 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeletePasskey = async () => {
+  const handleDeletePasskey = async (id?: string) => {
     setPasskeyLoading(true);
     setPasskeyMessage('');
     try {
       const apiCall = getApiCall();
-      await apiCall<{ success: boolean }>('/auth/passkey', { method: 'DELETE' });
-      setHasPasskey(false);
+      if (id) {
+        await apiCall<{ success: boolean }>(`/webauthn/credentials/${id}`, { method: 'DELETE' });
+        setPasskeys((p) => {
+          const next = p.filter((c) => c.id !== id);
+          setHasPasskey(next.length > 0);
+          return next;
+        });
+      } else {
+        await apiCall<{ success: boolean }>('/auth/passkey', { method: 'DELETE' });
+        setPasskeys([]);
+        setHasPasskey(false);
+      }
       setPasskeyMessage('Passkey removed.');
     } catch {
       setPasskeyMessage('Failed to remove passkey');
@@ -546,25 +562,38 @@ export default function SettingsPage() {
                     </span>
                   )}
                 </div>
+                {passkeys.length > 0 && (
+                  <ul className="mb-3 space-y-2">
+                    {passkeys.map((c) => (
+                      <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700">
+                        <div>
+                          <p className="text-sm font-medium text-black dark:text-white">
+                            {c.deviceName || (c.transports?.includes('internal') ? 'This device' : 'Security key')}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            {c.backedUp ? 'Synced' : 'On-device'}
+                            {c.lastUsedAt ? ` · last used ${new Date(c.lastUsedAt).toLocaleDateString()}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeletePasskey(c.id)}
+                          disabled={passkeyLoading}
+                          className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="flex gap-2 mt-3">
-                  {!hasPasskey && (
-                    <button
-                      onClick={handleRegisterPasskey}
-                      disabled={passkeyLoading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50"
-                    >
-                      {passkeyLoading ? 'Setting up...' : 'Add Passkey'}
-                    </button>
-                  )}
-                  {hasPasskey && (
-                    <button
-                      onClick={handleDeletePasskey}
-                      disabled={passkeyLoading}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm disabled:opacity-50"
-                    >
-                      {passkeyLoading ? 'Removing...' : 'Remove Passkey'}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleRegisterPasskey}
+                    disabled={passkeyLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50"
+                  >
+                    {passkeyLoading ? 'Setting up...' : passkeys.length ? 'Add Another Device' : 'Add Passkey'}
+                  </button>
                 </div>
                 {passkeyMessage && (
                   <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{passkeyMessage}</p>
