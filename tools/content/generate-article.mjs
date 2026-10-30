@@ -81,7 +81,7 @@ function postJson(urlString, payload) {
 async function chat(messages, json = true) {
   const body = await postJson(
     `${BASE.replace(/\/$/, '')}/chat/completions`,
-    JSON.stringify({ model: MODEL, messages, temperature: 0.7, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
+    JSON.stringify({ model: MODEL, messages, temperature: 0.7, options: { num_ctx: 8192 }, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
   );
   const data = JSON.parse(body);
   return data.choices?.[0]?.message?.content ?? '';
