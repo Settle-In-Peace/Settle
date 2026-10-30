@@ -45,6 +45,8 @@ export interface Org {
   seatsPurchased: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  /** BYOK skip-trace vendor key — set = their account billed, null = platform metering. */
+  skiptraceKey?: string | null;
   subscriptionStatus?: string;
   status: 'active' | 'suspended' | 'canceled';
   createdAt: string;
@@ -204,4 +206,25 @@ export function orderNumber(phoneNumber: string, friendlyName?: string) {
 
 export function releaseNumber(id: string) {
   return api()<{ released: boolean }>(`/orgs/me/numbers/${id}`, { method: 'DELETE' });
+}
+
+/** PATCH /orgs/me — owner-only org settings (name, billing email, BYOK key). */
+export function updateMyOrg(payload: { name?: string; billingEmail?: string; skiptraceKey?: string }) {
+  return api()<Org>('/orgs/me', { method: 'PATCH', body: JSON.stringify(payload) });
+}
+
+export interface SkiptraceHistoryRow {
+  id: string;
+  leadId?: string;
+  vendor: string;
+  matchCount: number;
+  litigator: boolean;
+  bankruptcy: boolean;
+  costUsd: number;
+  createdAt: string;
+}
+
+/** GET /skiptrace/history — this org's lookup audit trail (org-scoped). */
+export function getSkiptraceHistory() {
+  return api()<SkiptraceHistoryRow[]>('/skiptrace/history', { method: 'GET' });
 }

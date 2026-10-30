@@ -24,6 +24,9 @@ import {
   orderNumber,
   releaseNumber,
   searchNumbers,
+  updateMyOrg,
+  getSkiptraceHistory,
+  SkiptraceHistoryRow,
 } from '@/lib/org';
 
 function fmtCents(c: number) {
@@ -379,6 +382,7 @@ function OrgDashboardContent() {
             </div>
 
             <PhoneNumbersCard isManager={isManager} />
+            <SkiptraceCard isOwner={data!.myRole === 'org_owner'} initialKey={data!.org?.skiptraceKey} />
 
             {isManager && (
               <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-blue-200 dark:border-blue-800 p-5">
@@ -557,6 +561,73 @@ function PhoneNumbersCard({ isManager }: { isManager: boolean }) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function SkiptraceCard({ isOwner, initialKey }: { isOwner: boolean; initialKey?: string | null }) {
+  const [key, setKey] = useState('');
+  const [hasKey, setHasKey] = useState(!!initialKey);
+  const [history, setHistory] = useState<SkiptraceHistoryRow[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    getSkiptraceHistory().then(setHistory).catch(() => {});
+  }, []);
+
+  const save = async () => {
+    setBusy(true); setMsg('');
+    try {
+      await updateMyOrg({ skiptraceKey: key });
+      setHasKey(!!key); setKey('');
+      setMsg(key ? 'Vendor key saved — lookups bill to your account.' : 'Reverted to platform metering.');
+    } catch (e: any) { setMsg(e?.message || 'Save failed'); }
+    finally { setBusy(false); }
+  };
+
+  const platform = history.filter((h) => !h.vendor.startsWith('byok:'));
+  const platformCost = platform.reduce((a, h) => a + Number(h.costUsd || 0), 0);
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-100">Skip Trace</h3>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {hasKey ? 'Using your own vendor key — lookups bill to your account.' : 'Platform account — lookups metered to this org.'}
+          </p>
+        </div>
+        <span className={"text-[10px] px-2 py-0.5 rounded-full border " + (hasKey ? 'border-emerald-800 text-emerald-400' : 'border-zinc-700 text-zinc-400')}>
+          {hasKey ? 'BYOK' : 'Platform'}
+        </span>
+      </div>
+      {isOwner && (
+        <div className="flex gap-2">
+          <input value={key} onChange={(e) => setKey(e.target.value)}
+            placeholder={hasKey ? 'Enter new vendor key (blank clears)' : 'Vendor API key (optional)'}
+            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600" />
+          <button onClick={save} disabled={busy}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+            {busy ? '…' : 'Save'}
+          </button>
+        </div>
+      )}
+      {msg && <p className="text-xs text-zinc-400">{msg}</p>}
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="rounded-lg border border-zinc-800 p-3">
+          <p className="text-lg font-semibold text-zinc-100">{history.length}</p>
+          <p className="text-[10px] text-zinc-500">Lookups</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 p-3">
+          <p className="text-lg font-semibold text-zinc-100">{history.reduce((a, h) => a + (h.matchCount || 0), 0)}</p>
+          <p className="text-[10px] text-zinc-500">Phones found</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 p-3">
+          <p className="text-lg font-semibold text-zinc-100">${platformCost.toFixed(2)}</p>
+          <p className="text-[10px] text-zinc-500">Platform cost</p>
+        </div>
+      </div>
     </div>
   );
 }
