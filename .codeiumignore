@@ -1,0 +1,17 @@
+# Build outputs and generated dirs — exclude from indexing/scanning
+**/node_modules/
+**/.next/
+**/.turbo/
+**/dist/
+**/build/
+**/out/
+**/coverage/
+**/.expo/
+**/playwright-report/
+**/test-results/
+**/Pods/
+**/.gradle/
+**/.windsurf/worktrees/
+**/videos/
+**/store-assets/
+**/*.code-search

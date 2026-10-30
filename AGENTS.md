@@ -53,7 +53,7 @@ This project uses **pnpm** as the package manager (NOT npm or yarn).
 
 ## Deployment Architecture
 
-The project uses **Cloudflare Workers** for the frontend and **Render** for the backend API.
+The project uses **Cloudflare Workers** for the frontend and a **Cloudflare tunnel → PM2** setup for the backend API (opsbox). **Render and Railway are retired.**
 
 ### Frontend: Cloudflare Workers (OpenNext)
 - **Frontend** (`settle-web`) deploys to Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`)
@@ -68,9 +68,14 @@ The project uses **Cloudflare Workers** for the frontend and **Render** for the 
 - **Worker secrets:** Firebase env vars set via Cloudflare API (`PUT /accounts/.../workers/scripts/settleinpeace/secrets`)
 - **API token:** Stored in env var `CLOUDFLARE_API_TOKEN` for deploy (never commit)
 
-### Backend: Render (API)
-- **API service** — built from `settle-api/`, configured in `render.yaml`
-- **Database** — external PostgreSQL (e.g., Supabase), connected via `DATABASE_URL` set in the Render dashboard
+### Backend: opsbox via Cloudflare tunnel + PM2
+- **API service** — `api.settleinpeace.com` → cloudflared (`config-settle.yml`, tunnel `a202a286-ecde-43a3-89d3-64f481763d43`) → `localhost:4025` → PM2 `settle-api`
+- **Host** — `opsbox` SSH alias; app dir `~/apps/Settle/settle-api`; env in `.env` there (NOT local repo `.env`)
+- **Deploy** — `cd settle-api && pnpm build`, then `rsync -az --delete dist/ opsbox:~/apps/Settle/settle-api/dist/` and `pm2 restart settle-api` over SSH (prefix `export PATH=/Users/obdulreid/runtime/node/bin:/usr/bin:/bin:/usr/sbin:/sbin`; never `pm2 restart --update-env` — it clobbers PATH)
+- **Migrations auto-run at boot** — a `pnpm build` + restart applies pending migrations
+- **Database** — external PostgreSQL via `DATABASE_URL` in the opsbox `.env`
+- **Oracle Cloud** — planned free-tier host; NOT live yet. Cutover = point the tunnel's `service:` at the Oracle host (or move cloudflared) after the API is running there
+- **Render / Railway — RETIRED.** `render.yaml`/`railway.toml` removed; do not deploy or configure them
 
 ### Alternative: Railway (backend API)
 - **API service** — built from `settle-api/`, uses `railway.toml` at repo root with the repo-level `Dockerfile`
@@ -89,7 +94,7 @@ The project uses **Cloudflare Workers** for the frontend and **Render** for the 
 
 **Production URLs:**
 - **Frontend**: `https://settleinpeace.settleinpeace.workers.dev` (or custom domain)
-- **Backend**: `https://api.settleinpeace.com` (Render)
+- **Backend**: `https://api.settleinpeace.com` (opsbox → PM2 via Cloudflare tunnel)
 
 **Environment Variables:**
 - `NEXT_PUBLIC_API_URL`: Backend API URL for frontend
@@ -103,8 +108,8 @@ The project uses **Cloudflare Workers** for the frontend and **Render** for the 
 2. **Authentication**: Follow the flows documented in `docs/FLOWS.md`
 3. **API Responses**: Profile responses are flat (not nested under `user` object)
 4. **Token Storage**: Web uses localStorage, mobile uses AsyncStorage
-5. **Health Endpoints**: `/health` and `/` for Railway health checks
-6. **File Storage**: Use Railway-compatible storage solutions (local volumes, S3-compatible services)
+5. **Health Endpoints**: `/health` and `/` for tunnel/PM2 health checks
+6. **File Storage**: Use local volumes or S3-compatible services
 
 ## Critical Files to Read Before Changes
 

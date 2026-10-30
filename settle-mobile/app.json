@@ -16,7 +16,11 @@
       "infoPlist": {
         "NSFaceIDUsageDescription": "Settle In Peace uses Face ID to securely unlock your account.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": [
+        "webcredentials:settleinpeace.com",
+        "webcredentials:www.settleinpeace.com"
+      ]
     },
     "android": {
       "package": "com.settleinpeace.mobile",

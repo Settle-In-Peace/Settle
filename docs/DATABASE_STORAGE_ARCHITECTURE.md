@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Standard Architecture**: Railway PostgreSQL (databases + backend) + Render (frontend web applications)
+**Standard Architecture**: External PostgreSQL + opsbox PM2 via Cloudflare tunnel (backend) + Cloudflare Workers (frontend). Render/Railway retired — this doc is historical.
 
 This architecture separates concerns: Railway handles all backend infrastructure including PostgreSQL databases and API services, while Render handles frontend web applications with excellent Next.js support and global edge network.
 

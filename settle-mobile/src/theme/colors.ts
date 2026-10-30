@@ -5,7 +5,7 @@ export const colors = {
   secondaryDark: '#059669', // emerald-600
   slate: '#64748B', // slate-500
   slateLight: '#F1F5F9', // slate-100
-  slateDark: '#334155', // slate-700
+  slateDark: '#fff', // slate-700
   slate900: '#0F172A', // slate-900
   white: '#FFFFFF',
   black: '#000000',
