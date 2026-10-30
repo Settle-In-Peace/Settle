@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SkiptraceService } from './skiptrace.service';
 import { SkipTraceLookupInput } from './skiptrace-provider.interface';
@@ -32,6 +32,20 @@ export class SkiptraceController {
       orgId: body.orgId,
       agentId,
     });
+  }
+
+  /**
+   * POST /skiptrace/leads/:leadId — trace a lead by its stored address,
+   * hydrating alt_phones with vendor-scored, non-DNC candidates.
+   */
+  @Post('leads/:leadId')
+  traceLead(
+    @Param('leadId') leadId: string,
+    @Body() body: { orgId?: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const agentId = req.user?.sub ?? req.user?.id;
+    return this.skiptrace.traceLead(leadId, { orgId: body.orgId, agentId });
   }
 
   /** GET /skiptrace/history — audit trail of lookups. */

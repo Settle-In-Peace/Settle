@@ -27,6 +27,7 @@ export class Lead {
   @Column({ type: 'varchar', length: 10, nullable: true })
   zipCode?: string;
 
+
   // Debt situation
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalDebt!: number;

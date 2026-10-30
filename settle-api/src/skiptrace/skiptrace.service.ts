@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Lead } from '../entities/lead.entity';
 import { SkipTraceLookup as SkipTraceLookupEntity } from '../entities/skip-trace-lookup.entity';
 import { BatchDataProvider } from './batchdata.provider';
 import {
@@ -20,6 +21,8 @@ export class SkiptraceService {
     private readonly batchdata: BatchDataProvider,
     @InjectRepository(SkipTraceLookupEntity)
     private readonly results: Repository<SkipTraceLookupEntity>,
+    @InjectRepository(Lead)
+    private readonly leads: Repository<Lead>,
   ) {
     this.providers = [batchdata];
   }
@@ -77,6 +80,39 @@ export class SkiptraceService {
       bankruptcy: row.bankruptcy,
       costUsd: row.costUsd,
     };
+  }
+
+  /**
+   * Trace a marketplace lead — pulls its stored address, runs the lookup,
+   * and hydrates altPhones with ranked non-DNC wireless candidates so the
+   * dialer can pick them up. Consent/DNC flags ride along on each hit.
+   */
+  async traceLead(leadId: string, meta: { orgId?: string; agentId?: string }) {
+    const lead = await this.leads.findOne({ where: { id: leadId } });
+    if (!lead) throw new BadRequestException(`Lead ${leadId} not found`);
+    if (!lead.streetAddress || !lead.city || !lead.state || !lead.zipCode)
+      throw new BadRequestException(`Lead ${leadId} has no full address on file — cannot trace`);
+
+    const out = await this.run(
+      [{
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        street: lead.streetAddress,
+        city: lead.city,
+        state: lead.state,
+        zip: lead.zipCode,
+      }],
+      { leadId, orgId: meta.orgId, agentId: meta.agentId },
+    );
+
+    const callable = out.phones.filter((p) => !p.dnc && !p.tcpa && p.reachable !== false);
+    if (callable.length) {
+      const existing = Array.isArray(lead.altPhones) ? lead.altPhones : [];
+      const merged = [...new Set([...existing, ...callable.map((p) => p.number)])];
+      lead.altPhones = merged as any;
+      await this.leads.save(lead);
+    }
+    return { ...out, callable: callable.length, altPhones: lead.altPhones };
   }
 
   /** Recent lookups — for the org's audit/history view. */
