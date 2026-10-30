@@ -17,6 +17,7 @@ import {
   MfsnUpstreamError,
   MyFreeScoreNowProvider,
 } from './providers/myfreescorenow.provider';
+import { SmartCreditProvider } from './providers/smartcredit.provider';
 import { PullCreditDto } from './dto/pull-credit.dto';
 import {
   SendEnrollmentLinkDto,
@@ -36,10 +37,14 @@ export class CreditBureauService {
 
   constructor(
     private readonly mfsnProvider: MyFreeScoreNowProvider,
+    private readonly smartcreditProvider: SmartCreditProvider,
     @InjectRepository(CreditReport)
     private readonly creditReportsRepository: Repository<CreditReport>,
   ) {
-    this.providers = new Map([['myfreescorenow', mfsnProvider]]);
+    this.providers = new Map<string, CreditProvider>([
+      ['myfreescorenow', mfsnProvider],
+      ['smartcredit', smartcreditProvider],
+    ]);
   }
 
   /** Get the active provider (extensible to support multiple in future) */
