@@ -1,0 +1,15 @@
+{
+  "webcredentials": {
+    "apps": [
+      "TEAMID_PLACEHOLDER.com.settleinpeace.mobile"
+    ]
+  },
+  "applinks": {
+    "details": [
+      {
+        "appID": "TEAMID_PLACEHOLDER.com.settleinpeace.mobile",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
