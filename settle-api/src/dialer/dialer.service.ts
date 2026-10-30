@@ -302,6 +302,8 @@ export class DialerService {
 
   async hangup(callId: string): Promise<DialerCall> {
     const call = await this.getCall(callId);
+    // Already terminal (completed/failed/reconciled stale) — nothing to kill.
+    if (TERMINAL_STATUSES.has(call.status)) return call;
     if (!call.providerCallId) {
       throw new BadRequestException('Call has no provider call id');
     }
@@ -334,6 +336,7 @@ export class DialerService {
     if (filter.collectionAccountId)
       where.collectionAccountId = filter.collectionAccountId;
     if (filter.agentId) where.agentId = filter.agentId;
+    await this.reconcileStaleCalls();
     return this.dialerCallsRepository.find({
       where,
       order: { createdAt: 'DESC' },
@@ -345,6 +348,46 @@ export class DialerService {
     const call = await this.dialerCallsRepository.findOne({ where: { id } });
     if (!call) throw new NotFoundException(`Dialer call ${id} not found`);
     return call;
+  }
+
+  // ── Stale-call reconciliation ──────────────────────────────────────────
+
+  /**
+   * Close calls wedged in a non-terminal state because the provider webhook
+   * never arrived (missed delivery, API restart mid-call, provider outage).
+   * Runs lazily on listCalls — no scheduler needed. In-flight statuses
+   * (queued/dialing/ringing) get 15 min; answered gets 3h since a real
+   * conversation can run long.
+   */
+  private async reconcileStaleCalls(): Promise<void> {
+    const result = await this.dialerCallsRepository
+      .createQueryBuilder()
+      .update(DialerCall)
+      .set({
+        status: DialerCallStatus.FAILED,
+        hangupCause: 'stale_timeout',
+        endedAt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where(
+        `status IN (:...inFlight) AND COALESCE(started_at, created_at) < :inFlightCutoff`,
+        {
+          inFlight: IN_FLIGHT_STATUSES,
+          inFlightCutoff: new Date(Date.now() - STALE_IN_FLIGHT_MS),
+        },
+      )
+      .orWhere(
+        `status = :answered AND COALESCE(answered_at, created_at) < :answeredCutoff`,
+        {
+          answered: DialerCallStatus.ANSWERED,
+          answeredCutoff: new Date(Date.now() - STALE_ANSWERED_MS),
+        },
+      )
+      .execute();
+    if (result.affected) {
+      this.logger.log(
+        `reconciled ${result.affected} stale dialer call(s) → failed (stale_timeout)`,
+      );
+    }
   }
 
   // ── Webhook ingest ─────────────────────────────────────────────────────
@@ -482,6 +525,14 @@ export interface CampaignContact {
   debtId?: string;
   collectionAccountId?: string;
 }
+
+const IN_FLIGHT_STATUSES = [
+  DialerCallStatus.QUEUED,
+  DialerCallStatus.DIALING,
+  DialerCallStatus.RINGING,
+];
+const STALE_IN_FLIGHT_MS = 15 * 60 * 1000;
+const STALE_ANSWERED_MS = 3 * 60 * 60 * 1000;
 
 const TERMINAL_STATUSES = new Set([
   DialerCallStatus.COMPLETED,

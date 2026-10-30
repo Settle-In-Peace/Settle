@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearAuth, getStoredToken, getStoredUser } from '@/lib/authUtils';
 
-import { API_URL } from '@/lib/apiUrl';
+import { getAuthenticatedApi } from '@/lib/api';
 import DialerPanel from '@/components/dialer/DialerPanel';
 interface SalesLead {
   id: string;
@@ -211,32 +211,27 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
   const [scheduleType, setScheduleType] = useState<'call' | 'email' | 'meeting'>('call');
   const [scheduleNotes, setScheduleNotes] = useState('');
 
-  const apiCall = useCallback(async (path: string, opts?: RequestInit) => {
-    const token = getStoredToken();
-    if (!token) throw new Error('No auth token');
-    const res = await fetch(`${API_URL}${path}`, {
+  const apiCall = useCallback(async <T = any>(path: string, opts?: RequestInit): Promise<T> => {
+    return getAuthenticatedApi()<T>(path, {
       ...opts,
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...opts?.headers },
+      headers: { 'Content-Type': 'application/json', ...opts?.headers },
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
   }, []);
 
-  const loadData = useCallback(async (token: string) => {
+  const loadData = useCallback(async () => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const [leadsRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/sales/leads`, { headers }).catch(() => null),
-        fetch(`${API_URL}/sales/leads/stats`, { headers }).catch(() => null),
+      const [leadsData, statsData] = await Promise.all([
+        apiCall('/sales/leads').catch(() => null),
+        apiCall('/sales/leads/stats').catch(() => null),
       ]);
-      if (leadsRes?.ok) setLeads(await leadsRes.json());
-      if (statsRes?.ok) setStats(await statsRes.json());
+      if (leadsData) setLeads(leadsData);
+      if (statsData) setStats(statsData);
     } catch {
       setError('Failed to load sales data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   const loadInbox = useCallback(async () => {
     try {
@@ -278,7 +273,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
     }
     queueMicrotask(() => {
       setUser(parsed);
-      void loadData(token);
+      void loadData();
     });
   }, [router, initialUser, loadData]);
 
@@ -315,23 +310,22 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
   }, [filteredLeads]);
 
   const handleSave = async () => {
-    const token = getStoredToken();
-    if (!token || !selectedLead) return;
+    if (!selectedLead) return;
     setSaving(true);
     try {
       if (status && status !== selectedLead.status) {
-        await fetch(`${API_URL}/sales/leads/${selectedLead.id}/status`, {
-          method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        await apiCall(`/sales/leads/${selectedLead.id}/status`, {
+          method: 'POST',
           body: JSON.stringify({ status, notes: notes.trim() ? notes : undefined }),
         });
       } else if (notes.trim()) {
-        await fetch(`${API_URL}/sales/leads/${selectedLead.id}/notes`, {
-          method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        await apiCall(`/sales/leads/${selectedLead.id}/notes`, {
+          method: 'POST',
           body: JSON.stringify({ notes }),
         });
       }
       setSelectedLead(null); setNotes(''); setStatus('');
-      await loadData(token);
+      await loadData();
     } catch (err) { setError(errMsg(err)); }
     finally { setSaving(false); }
   };
@@ -340,8 +334,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
     try {
       await apiCall(`/sales/leads/${leadId}/assign`, { method: 'POST' });
       await loadInbox();
-      const token = getStoredToken();
-      if (token) await loadData(token);
+      await loadData();
     } catch (err) { setError(errMsg(err)); }
   };
 
@@ -354,8 +347,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
         body: JSON.stringify({ subject: emailSubject, body: emailBody }),
       });
       setEmailLead(null); setEmailSubject(''); setEmailBody(''); setEmailTemplate('intro');
-      const token = getStoredToken();
-      if (token) await loadData(token);
+      await loadData();
     } catch (err) { setError(errMsg(err)); }
     finally { setEmailSending(false); }
   };
@@ -386,8 +378,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
         }),
       });
       setDialLead(null); setCallStatus(''); setCallLogNotes(''); setCallResult('');
-      const token = getStoredToken();
-      if (token) await loadData(token);
+      await loadData();
     } catch (err) { setError(errMsg(err)); }
   };
 
@@ -400,8 +391,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
       });
       setScheduleLead(null); setScheduleDate(''); setScheduleNotes('');
       await loadCalendar();
-      const token = getStoredToken();
-      if (token) await loadData(token);
+      await loadData();
     } catch (err) { setError(errMsg(err)); }
   };
 
