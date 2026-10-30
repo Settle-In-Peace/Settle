@@ -57,34 +57,69 @@ export class TelnyxWebhookService {
   /**
    * Verify the inbound Telnyx webhook signature.
    *
-   * Telnyx signs webhooks with the public key from your Telnyx account and
-   * sends the signature in the `telnyx-signature-ed25519` header alongside a
-   * `telnyx-timestamp-ed25519` header. Verification requires the Ed25519
-   * public key stored in the TELNYX_PUBLIC_KEY env var. When the public key
-   * is not configured this method returns true (verification skipped) so that
-   * development environments are not blocked.
+   * Telnyx signs webhooks with Ed25519 using the private key paired with the
+   * public key configured in the Telnyx portal. The signature is sent in the
+   * `telnyx-signature-ed25519` header alongside `telnyx-timestamp-ed25519`,
+   * and covers `${timestamp}|${rawBody}`.
+   *
+   * TELNYX_PUBLIC_KEY holds the public key — either a base64-encoded raw
+   * 32-byte Ed25519 key (as shown in the Telnyx portal) or a PEM string.
+   *
+   * Fail-closed in production: when NODE_ENV=production a missing public key
+   * or missing signature headers rejects the event. In non-production a
+   * missing public key skips verification so local dev is not blocked.
    */
-  verifySignature(rawBody: string, headers: Record<string, string>): boolean {
+  verifySignature(
+    rawBody: string,
+    headers: Record<string, string | string[] | undefined>,
+  ): boolean {
     const publicKey = process.env.TELNYX_PUBLIC_KEY;
-    const signatureHeader =
-      headers['telnyx-signature-ed25519'] ||
-      headers['Telnyx-Signature-Ed25519'];
-    const timestampHeader =
-      headers['telnyx-timestamp-ed25519'] ||
-      headers['Telnyx-Timestamp-Ed25519'];
+    const isProduction = process.env.NODE_ENV === 'production';
+    const header = (name: string): string | undefined => {
+      const value = headers[name] ?? headers[name.toLowerCase()];
+      return Array.isArray(value) ? value[0] : value;
+    };
+    const signatureHeader = header('telnyx-signature-ed25519');
+    const timestampHeader = header('telnyx-timestamp-ed25519');
 
-    if (!publicKey || !signatureHeader || !timestampHeader) {
+    if (!signatureHeader || !timestampHeader) {
+      this.logger.error(
+        'Telnyx webhook rejected — signature or timestamp header missing.',
+      );
+      return false;
+    }
+
+    if (!publicKey) {
+      if (isProduction) {
+        this.logger.error(
+          'Telnyx webhook rejected — TELNYX_PUBLIC_KEY is not configured in production.',
+        );
+        return false;
+      }
       this.logger.warn(
-        'Telnyx signature verification skipped — TELNYX_PUBLIC_KEY or signature headers missing.',
+        'Telnyx signature verification skipped — TELNYX_PUBLIC_KEY not set (non-production).',
       );
       return true;
     }
 
+    // Reject replayed events: timestamp must be within 5 minutes.
+    const timestampSeconds = Number(timestampHeader);
+    if (
+      !Number.isFinite(timestampSeconds) ||
+      Math.abs(Date.now() / 1000 - timestampSeconds) > 300
+    ) {
+      this.logger.error(
+        'Telnyx webhook rejected — timestamp is stale or malformed.',
+      );
+      return false;
+    }
+
     try {
-      const verifier = crypto.createVerify('sha512');
-      verifier.update(`${timestampHeader}|${rawBody}`);
-      const isValid = verifier.verify(
-        publicKey,
+      const keyObject = this.buildEd25519PublicKey(publicKey);
+      const isValid = crypto.verify(
+        null,
+        Buffer.from(`${timestampHeader}|${rawBody}`, 'utf8'),
+        keyObject,
         Buffer.from(signatureHeader, 'base64'),
       );
       if (!isValid) {
@@ -98,6 +133,26 @@ export class TelnyxWebhookService {
       );
       return false;
     }
+  }
+
+  /**
+   * Build an Ed25519 KeyObject from either a PEM string or the raw base64
+   * public key shown in the Telnyx portal (32 bytes wrapped in SPKI DER).
+   */
+  private buildEd25519PublicKey(publicKey: string): crypto.KeyObject {
+    if (publicKey.includes('BEGIN')) {
+      return crypto.createPublicKey(publicKey);
+    }
+    const keyBytes = Buffer.from(publicKey, 'base64');
+    if (keyBytes.length !== 32) {
+      throw new Error('TELNYX_PUBLIC_KEY must be a PEM or a 32-byte base64 Ed25519 key');
+    }
+    // Ed25519 SPKI DER prefix: SEQUENCE { SEQUENCE { OID 1.3.101.112 }, BIT STRING }
+    const spkiDer = Buffer.concat([
+      Buffer.from('302a300506032b6570032100', 'hex'),
+      keyBytes,
+    ]);
+    return crypto.createPublicKey({ key: spkiDer, format: 'der', type: 'spki' });
   }
 
   /**

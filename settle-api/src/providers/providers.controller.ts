@@ -25,11 +25,11 @@ export class ProvidersController {
     });
   }
 
-  // Public: single provider profile page
+  // Public: single provider profile page (internal/billing fields stripped)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get(':id')
   async getProvider(@Param('id') id: string) {
-    return this.providersService.getProviderById(id);
+    return this.providersService.getPublicProviderById(id);
   }
 
   // Public: provider signup (creates pending account awaiting admin approval)

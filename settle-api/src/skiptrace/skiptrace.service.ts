@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from '../entities/lead.entity';
+import { Org } from '../seats/org.entity';
 import { SkipTraceLookup as SkipTraceLookupEntity } from '../entities/skip-trace-lookup.entity';
 import { BatchDataProvider } from './batchdata.provider';
 import {
@@ -23,6 +24,8 @@ export class SkiptraceService {
     private readonly results: Repository<SkipTraceLookupEntity>,
     @InjectRepository(Lead)
     private readonly leads: Repository<Lead>,
+    @InjectRepository(Org)
+    private readonly orgs: Repository<Org>,
   ) {
     this.providers = [batchdata];
   }
@@ -46,7 +49,11 @@ export class SkiptraceService {
     }
 
     const provider = this.active();
-    const result = await provider.lookup(inputs);
+    // BYOK: org's own vendor key bypasses platform metering (cost logged as 0 —
+    // the lookup bills to their vendor account, not ours).
+    const org = meta.orgId ? await this.orgs.findOne({ where: { id: meta.orgId } }) : null;
+    const byokKey = org?.skiptraceKey || undefined;
+    const result = await provider.lookup(inputs, { apiKey: byokKey });
 
     // Best-first phone ordering: score desc, wireless preferred, non-DNC first.
     const allPhones = result.persons.flatMap((p) => p.phones).filter((p) => p.number);
@@ -61,7 +68,7 @@ export class SkiptraceService {
       leadId: meta.leadId,
       orgId: meta.orgId,
       agentId: meta.agentId,
-      vendor: provider.name,
+      vendor: byokKey ? `byok:${provider.name}` : provider.name,
       phones: sorted,
       matchCount: result.matchCount,
       litigator: result.persons.some((p) => p.litigator) ?? false,
@@ -73,7 +80,7 @@ export class SkiptraceService {
 
     return {
       id: row.id,
-      vendor: provider.name,
+      vendor: byokKey ? `byok:${provider.name}` : provider.name,
       matchCount: result.matchCount,
       phones: sorted,
       litigator: row.litigator,

@@ -169,16 +169,16 @@ export class NurtureService implements OnModuleInit, OnModuleDestroy {
       const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
         <div style="max-width:520px;margin:0 auto;padding:32px 16px;background:#ffffff;border-radius:12px;">
           <h1 style="font-size:20px;color:#0f172a;margin:0 0 12px;">Congratulations, ${firstName} — program complete.</h1>
-          <p style="font-size:14px;color:#334155;line-height:1.7;">
+          <p style="font-size:14px;color:#fff;line-height:1.7;">
             ${saved > 0 ? `You finished with <strong>$${saved.toLocaleString()}</strong> less debt than you started with. ` : 'You finished the program. '}
             That's real — and honestly, it deserves a moment.
           </p>
-          <p style="font-size:14px;color:#334155;line-height:1.7;">
+          <p style="font-size:14px;color:#fff;line-height:1.7;">
             If your experience was good, would you reply to this email with a sentence or two?
             People sitting where you were — staring at statements, wondering if this works — read
             those words. It takes 60 seconds and it genuinely helps the next person.
           </p>
-          <p style="font-size:14px;color:#334155;line-height:1.7;">
+          <p style="font-size:14px;color:#fff;line-height:1.7;">
             And if anything fell short, reply and tell us that too — we'd rather hear it.
           </p>
           <p style="font-size:13px;color:#64748b;margin-top:24px;">— Obdul Reid, Settle In Peace</p>

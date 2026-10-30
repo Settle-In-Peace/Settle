@@ -324,7 +324,21 @@ export class MatchingService {
     for (const match of matches) {
       const provider = providerMap.get(match.providerId);
       if (!provider) continue;
-      const { password: _pw, stripeCustomerId: _sc, ...safe } = provider;
+      const {
+        password: _pw,
+        stripeCustomerId: _sc,
+        stripeSubscriptionId: _ss,
+        subscriptionStatus: _sst,
+        subscriptionTier: _st,
+        subscriptionSeats: _sse,
+        currentPeriodEnd: _cpe,
+        cancelAtPeriodEnd: _cape,
+        creditBalance: _cb,
+        leadPrice: _lp,
+        subscriptionType: _sbt,
+        emailVerified: _ev,
+        ...safe
+      } = provider;
       result.push({
         ...safe,
         matchId: match.id,

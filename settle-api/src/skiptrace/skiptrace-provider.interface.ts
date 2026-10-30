@@ -40,7 +40,7 @@ export interface SkipTraceResult {
 export interface SkipTraceProvider {
   readonly name: string;
   isConfigured(): boolean;
-  lookup(inputs: SkipTraceLookupInput[]): Promise<SkipTraceResult>;
+  lookup(inputs: SkipTraceLookupInput[], opts?: { apiKey?: string }): Promise<SkipTraceResult>;
 }
 
 export class SkipTraceNotConfiguredError extends Error {

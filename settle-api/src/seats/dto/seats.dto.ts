@@ -23,6 +23,12 @@ export class CreateOrgDto {
   @IsOptional()
   billingEmail?: string;
 
+  /** BYOK skip-trace vendor key — empty string clears back to platform metering. */
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  skiptraceKey?: string;
+
   /** Platform admin only — provision the org for another user. Ignored otherwise. */
   @IsUUID()
   @IsOptional()
@@ -38,6 +44,12 @@ export class UpdateOrgDto {
   @IsEmail()
   @IsOptional()
   billingEmail?: string;
+
+  /** BYOK skip-trace vendor key — empty string clears back to platform metering. */
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  skiptraceKey?: string;
 
   @IsEnum(OrgStatus)
   @IsOptional()

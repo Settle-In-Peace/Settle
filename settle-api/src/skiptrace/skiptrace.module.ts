@@ -1,3 +1,4 @@
+import { Org } from '../seats/org.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Lead } from '../entities/lead.entity';
@@ -7,7 +8,7 @@ import { SkiptraceController } from './skiptrace.controller';
 import { SkiptraceService } from './skiptrace.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SkipTraceLookup, Lead])],
+  imports: [TypeOrmModule.forFeature([Org,SkipTraceLookup, Lead])],
   controllers: [SkiptraceController],
   providers: [SkiptraceService, BatchDataProvider],
   exports: [SkiptraceService],

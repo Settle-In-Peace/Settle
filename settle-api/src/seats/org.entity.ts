@@ -45,6 +45,10 @@ export class Org {
   @Column({ name: 'seats_purchased', type: 'int', default: 0 })
   seatsPurchased: number;
 
+  /** BYOK: org's own vendor API key (e.g. BatchData). Null = platform key + metering. */
+  @Column({ name: 'skiptrace_key', length: 255, nullable: true })
+  skiptraceKey: string | null;
+
   @Column({ name: 'stripe_customer_id', length: 255, nullable: true })
   stripeCustomerId?: string;
 

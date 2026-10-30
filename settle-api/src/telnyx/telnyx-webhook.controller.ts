@@ -1,4 +1,13 @@
-import { Controller, Post, Body, HttpCode, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  HttpCode,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Request } from 'express';
 import { TelnyxWebhookService } from './telnyx-webhook.service';
 
 /**
@@ -20,8 +29,10 @@ interface TelnyxWebhookEvent {
  *
  * Receives raw webhook payloads from Telnyx for both call control and SMS
  * events. These endpoints are intentionally NOT guarded by JWT — Telnyx
- * webhooks are authenticated via signature/header verification performed in
- * the service layer (see TelnyxWebhookService#verifySignature).
+ * webhooks are authenticated via the Ed25519 signature headers
+ * (`telnyx-signature-ed25519` / `telnyx-timestamp-ed25519`) verified against
+ * the TELNYX_PUBLIC_KEY env var in TelnyxWebhookService#verifySignature.
+ * In production, events that fail or skip verification are rejected with 401.
  */
 @Controller('telnyx/webhooks')
 export class TelnyxWebhookController {
@@ -36,8 +47,11 @@ export class TelnyxWebhookController {
   @Post('calls')
   @HttpCode(200)
   async handleCallWebhook(
+    @Req() req: Request & { rawBody?: Buffer },
     @Body() body: TelnyxWebhookEvent,
   ): Promise<{ received: true }> {
+    this.assertSignature(req, body);
+
     const eventType = body?.data?.event_type ?? 'unknown';
     const payload = body?.data?.payload ?? {};
 
@@ -64,8 +78,11 @@ export class TelnyxWebhookController {
   @Post('sms')
   @HttpCode(200)
   async handleSmsWebhook(
+    @Req() req: Request & { rawBody?: Buffer },
     @Body() body: TelnyxWebhookEvent,
   ): Promise<{ received: true }> {
+    this.assertSignature(req, body);
+
     const eventType = body?.data?.event_type ?? 'unknown';
     const payload = body?.data?.payload ?? {};
 
@@ -83,5 +100,24 @@ export class TelnyxWebhookController {
     }
 
     return { received: true };
+  }
+
+  /**
+   * Reject the request when the Telnyx signature check fails.
+   * The raw body is provided by the raw() body parser mounted in main.ts.
+   */
+  private assertSignature(
+    req: Request & { rawBody?: Buffer },
+    body: TelnyxWebhookEvent,
+  ): void {
+    // Prefer the exact raw bytes; fall back to a re-serialized body only if
+    // the raw parser was bypassed (e.g. in tests).
+    const rawBody = req.rawBody
+      ? req.rawBody.toString('utf8')
+      : JSON.stringify(body ?? {});
+
+    if (!this.telnyxWebhookService.verifySignature(rawBody, req.headers)) {
+      throw new UnauthorizedException('Invalid Telnyx webhook signature');
+    }
   }
 }

@@ -32,7 +32,7 @@ export class BatchDataProvider implements SkipTraceProvider {
     return Boolean(this.apiKey);
   }
 
-  async lookup(inputs: SkipTraceLookupInput[]): Promise<SkipTraceResult> {
+  async lookup(inputs: SkipTraceLookupInput[], opts?: { apiKey?: string }): Promise<SkipTraceResult> {
     const res = await this.request('/property/skip-trace', {
       requests: inputs.map((i) => ({
         name: i.firstName || i.lastName ? `${i.firstName ?? ''} ${i.lastName ?? ''}`.trim() : undefined,
@@ -43,15 +43,15 @@ export class BatchDataProvider implements SkipTraceProvider {
           zip: i.zip,
         },
       })),
-    });
+    }, opts?.apiKey);
     return this.normalize(res);
   }
 
-  private async request(path: string, body: unknown): Promise<any> {
+  private async request(path: string, body: unknown, apiKey?: string): Promise<any> {
     const r = await fetch(`https://api.batchdata.com/api/v1${path}`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${apiKey || this.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

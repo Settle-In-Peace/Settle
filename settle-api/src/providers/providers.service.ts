@@ -14,12 +14,78 @@ export class ProvidersService {
     private crmService: CrmService,
   ) {}
 
+  /**
+   * Fields a provider is allowed to set/update on their own profile.
+   * Sensitive internal fields (status, creditBalance, leadPrice,
+   * subscriptionType, stripe IDs, email, password) are intentionally
+   * excluded — email/password changes need a dedicated verified flow, and
+   * billing/status fields are admin-managed.
+   */
+  private static readonly SELF_SERVICE_FIELDS: (keyof Provider)[] = [
+    'companyName',
+    'phone',
+    'website',
+    'logoUrl',
+    'description',
+    'serviceTypes',
+    'debtTypes',
+    'statesServed',
+    'minDebtAmount',
+    'maxDebtAmount',
+    'feePercentage',
+    'bbbRating',
+    'yearsInBusiness',
+    'isAfccMember',
+    'isIapdaMember',
+    'isAcceptingLeads',
+  ];
+
+  /** Pick only self-service profile fields from an arbitrary payload. */
+  private pickSelfServiceFields(data: Partial<Provider>): Partial<Provider> {
+    const picked: Partial<Provider> = {};
+    for (const key of ProvidersService.SELF_SERVICE_FIELDS) {
+      if (data[key] !== undefined) {
+        (picked as Record<string, unknown>)[key] = data[key];
+      }
+    }
+    return picked;
+  }
+
+  /**
+   * Strip internal/billing fields for public (unauthenticated) responses.
+   * Consumers legitimately see business contact info and service details,
+   * but never credit balances, Stripe IDs, subscription state, or lead pricing.
+   */
+  private toPublicProvider(provider: Partial<Provider>): Partial<Provider> {
+    const {
+      password: _password,
+      stripeCustomerId: _stripeCustomerId,
+      stripeSubscriptionId: _stripeSubscriptionId,
+      subscriptionStatus: _subscriptionStatus,
+      subscriptionTier: _subscriptionTier,
+      subscriptionSeats: _subscriptionSeats,
+      currentPeriodEnd: _currentPeriodEnd,
+      cancelAtPeriodEnd: _cancelAtPeriodEnd,
+      creditBalance: _creditBalance,
+      leadPrice: _leadPrice,
+      subscriptionType: _subscriptionType,
+      emailVerified: _emailVerified,
+      ...publicFields
+    } = provider;
+    return publicFields;
+  }
+
   async createProvider(data: Partial<Provider> & { password: string }) {
     const existing = await this.providersRepository.findOne({ where: { email: data.email } });
     if (existing) throw new ConflictException('A provider with this email already exists');
 
     const hashed = await bcrypt.hash(data.password, 10);
-    const provider = this.providersRepository.create({ ...data, password: hashed, status: 'pending' });
+    const provider = this.providersRepository.create({
+      ...this.pickSelfServiceFields(data),
+      email: data.email,
+      password: hashed,
+      status: 'pending',
+    });
     const saved = await this.providersRepository.save(provider);
     const { password: _, ...result } = saved;
 
@@ -54,7 +120,7 @@ export class ProvidersService {
     }
 
     const providers = await qb.orderBy('p.avgRating', 'DESC').getMany();
-    return providers.map(({ password: _, ...p }) => p);
+    return providers.map((p) => this.toPublicProvider(p));
   }
 
   async getProviderById(id: string) {
@@ -64,12 +130,26 @@ export class ProvidersService {
     return result;
   }
 
+  /** Public-safe single provider lookup (internal/billing fields stripped). */
+  async getPublicProviderById(id: string) {
+    const provider = await this.getProviderById(id);
+    return this.toPublicProvider(provider);
+  }
+
   async getProviderByEmail(email: string) {
     return this.providersRepository.findOne({ where: { email } });
   }
 
   async updateProvider(id: string, data: Partial<Provider>) {
-    await this.providersRepository.update(id, data);
+    // Only whitelisted self-service fields may be updated through this path.
+    // This prevents privilege escalation (status, creditBalance, leadPrice,
+    // subscriptionType, Stripe IDs) and accidentally storing a plaintext
+    // password — password/email changes require a dedicated verified flow.
+    const safe = this.pickSelfServiceFields(data);
+    if (Object.keys(safe).length === 0) {
+      return this.getProviderById(id);
+    }
+    await this.providersRepository.update(id, safe);
     return this.getProviderById(id);
   }
 

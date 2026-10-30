@@ -144,6 +144,7 @@ export class SeatsService {
     // billing (or platform admin below).
     if (dto.name) org.name = dto.name.trim();
     if (dto.billingEmail !== undefined) org.billingEmail = dto.billingEmail;
+    if (dto.skiptraceKey !== undefined) org.skiptraceKey = dto.skiptraceKey || null;
     return this.orgsRepo.save(org);
   }
 
@@ -478,6 +479,7 @@ export class SeatsService {
     if (!org) throw new NotFoundException('Organization not found');
     if (dto.name) org.name = dto.name.trim();
     if (dto.billingEmail !== undefined) org.billingEmail = dto.billingEmail;
+    if (dto.skiptraceKey !== undefined) org.skiptraceKey = dto.skiptraceKey || null;
     if (dto.status) org.status = dto.status;
     if (dto.planCode !== undefined) org.planCode = dto.planCode;
     if (dto.seatsPurchased !== undefined) org.seatsPurchased = dto.seatsPurchased;
