@@ -5,6 +5,7 @@ import { AuthStackParamList } from '../navigation/AppNavigator';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { login, User } from '../services/auth';
+import { loginWithPasskey, isPasskeySupported } from '../services/passkey';
 import { colors } from '../theme/colors';
 
 type LoginScreenProps = NativeStackScreenProps<AuthStackParamList, 'Login'> & {
@@ -34,6 +35,29 @@ export default function LoginScreen({ navigation, setUser }: LoginScreenProps) {
     }
   }
 
+  async function handlePasskey() {
+    setError('');
+    setLoading(true);
+    try {
+      // Email optional — blank field triggers discoverable (userless) sign-in:
+      // the device offers its passkeys and the credential resolves the account.
+      const response = await loginWithPasskey(email || undefined);
+      if (response.success && response.user) {
+        setUser(response.user);
+      } else {
+        setError(response.error || 'Passkey sign-in failed');
+      }
+    } catch (err: any) {
+      if (err?.name === 'UserCanceled' || err?.message?.includes('cancel')) {
+        setError('Passkey sign-in cancelled');
+      } else {
+        setError(err?.message || 'Passkey sign-in failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
@@ -46,6 +70,21 @@ export default function LoginScreen({ navigation, setUser }: LoginScreenProps) {
         <Input label="Password" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
 
         <Button title={loading ? 'Signing in...' : 'Sign In'} onPress={handleLogin} disabled={loading || !email || !password} />
+
+        {isPasskeySupported() && (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.divider} />
+            </View>
+            <Button
+              title="Sign in with Face ID / Passkey"
+              onPress={handlePasskey}
+              disabled={loading}
+            />
+          </>
+        )}
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don&apos;t have an account?</Text>
@@ -90,6 +129,21 @@ const styles = StyleSheet.create({
     color: colors.danger,
     marginBottom: 12,
     fontSize: 14,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    gap: 10,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    color: colors.textMuted,
+    fontSize: 13,
   },
   footer: {
     marginTop: 20,
