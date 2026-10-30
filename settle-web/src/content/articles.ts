@@ -1049,33 +1049,7 @@ export const articles: Article[] = [
       },
     ],
   },
-];
-
-// ---------------------------------------------------------------
-// Helper functions
-// ---------------------------------------------------------------
-
-export function getAllArticles(): Article[] {
-  return [...articles].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
-}
-
-export function getArticleBySlug(slug: string): Article | undefined {
-  return articles.find(a => a.slug === slug);
-}
-
-export function getAllSlugs(): string[] {
-  return articles.map(a => a.slug);
-}
-
-export function getArticlesByCategory(category: string): Article[] {
-  return articles.filter(a => a.category === category);
-}
-
-export function getRelatedArticles(slug: string, limit = 3): Article[] {
-  const current = getArticleBySlug(slug);
-  if (!current) return [  {
+  {
     slug: 'debt-settlement-vs-debt-consolidation-which-is-better',
     title: "Debt Settlement vs Debt Consolidation: Which Is Better?",
     description: "Debt settlement and debt consolidation are both popular debt-relief strategies. Learn which one is better for your situation.",
@@ -1147,7 +1121,34 @@ export function getRelatedArticles(slug: string, limit = 3): Article[] {
       }
     ],
   },
+
 ];
+
+// ---------------------------------------------------------------
+// Helper functions
+// ---------------------------------------------------------------
+
+export function getAllArticles(): Article[] {
+  return [...articles].sort(
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+  );
+}
+
+export function getArticleBySlug(slug: string): Article | undefined {
+  return articles.find(a => a.slug === slug);
+}
+
+export function getAllSlugs(): string[] {
+  return articles.map(a => a.slug);
+}
+
+export function getArticlesByCategory(category: string): Article[] {
+  return articles.filter(a => a.category === category);
+}
+
+export function getRelatedArticles(slug: string, limit = 3): Article[] {
+  const current = getArticleBySlug(slug);
+  if (!current) return [];
   const sameCategory = articles.filter(
     a => a.slug !== slug && a.category === current.category,
   );

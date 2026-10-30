@@ -152,10 +152,14 @@ function appendArticle(src, article) {
     excerpt: ${JSON.stringify(article.excerpt)},
     content: ${JSON.stringify(article.content, null, 2).replace(/\n/g, '\n    ')},
   },\n`;
-  // Insert before the closing `];` of the articles array
-  const idx = src.lastIndexOf('];');
+  // Insert before the FIRST top-level `];` after the articles declaration —
+  // lastIndexOf hits brackets inside later helper functions and splices the
+  // entry into unrelated code.
+  const decl = src.indexOf('export const articles');
+  if (decl === -1) throw new Error('articles.ts: articles export not found');
+  const idx = src.indexOf('\n];', decl);
   if (idx === -1) throw new Error('articles.ts: closing ]; not found');
-  return src.slice(0, idx) + entry + src.slice(idx);
+  return src.slice(0, idx) + '\n' + entry + src.slice(idx);
 }
 
 const src = fs.readFileSync(ARTICLES_TS, 'utf8');
