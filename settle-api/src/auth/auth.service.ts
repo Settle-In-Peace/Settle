@@ -179,6 +179,37 @@ export class AuthService {
     };
   }
 
+  /** Passwordless sign-in via a verified WebAuthn assertion. */
+  async loginViaPasskey(userId: string, reqInfo?: { ipAddress?: string; userAgent?: string }) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user || user.deletedAt) {
+      throw new UnauthorizedException('Invalid passkey');
+    }
+    const tokens = await this.generateTokens(user, reqInfo);
+    if (user.role !== 'provider') {
+      try {
+        await this.activitiesService.createActivity(user.id, 'login', 'User logged in with passkey', { email: user.email });
+      } catch {
+        // Activity logging is non-critical
+      }
+    }
+    return {
+      success: true,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role || 'customer',
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        createdAt: user.createdAt,
+      },
+    };
+  }
+
   async refreshToken(refreshToken: string, reqInfo?: { ipAddress?: string; userAgent?: string }) {
     try {
       const payload = this.jwtService.verify(refreshToken, {

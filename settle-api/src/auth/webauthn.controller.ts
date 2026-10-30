@@ -1,78 +1,57 @@
 import { Controller, Get, Post, Delete, Body, UseGuards, Request } from '@nestjs/common';
-import { WebAuthnService } from './webauthn.service';
-import { AuthService } from './auth.service';
+import { WebAuthnService } from '../webauthn/webauthn.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+/**
+ * Legacy /auth/passkey routes — kept for the existing frontend (login,
+ * register, settings). Delegates to the multi-credential WebAuthnService;
+ * newer surfaces should prefer /webauthn/*.
+ */
 @Controller('auth/passkey')
 export class WebAuthnController {
-  constructor(
-    private webauthnService: WebAuthnService,
-    private authService: AuthService,
-  ) {}
+  constructor(private readonly webauthnService: WebAuthnService) {}
 
-  // Step 1: Get registration options (requires auth — user must be logged in to add a passkey)
   @UseGuards(JwtAuthGuard)
   @Post('register/options')
-  async registerOptions(@Request() req) {
-    return this.webauthnService.generateRegistrationOptions(req.user.sub, req.user.email);
+  registerOptions(@Request() req) {
+    return this.webauthnService.registrationOptions(req.user.sub);
   }
 
-  // Step 2: Verify registration response (requires auth)
   @UseGuards(JwtAuthGuard)
   @Post('register/verify')
-  async registerVerify(@Request() req, @Body() body: { credential: any; challenge: string }) {
-    return this.webauthnService.verifyRegistration(req.user.sub, body.credential, body.challenge);
+  async registerVerify(@Request() req, @Body() body: { credential: any; challenge?: string }) {
+    await this.webauthnService.verifyRegistration(req.user.sub, body.credential);
+    return { verified: true };
   }
 
-  // Step 1: Get authentication options (no auth required — user is trying to log in)
   @Post('authenticate/options')
-  async authOptions(@Body() body: { email?: string }) {
-    return this.webauthnService.generateAuthenticationOptions(body.email);
+  authOptions(@Body() _body: { email?: string }) {
+    // Userless/discoverable — the email field is accepted for compat but unused.
+    return this.webauthnService.authenticationOptions();
   }
 
-  // Step 2: Verify authentication response and issue JWT
   @Post('authenticate/verify')
-  async authVerify(@Request() req, @Body() body: { email: string; credential: any; challenge: string }) {
-    const result = await this.webauthnService.verifyAuthentication(
-      body.email,
-      body.credential,
-      body.challenge,
-    );
-
-    if (!result.verified || !result.user) {
-      return { success: false, error: result.error || 'Passkey verification failed' };
-    }
-
-    // Issue JWT tokens
-    const tokens = await this.authService.generateTokensForUser(result.user, {
+  async authVerify(
+    @Request() req,
+    @Body() body: { email?: string; credential: any; challenge?: string },
+  ) {
+    const userId = await this.webauthnService.verifyAuthentication(body.credential);
+    return this.webauthnService.issueTokens(userId, {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
-    return {
-      success: true,
-      ...tokens,
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        role: result.user.role,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
-        phone: result.user.phone,
-        createdAt: result.user.createdAt,
-      },
-    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('status')
   async passkeyStatus(@Request() req) {
-    const hasPasskey = await this.webauthnService.hasPasskey(req.user.sub);
-    return { hasPasskey };
+    const creds = await this.webauthnService.listCredentials(req.user.sub);
+    return { hasPasskey: creds.length > 0 };
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete()
-  async deletePasskey(@Request() req) {
-    return { success: await this.webauthnService.deletePasskey(req.user.sub) };
+  deletePasskey(@Request() req) {
+    return this.webauthnService.removeAllCredentials(req.user.sub);
   }
 }

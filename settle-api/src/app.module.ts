@@ -92,6 +92,7 @@ import { AffiliatesModule } from './affiliates/affiliates.module';
 import { NurtureModule } from './nurture/nurture.module';
 import { EsignModule } from './esign/esign.module';
 import { SkiptraceModule } from './skiptrace/skiptrace.module';
+import { WebAuthnModule } from './webauthn/webauthn.module';
 import { SeatsModule } from './seats/seats.module';
 
 @Module({
@@ -268,6 +269,7 @@ import { SeatsModule } from './seats/seats.module';
     NurtureModule,
     EsignModule,
     SkiptraceModule,
+    WebAuthnModule,
     SeatsModule,
   ],
   controllers: [AppController],

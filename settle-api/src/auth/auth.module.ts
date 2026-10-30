@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { WebAuthnService } from './webauthn.service';
+import { WebAuthnModule } from '../webauthn/webauthn.module';
 import { WebAuthnController } from './webauthn.controller';
 import { TelnyxService } from './telnyx.service';
 import { SmsAuthService } from './sms-auth.service';
@@ -42,9 +42,10 @@ import { EmailModule } from '../email/email.module';
       },
       inject: [ConfigService],
     }),
+    WebAuthnModule,
   ],
   controllers: [AuthController, WebAuthnController, SmsAuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, WebAuthnService, TelnyxService, SmsAuthService],
+  providers: [AuthService, JwtStrategy, LocalStrategy, TelnyxService, SmsAuthService],
   exports: [AuthService],
 })
 export class AuthModule {}
