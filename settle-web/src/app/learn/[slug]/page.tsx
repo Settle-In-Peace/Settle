@@ -8,7 +8,9 @@ import {
   type ContentBlock,
 } from '../../../content/articles';
 
-// Pre-render every article at build time for SEO.
+// Pre-render every article at build time for SEO, and allow on-demand
+// rendering for slugs added after the build (nightly AI articles).
+export const dynamicParams = true;
 export function generateStaticParams() {
   return getAllSlugs().map(slug => ({ slug }));
 }
