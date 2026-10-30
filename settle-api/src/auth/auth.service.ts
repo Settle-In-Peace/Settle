@@ -101,6 +101,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      amr: ['pwd'],
     };
 
     const accessToken = this.jwtService.sign(payload, {

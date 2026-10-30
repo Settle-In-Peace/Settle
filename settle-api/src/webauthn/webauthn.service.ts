@@ -50,6 +50,10 @@ export class WebAuthnService {
       firstName: (user as any).firstName,
       lastName: (user as any).lastName,
       phone: (user as any).phone,
+      // amr = Authentication Methods Reference (RFC 8176). A passkey session is
+      // possession + user-verification — the MFA-equivalent claim credit-data
+      // access requires under MFSN §5.5.1.
+      amr: ['passkey', 'mfa'],
     };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1h', secret: process.env.JWT_SECRET, algorithm: 'HS256' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d', secret: process.env.JWT_REFRESH_SECRET, algorithm: 'HS256' });

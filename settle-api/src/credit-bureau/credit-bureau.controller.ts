@@ -10,6 +10,7 @@ import {
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SalesGuard } from '../auth/guards/sales.guard';
+import { MfaGuard } from '../auth/guards/mfa.guard';
 import { CreditBureauService } from './credit-bureau.service';
 import { PullCreditDto } from './dto/pull-credit.dto';
 import {
@@ -25,7 +26,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('credit-bureau')
-@UseGuards(JwtAuthGuard, SalesGuard)
+@UseGuards(JwtAuthGuard, SalesGuard, MfaGuard)
 export class CreditBureauController {
   constructor(private readonly creditBureauService: CreditBureauService) {}
 
