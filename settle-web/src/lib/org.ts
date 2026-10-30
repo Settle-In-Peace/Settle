@@ -172,3 +172,36 @@ export function createSeatCheckout(payload: { planCode: string; seats: number })
 export function createOrgBillingPortal() {
   return api()<{ url: string }>('/orgs/me/billing-portal', { method: 'POST' });
 }
+
+export interface OrgPhoneNumber {
+  id: string;
+  phoneNumber: string;
+  status: string;
+  friendlyName?: string;
+  createdAt: string;
+}
+
+export interface AvailableNumber {
+  phoneNumber: string;
+  locality?: string;
+  region?: string;
+}
+
+export function searchNumbers(prefix: string, limit = 8) {
+  return api()<AvailableNumber[]>(`/orgs/me/numbers/search?prefix=${encodeURIComponent(prefix)}&limit=${limit}`, { method: 'GET' });
+}
+
+export function listNumbers() {
+  return api()<OrgPhoneNumber[]>('/orgs/me/numbers', { method: 'GET' });
+}
+
+export function orderNumber(phoneNumber: string, friendlyName?: string) {
+  return api()<OrgPhoneNumber>('/orgs/me/numbers/order', {
+    method: 'POST',
+    body: JSON.stringify({ phoneNumber, friendlyName }),
+  });
+}
+
+export function releaseNumber(id: string) {
+  return api()<{ released: boolean }>(`/orgs/me/numbers/${id}`, { method: 'DELETE' });
+}

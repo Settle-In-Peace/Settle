@@ -18,6 +18,12 @@ import {
   getSeatUsage,
   setOrgMemberFlag,
   updateOrgMember,
+  OrgPhoneNumber,
+  AvailableNumber,
+  listNumbers,
+  orderNumber,
+  releaseNumber,
+  searchNumbers,
 } from '@/lib/org';
 
 function fmtCents(c: number) {
@@ -372,6 +378,8 @@ function OrgDashboardContent() {
               )}
             </div>
 
+            <PhoneNumbersCard isManager={isManager} />
+
             {isManager && (
               <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-blue-200 dark:border-blue-800 p-5">
                 <h2 className="font-semibold text-zinc-900 dark:text-white mb-3">Buy seats</h2>
@@ -436,5 +444,119 @@ export default function OrgDashboardPage() {
     >
       <OrgDashboardContent />
     </Suspense>
+  );
+}
+
+
+function PhoneNumbersCard({ isManager }: { isManager: boolean }) {
+  const [numbers, setNumbers] = useState<OrgPhoneNumber[]>([]);
+  const [prefix, setPrefix] = useState('');
+  const [results, setResults] = useState<AvailableNumber[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      setNumbers(await listNumbers());
+    } catch {
+      /* not configured yet */
+    }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const doSearch = async () => {
+    setBusy(true); setError('');
+    try {
+      setResults(await searchNumbers(prefix));
+    } catch (e: any) {
+      setError(e?.message || 'Search failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doOrder = async (phoneNumber: string) => {
+    setBusy(true); setError('');
+    try {
+      await orderNumber(phoneNumber);
+      setResults(results.filter((r) => r.phoneNumber !== phoneNumber));
+      await load();
+    } catch (e: any) {
+      setError(e?.message || 'Order failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doRelease = async (id: string) => {
+    setBusy(true); setError('');
+    try {
+      await releaseNumber(id);
+      await load();
+    } catch (e: any) {
+      setError(e?.message || 'Release failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5">
+      <h2 className="font-semibold text-zinc-900 dark:text-white mb-1">Phone numbers</h2>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+        Numbers your org owns — used as caller IDs on outbound dials.
+      </p>
+
+      {error && <p className="text-xs text-red-600 dark:text-red-400 mb-3">{error}</p>}
+
+      {numbers.length > 0 ? (
+        <ul className="mb-4 space-y-2">
+          {numbers.map((n) => (
+            <li key={n.id} className="flex items-center justify-between text-sm">
+              <span className="font-mono text-zinc-900 dark:text-zinc-100">{n.phoneNumber}</span>
+              <span className="flex items-center gap-2">
+                <span className={`text-[10px] font-semibold uppercase ${n.status === 'active' ? 'text-emerald-600' : 'text-zinc-400'}`}>{n.status}</span>
+                {isManager && n.status === 'active' && (
+                  <button onClick={() => doRelease(n.id)} disabled={busy} className="text-xs text-red-500 hover:text-red-400 disabled:opacity-50">Release</button>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-zinc-400 mb-4">No numbers yet — orders use the platform account until then.</p>
+      )}
+
+      {isManager && (
+        <>
+          <div className="flex gap-2">
+            <input
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
+              placeholder="Area code — e.g. 951"
+              className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
+            />
+            <button onClick={doSearch} disabled={busy || !prefix.trim()} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium disabled:opacity-50">
+              {busy ? '…' : 'Search'}
+            </button>
+          </div>
+          {results.length > 0 && (
+            <ul className="mt-3 space-y-1.5">
+              {results.map((r) => (
+                <li key={r.phoneNumber} className="flex items-center justify-between text-sm">
+                  <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                    {r.phoneNumber}
+                    {r.locality && <span className="ml-2 text-xs text-zinc-400">{r.locality}{r.region ? `, ${r.region}` : ''}</span>}
+                  </span>
+                  <button onClick={() => doOrder(r.phoneNumber)} disabled={busy} className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-medium disabled:opacity-50">
+                    Buy
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
   );
 }
