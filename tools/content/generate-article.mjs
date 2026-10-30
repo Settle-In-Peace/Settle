@@ -42,7 +42,7 @@ const CATEGORIES = ['Debt Settlement', 'Credit Repair', 'Budgeting', 'Debt Relie
 
 // Raw http(s) request — fetch/undici kills slow local Ollama calls at its
 // built-in 5-min headers timeout. Socket timeout only fires on inactivity.
-const REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 30 * 60 * 1000;
 
 function postJson(urlString, payload) {
   return new Promise((resolve, reject) => {
@@ -78,13 +78,26 @@ function postJson(urlString, payload) {
   });
 }
 
+const IS_OLLAMA = /11434|ollama/i.test(BASE);
+
 async function chat(messages, json = true) {
-  const body = await postJson(
-    `${BASE.replace(/\/$/, '')}/chat/completions`,
-    JSON.stringify({ model: MODEL, messages, temperature: 0.7, options: { num_ctx: 8192 }, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
-  );
+  // Ollama native /api/chat — honors options.num_ctx (the OpenAI-compat
+  // /v1 endpoint silently ignores it and clamps to the 4096 default).
+  // Other providers keep the OpenAI-compatible path.
+  const url = IS_OLLAMA
+    ? `${BASE.replace(/\/v1\/?$/, '').replace(/\/$/, '')}/api/chat`
+    : `${BASE.replace(/\/$/, '')}/chat/completions`;
+  const payload = IS_OLLAMA
+    ? { model: MODEL, messages, stream: false, think: false,
+        ...(json ? { format: 'json' } : {}),
+        options: { num_ctx: 8192, temperature: 0.7 } }
+    : { model: MODEL, messages, temperature: 0.7,
+        ...(json ? { response_format: { type: 'json_object' } } : {}) };
+  const body = await postJson(url, JSON.stringify(payload));
   const data = JSON.parse(body);
-  return data.choices?.[0]?.message?.content ?? '';
+  return IS_OLLAMA
+    ? (data.message?.content ?? '')
+    : (data.choices?.[0]?.message?.content ?? '');
 }
 
 function parseJsonOut(text) {
