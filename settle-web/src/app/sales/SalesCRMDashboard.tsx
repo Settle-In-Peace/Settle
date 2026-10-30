@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { clearAuth, getStoredToken, getStoredUser } from '@/lib/authUtils';
 
 import { API_URL } from '@/lib/apiUrl';
+import DialerPanel from '@/components/dialer/DialerPanel';
 interface SalesLead {
   id: string;
   firstName: string;
@@ -439,7 +440,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
   const TABS: { key: Tab; label: string; badge?: number }[] = [
     { key: 'leads', label: 'Leads', badge: leads.length },
     { key: 'inbox', label: 'Inbox', badge: (inbox.unassigned?.length || 0) + (inbox.mine?.length || 0) },
-    { key: 'dialer', label: 'Dialer' },
+    { key: 'dialer', label: 'Auto-Dialer' },
     { key: 'email', label: 'Email' },
     { key: 'calendar', label: 'Calendar', badge: (calendar.overdue?.length || 0) + (calendar.upcoming?.length || 0) },
     { key: 'collections', label: 'Collections', badge: collections.length },
@@ -656,8 +657,8 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
         {/* ─── Dialer Tab ─── */}
         {tab === 'dialer' && (
           <div className="space-y-6">
-            <h2 className="text-lg font-bold text-black dark:text-white">Integrated Dialer</h2>
-            <p className="text-sm text-zinc-500">Click-to-call your leads using Telnyx. Calls are logged automatically.</p>
+            <h2 className="text-lg font-bold text-black dark:text-white">Auto-Dialer</h2>
+            <p className="text-sm text-zinc-500">Click-to-call your leads or run autodial campaigns through Telnyx. DNC numbers are blocked and calls are logged automatically.</p>
             {!dialLead ? (
               <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-4">
                 <h3 className="font-semibold text-black dark:text-white mb-3">Select a lead to call:</h3>
@@ -714,6 +715,7 @@ export default function SalesCRMDashboard({ initialUser }: SalesCRMDashboardProp
                 </div>
               </div>
             )}
+            <DialerPanel />
           </div>
         )}
 
