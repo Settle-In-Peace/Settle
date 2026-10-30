@@ -1,3 +1,6 @@
+import { OrgPhoneNumber } from '../entities/org-phone-number.entity';
+import { NumbersController } from './numbers.controller';
+import { NumbersService } from './numbers.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Org } from './org.entity';
@@ -51,11 +54,12 @@ import { AgentDialerController } from './agent-dialer.controller';
       DebtorProfile,
       DncEntry,
       ConsentLog,
+      OrgPhoneNumber,
     ]),
     StripeModule,
   ],
-  controllers: [SeatsController, OrgsController, AgentDialerController],
-  providers: [SeatsService, AgentQueueService, OrgRoleGuard],
+  controllers: [SeatsController, OrgsController, AgentDialerController, NumbersController],
+  providers: [SeatsService, AgentQueueService, OrgRoleGuard, NumbersService],
   exports: [SeatsService],
 })
 export class SeatsModule {}
