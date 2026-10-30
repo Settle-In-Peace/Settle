@@ -20,6 +20,7 @@ import { DialerCall } from './dialer-call.entity';
 import { DncEntry } from '../entities/dnc-entry.entity';
 import { ConsentLog, ConsentType } from '../entities/consent-log.entity';
 import { DebtorProfile } from '../entities/debtor-profile.entity';
+import { SkipTraceLookup } from '../entities/skip-trace-lookup.entity';
 import { Org } from '../seats/org.entity';
 import { Seat, SeatStatus } from '../seats/seat.entity';
 import {
@@ -57,6 +58,8 @@ export class DialerService {
     private readonly seatsRepository: Repository<Seat>,
     @InjectRepository(Org)
     private readonly orgsRepository: Repository<Org>,
+    @InjectRepository(SkipTraceLookup)
+    private readonly skipTraceLookupsRepository: Repository<SkipTraceLookup>,
   ) {
     this.providers = new Map<string, DialerProvider>([
       ['telnyx', telnyxProvider],
@@ -125,6 +128,22 @@ export class DialerService {
           `Contact ${dto.contactId} is flagged do-not-call. Call blocked.`,
         );
       }
+    }
+
+    // 3.5 TCPA litigator scrub — a vendor-flagged serial-litigator number is
+    //     radioactive: block at the gate regardless of consent source.
+    const litigator = await this.skipTraceLookupsRepository
+      .createQueryBuilder('l')
+      .where('l.litigator = true')
+      .andWhere(
+        "EXISTS (SELECT 1 FROM jsonb_array_elements(l.phones) ph WHERE ph->>'number' = :phone)",
+        { phone: normalizedPhone },
+      )
+      .getExists();
+    if (litigator) {
+      throw new ForbiddenException(
+        `Number ${normalizedPhone} is flagged as a known TCPA litigator by skip-trace. Call blocked.`,
+      );
     }
 
     // 4. Consent — autodial semantics (manualDial=false) require confirmed
