@@ -51,6 +51,16 @@ async function chat(messages, json = true) {
   return data.choices?.[0]?.message?.content ?? '';
 }
 
+function parseJsonOut(text) {
+  // strip <think>...</think> blocks and markdown fences qwen emits
+  let t = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  t = t.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
+  const start = t.indexOf('{');
+  const end = t.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('no JSON object in model output');
+  return t.slice(start, end + 1);
+}
+
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 function existingSlugs(src) {
@@ -70,11 +80,11 @@ function pickTopic(src) {
 }
 
 async function generate(topic) {
-  const article = JSON.parse(await chat([
+  const article = JSON.parse(parseJsonOut(await chat([
     { role: 'system', content:
       'You write honest, plain-English debt-relief educational articles for Settle In Peace (settleinpeace.com), a debt-relief marketplace. Output ONLY valid JSON matching this schema: {"title":string,"description":string,"category":string,"keywords":string[],"excerpt":string,"readingTime":number,"content":ContentBlock[]} where ContentBlock = {"type":"h2","text":string} | {"type":"p","text":string} | {"type":"ul","items":string[]} | {"type":"ol","items":string[]} | {"type":"callout","text":string}. Rules: 6-10 content blocks, 2-4 h2 sections, factual non-promotional tone, one "callout" with a balanced pros/cons warning, end with a final "p" block telling readers they can compare vetted options at settleinpeace.com/compare or take the free assessment at settleinpeace.com/assessment (render as plain text, no markdown).' },
     { role: 'user', content: `Write an article about: ${topic}. Category should be one of: ${CATEGORIES.join(', ')}.` },
-  ]));
+  ])));
   return article;
 }
 
