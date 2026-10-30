@@ -34,6 +34,12 @@ export default function Navigation() {
   // Close menu on route change
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
+  // Internal workspaces (sales/admin/crm) render their own chrome — hide the
+  // public site nav so logged-in staff aren't navigating two nav bars at once.
+  if (['/sales', '/admin', '/crm'].some((p) => pathname.startsWith(p))) {
+    return null;
+  }
+
   const handleLogout = () => {
     clearAuth();
     setMenuOpen(false);
