@@ -27,6 +27,9 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 | devin-parity-matrix | 2026-10-31 — parity matrix: `/Volumes/Os_Sites/MOBILE_PARITY_MATRIX.md`. settle-mobile ~50% consumer surface. Ranked gaps: portal/billing (subscription mgmt = revenue) → settlement flow → settings → questions Q&A → coaching. |
 
+| devin-settlement-mobile | 2026-10-31 — **DONE, pushed, tsc clean.** 'My Program' settlement-status screen (enrollment, trust account, settlements, milestones, docs) via /crm/portal/me/overview + dashboard action. Remaining gaps: portal/billing (provider-facing, B2B), settings, questions. | `settle-mobile/src/screens/SettlementScreen.tsx` |
+
+
 | devin-mobile-first-directive | 2026-10-31 — OWNER DIRECTIVE: mobile apps get features FIRST, web builds in parallel. Prioritize prime-mobile (driver/fleet/client), settle-mobile, favestate-mobile, notyced-mobile feature completeness ahead of web-only surfaces. |
 
 
