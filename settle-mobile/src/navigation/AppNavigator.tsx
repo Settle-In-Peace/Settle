@@ -10,6 +10,7 @@ import CalculatorsScreen from '../screens/CalculatorsScreen';
 import LearnScreen from '../screens/LearnScreen';
 import LearnArticleScreen from '../screens/LearnArticleScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import SettlementScreen from '../screens/SettlementScreen';
 import { User } from '../services/auth';
 import { colors } from '../theme/colors';
 
@@ -26,6 +27,7 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   Tabs: undefined;
   Assessment: undefined;
+  Settlement: undefined;
 };
 
 export type MainTabsParamList = {
@@ -67,6 +69,7 @@ function MainStackScreen({ user, setUser }: { user: User | null; setUser: (user:
         {(props) => <MainTabs {...(props as any)} user={user} setUser={setUser} />}
       </MainStack.Screen>
       <MainStack.Screen name="Assessment" component={AssessmentScreen} />
+      <MainStack.Screen name="Settlement" component={SettlementScreen} />
     </MainStack.Navigator>
   );
 }

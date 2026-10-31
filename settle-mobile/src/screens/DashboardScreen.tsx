@@ -25,6 +25,7 @@ export default function DashboardScreen({ user }: DashboardScreenProps) {
 
   const actions = [
     { label: 'My Debts', target: 'Debts', icon: '💳' },
+    { label: 'My Program', target: 'Settlement' as const, icon: '🤝' },
     { label: 'Assessment', target: 'Assessment' as const, icon: '💬' },
     { label: 'Calculators', target: 'Calculators', icon: '🧮' },
     { label: 'Learn', target: 'Learn', icon: '📚' },
@@ -54,8 +55,8 @@ export default function DashboardScreen({ user }: DashboardScreenProps) {
           key={action.label}
           style={styles.actionRow}
           onPress={() => {
-            if (action.target === 'Assessment') {
-              (mainNavigation as any).navigate('Assessment');
+            if (action.target === 'Assessment' || action.target === 'Settlement') {
+              (mainNavigation as any).navigate(action.target);
             } else {
               tabNavigation.navigate(action.target as any);
             }
