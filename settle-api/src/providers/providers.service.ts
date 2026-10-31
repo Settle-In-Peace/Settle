@@ -140,7 +140,7 @@ export class ProvidersService {
           status: 'pending_review',
         });
         const updated = await this.getProviderById(existing.id);
-        return { ...updated, reapply: true };
+        return { ...this.toPublicProvider(updated), reapply: true };
       }
       throw new ConflictException('A provider with this email already exists');
     }
@@ -152,7 +152,7 @@ export class ProvidersService {
       status: 'pending_review',
     });
     const saved = await this.providersRepository.save(provider);
-    const { password: _pw, ...result } = saved;
+    const result = this.toPublicProvider(saved);
 
     // CRM prospect record — same pattern as signup.
     try {
@@ -224,8 +224,10 @@ export class ProvidersService {
     }
 
     provider.password = await bcrypt.hash(password, 10);
-    provider.passwordSetupToken = undefined;
-    provider.passwordSetupExpires = undefined;
+    // Must be null, not undefined — save() skips undefined columns and the
+    // token would remain redeemable forever.
+    provider.passwordSetupToken = null;
+    provider.passwordSetupExpires = null;
     provider.emailVerified = true;
     await this.providersRepository.save(provider);
 

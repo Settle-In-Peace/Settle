@@ -24,10 +24,10 @@ export class Provider {
 
   // One-time password-setup token issued on approval for passwordless enrollees.
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'password_setup_token' })
-  passwordSetupToken?: string;
+  passwordSetupToken?: string | null;
 
   @Column({ type: 'timestamp', nullable: true, name: 'password_setup_expires' })
-  passwordSetupExpires?: Date;
+  passwordSetupExpires?: Date | null;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   phone?: string;
