@@ -25,7 +25,7 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
-| devin-eas-prep | 2026-10-31 — settle-mobile wired for EAS iOS submit, EXPO_USE_PNPM, creds copied (gitignored). pkgMgr pnpm@10.33.0 (9.15.5 fails install on EAS). Android retry running. NEEDS: ASC record (ascAppId) + Play listing. |
+| devin-eas-prep | 2026-10-31 — settle-mobile prepped + FIRST Android build vc4 FINISHED on EAS (pnpm@10.33.0 bump fixed install). Play submit blocked: no app listing yet (NEEDS_HUMAN). |
 
 | devin-parity-matrix | 2026-10-31 — parity matrix: `/Volumes/Os_Sites/MOBILE_PARITY_MATRIX.md`. settle-mobile ~50% consumer surface. Ranked gaps: portal/billing (subscription mgmt = revenue) → settlement flow → settings → questions Q&A → coaching. |
 
