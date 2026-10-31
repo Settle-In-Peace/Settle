@@ -1,10 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
-import { signupAsProvider } from '@/lib/api';
-import PasswordInput from '../../components/PasswordInput';
+import { enrollAsProvider, getProviderPublicCount } from '@/lib/api';
+
+const DEBT_TYPE_OPTIONS = [
+  { id: 'credit_card', label: 'Credit Card' },
+  { id: 'medical', label: 'Medical' },
+  { id: 'personal_loan', label: 'Personal Loan' },
+  { id: 'auto_loan', label: 'Auto Loan' },
+  { id: 'collections', label: 'Collections' },
+  { id: 'tax_debt', label: 'Tax Debt' },
+];
 
 const HOW_IT_WORKS_STEPS = [
   {
@@ -152,16 +160,19 @@ export default function ProvidersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [providerCount, setProviderCount] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: '',
     companyName: '',
     email: '',
-    password: '',
     phone: '',
     state: '',
+    nationwide: false,
     services: '',
+    debtTypes: [] as string[],
     website: '',
     description: '',
+    feeStructure: '',
     minDebtAmount: '7500',
     feePercentage: '',
     yearsInBusiness: '',
@@ -169,6 +180,17 @@ export default function ProvidersPage() {
     isAfccMember: false,
     isIapdaMember: false,
   });
+
+  useEffect(() => {
+    // Anonymous-safe network stat — hidden when zero/unavailable.
+    getProviderPublicCount()
+      .then((res) => {
+        if (res && typeof res.active === 'number' && res.active > 0) {
+          setProviderCount(res.active);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlan(planId);
@@ -185,7 +207,7 @@ export default function ProvidersPage() {
     if (!form.companyName.trim()) errors.companyName = 'Company name is required.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Enter a valid email address.';
     if (form.phone.replace(/\D/g, '').length < 10) errors.phone = 'Enter a phone number with at least 10 digits.';
-    if (!form.state) errors.state = 'Select the state where you operate.';
+    if (!form.nationwide && !form.state) errors.state = 'Select a state or check "nationwide".';
     if (!form.services.trim()) errors.services = 'Describe the services you offer.';
     return errors;
   };
@@ -200,14 +222,24 @@ export default function ProvidersPage() {
     setSubmitting(true);
     setError('');
     try {
-      await signupAsProvider({
-        ...form,
+      await enrollAsProvider({
+        companyName: form.companyName,
+        contactName: form.name,
+        email: form.email,
+        phone: form.phone,
+        website: form.website || undefined,
+        description: form.description || undefined,
         serviceTypes: form.services.split(',').map(service => service.trim()).filter(Boolean),
-        statesServed: [form.state],
-        subscriptionType: selectedPlan,
+        debtTypes: form.debtTypes.length ? form.debtTypes : undefined,
+        statesServed: form.nationwide ? [] : [form.state],
+        feeStructure: form.feeStructure || undefined,
+        planInterest: selectedPlan,
         minDebtAmount: parseFloat(form.minDebtAmount),
         feePercentage: form.feePercentage ? parseFloat(form.feePercentage) : undefined,
         yearsInBusiness: form.yearsInBusiness ? parseInt(form.yearsInBusiness) : undefined,
+        bbbRating: form.bbbRating || undefined,
+        isAfccMember: form.isAfccMember,
+        isIapdaMember: form.isIapdaMember,
       });
       setFormStep('success');
     } catch (err: any) {
@@ -228,7 +260,7 @@ export default function ProvidersPage() {
           </div>
           <h1 className="text-3xl font-bold text-black dark:text-white mb-4">Application Received!</h1>
           <p className="text-zinc-600 dark:text-zinc-400 text-lg mb-6">
-            Our team will review your application and reach out within 1–2 business days to activate your account.
+            We've emailed a confirmation to <strong>{form.email}</strong>. Our team reviews applications within 1–2 business days — once approved you'll get a secure link to set your portal password and start receiving matched leads.
           </p>
           <p className="text-sm text-zinc-500 dark:text-zinc-500">
             Questions? Email us at <a href="mailto:partners@settleinpeace.com" className="text-blue-500 hover:underline">partners@settleinpeace.com</a>
@@ -253,6 +285,11 @@ export default function ProvidersPage() {
               <p className="text-xl text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">
                 Our consumers self-qualify through a detailed 7-step assessment before you ever speak to them. Higher intent. Better conversions. Lower waste.
               </p>
+              {providerCount !== null && (
+                <p className="mt-4 inline-block px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold">
+                  {providerCount} debt relief {providerCount === 1 ? 'company is' : 'companies are'} active on the marketplace
+                </p>
+              )}
             </div>
 
             {/* Stats */}
@@ -465,9 +502,9 @@ export default function ProvidersPage() {
               ← Back to plans
             </button>
             <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md p-8">
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Create your provider account</h2>
+              <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Enroll your company</h2>
               <p className="text-zinc-500 dark:text-zinc-400 mb-6 text-sm">
-                Plan: <strong>{PLANS.find(p => p.id === selectedPlan)?.name}</strong> · Your account will be reviewed before activation (1–2 business days).
+                Plan: <strong>{PLANS.find(p => p.id === selectedPlan)?.name}</strong> · Applications are reviewed within 1–2 business days — once approved we'll email you a secure link to set your portal password.
               </p>
 
               {error && (
@@ -514,21 +551,22 @@ export default function ProvidersPage() {
                     {formErrors.phone && <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>}
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Password *</label>
-                  <PasswordInput
-                    required minLength={8} value={form.password}
-                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Primary State *</label>
-                    <select value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} aria-invalid={!!formErrors.state} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select value={form.state} disabled={form.nationwide} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} aria-invalid={!!formErrors.state} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
                       <option value="">Select state...</option>
                       {['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(state => <option key={state} value={state}>{state}</option>)}
                     </select>
+                    <label className="mt-2 flex items-center gap-2 cursor-pointer text-sm text-zinc-600 dark:text-zinc-400">
+                      <input
+                        type="checkbox"
+                        checked={form.nationwide}
+                        onChange={e => setForm(f => ({ ...f, nationwide: e.target.checked }))}
+                        className="accent-blue-600"
+                      />
+                      We serve all 50 states
+                    </label>
                     {formErrors.state && <p className="mt-1 text-sm text-red-600">{formErrors.state}</p>}
                   </div>
                   <div>
@@ -576,6 +614,45 @@ export default function ProvidersPage() {
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Debt types you handle</label>
+                  <div className="flex flex-wrap gap-2">
+                    {DEBT_TYPE_OPTIONS.map(opt => {
+                      const checked = form.debtTypes.includes(opt.id);
+                      return (
+                        <button
+                          type="button"
+                          key={opt.id}
+                          onClick={() =>
+                            setForm(f => ({
+                              ...f,
+                              debtTypes: checked
+                                ? f.debtTypes.filter(t => t !== opt.id)
+                                : [...f.debtTypes, opt.id],
+                            }))
+                          }
+                          aria-pressed={checked}
+                          className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                            checked
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700 hover:border-blue-400'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fee structure</label>
+                  <input
+                    type="text" value={form.feeStructure}
+                    onChange={e => setForm(f => ({ ...f, feeStructure: e.target.value }))}
+                    placeholder="e.g. 25% of enrolled debt, no upfront fees"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Services *</label>

@@ -113,6 +113,18 @@ export function compareProviders(leadId: string, token?: string | null) {
 export function signupAsProvider(data: ApiData) {
   return api()<ApiData>('/providers/signup', { method: 'POST', body: JSON.stringify(data) });
 }
+export function enrollAsProvider(data: ApiData) {
+  return api()<ApiData>('/providers/enroll', { method: 'POST', body: JSON.stringify(data) });
+}
+export function getProviderPublicCount() {
+  return api()<{ active: number }>('/providers/public/count', { method: 'GET' });
+}
+export function setProviderPassword(token: string, password: string) {
+  return api()<ApiData>('/providers/set-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  });
+}
 
 // Debts
 export function getDebts(token: string) {
