@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -18,8 +19,9 @@ function getDisplayName(user: User | null): string {
   return user.name || user.email.split('@')[0];
 }
 
-export default function ProfileScreen({ user, setUser }: ProfileScreenProps) {
+export default function ProfileScreen({ user, setUser, navigation }: ProfileScreenProps & { navigation?: any }) {
   const [deleting, setDeleting] = useState(false);
+  const nav = navigation ?? useNavigation<any>();
 
   async function handleLogout() {
     await logout();
@@ -65,6 +67,13 @@ export default function ProfileScreen({ user, setUser }: ProfileScreenProps) {
 
         <Text style={[styles.label, styles.labelSpacing]}>Role</Text>
         <Text style={styles.value}>{user?.role || 'customer'}</Text>
+      </Card>
+
+      <Card>
+        <Text style={styles.label}>Community</Text>
+        <Button title="Community Q&A" onPress={() => nav.navigate('Questions')} variant="outline" />
+        <View style={{ height: 8 }} />
+        <Button title="Coaching — budgets & goals" onPress={() => nav.navigate('Coaching')} variant="outline" />
       </Card>
 
       <Button title="Log Out" onPress={handleLogout} variant="outline" />
