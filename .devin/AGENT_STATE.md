@@ -25,6 +25,12 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| devin-parity-matrix | 2026-10-31 — parity matrix: `/Volumes/Os_Sites/MOBILE_PARITY_MATRIX.md`. settle-mobile ~50% consumer surface. Ranked gaps: portal/billing (subscription mgmt = revenue) → settlement flow → settings → questions Q&A → coaching. |
+
+| devin-mobile-first-directive | 2026-10-31 — OWNER DIRECTIVE: mobile apps get features FIRST, web builds in parallel. Prioritize prime-mobile (driver/fleet/client), settle-mobile, favestate-mobile, notyced-mobile feature completeness ahead of web-only surfaces. |
+
+
+
 | devin-admin-command-center | **IN PROGRESS** — /admin command-center redesign: KPI row (leads/calls/conversion/agents/pending-providers/credits), pipeline funnel, quick actions, activity feed, restyled providers/leads/matches/transactions tabs; fixes paginated-response parse bug (`data.data` not `data.leads`) that zeroed all counters. Light consistency pass on crm/sales/sales-agents + shared AdminChrome nav. | `settle-web/src/app/admin/**`, `settle-web/src/components/admin/AdminChrome.tsx` |
 
 | devin-apiurl-fix | **LANDED `4440bca` + DEPLOYED to prod (worker 65dc8bc2), live-verified.** Prod login was dead — last deploy skipped cf-build.sh's NEXT_PUBLIC_API_URL export → 14 files' `http://localhost:4025` fallback baked into the client bundle → CSP `connect-src https:` blocked every /auth/login. New `src/lib/apiUrl.ts` = single API_URL (prod-URL default + trailing-slash strip); `lib/api.ts` re-exports; 20 consumers converted (both the broken localhost fallbacks and the duplicated prod-URL ones). Bundle verified: login chunks now reference api.settleinpeace.com only. Deploy note for ops: `pnpm cf:deploy` alone is NOT safe — cf-build.sh must run first or the wrong env gets baked. | `settle-web/src/lib/{apiUrl,api}.ts` + 19 files under `src/app` + `src/components/FirebasePhoneVerify.tsx` |
