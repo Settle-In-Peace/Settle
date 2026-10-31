@@ -44,3 +44,6 @@ Thumbs.db
 # generated native folders
 /ios
 /android
+
+# EAS store credentials (never commit)
+credentials/

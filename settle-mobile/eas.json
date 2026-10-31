@@ -23,13 +23,19 @@
     "production": {
       "autoIncrement": true,
       "env": {
+        "EXPO_USE_PNPM": "1",
         "EXPO_PUBLIC_API_URL": "https://api.settleinpeace.com"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {},
+      "ios": {
+        "ascApiKeyPath": "./credentials/ios/asc-api-key.p8",
+        "ascApiKeyId": "PPQQ3TLU4A",
+        "ascApiKeyIssuerId": "69a6de7c-e268-47e3-e053-5b8c7c11a4d1",
+        "appleTeamId": "987B9KG4M7"
+      },
       "android": {
         "serviceAccountKeyPath": "./credentials/google-play-service-account.json",
         "track": "internal",
