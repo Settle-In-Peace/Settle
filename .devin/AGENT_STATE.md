@@ -29,6 +29,9 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 | devin-settlement-mobile | 2026-10-31 — **DONE, pushed, tsc clean.** 'My Program' settlement-status screen (enrollment, trust account, settlements, milestones, docs) via /crm/portal/me/overview + dashboard action. Remaining gaps: portal/billing (provider-facing, B2B), settings, questions. | `settle-mobile/src/screens/SettlementScreen.tsx` |
 
+| devin-attorney-plan | 2026-10-31 — OWNER APPROVED attorney-directory idea; gameplan committed `docs/ATTORNEY_DIRECTORY_PLAN.md`. Schema→API→web→assessment-branch→Stripe flat subs→seed+outreach. Hard rule: flat advertising only — attorneys can't pay/receive per-lead (bar fee-splitting). | `docs/ATTORNEY_DIRECTORY_PLAN.md` |
+
+
 
 | devin-mobile-first-directive | 2026-10-31 — OWNER DIRECTIVE: mobile apps get features FIRST, web builds in parallel. Prioritize prime-mobile (driver/fleet/client), settle-mobile, favestate-mobile, notyced-mobile feature completeness ahead of web-only surfaces. |
 
@@ -174,3 +177,5 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 ### CRM UI (2026-10-06) — devin
 - `6600d51` — `/admin/crm` page (Pipeline/Leads/Clients) wired to settle-api `/crm/*`: funnel counts, open deals, advance/nurture/promote/lose actions, lead capture form. Linked from admin header.
 - devin | pnpm-ONLY rule recorded globally + here — never npm/yarn, never package-lock/yarn.lock.
+
+- 2026-10-31 | devin-mobile-parity | **Settle Q&A + Coaching mobile — LANDED.** QuestionsScreen (category chips, ask), QuestionDetailScreen (thread+composer), CoachingScreen (budgets/goals CRUD+progress) wired into MainStack + Profile Community card. services/questions.ts = axios helpers. Settle remaining: dedicated settings prefs (Profile covers acct mgmt), debt-snapshot, eligibility.
