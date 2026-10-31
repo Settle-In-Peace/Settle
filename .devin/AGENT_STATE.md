@@ -25,6 +25,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| devin-eas-prep | 2026-10-31 — settle-mobile wired for EAS iOS submit, EXPO_USE_PNPM, creds copied (gitignored). pkgMgr pnpm@10.33.0 (9.15.5 fails install on EAS). Android retry running. NEEDS: ASC record (ascAppId) + Play listing. |
+
 | devin-parity-matrix | 2026-10-31 — parity matrix: `/Volumes/Os_Sites/MOBILE_PARITY_MATRIX.md`. settle-mobile ~50% consumer surface. Ranked gaps: portal/billing (subscription mgmt = revenue) → settlement flow → settings → questions Q&A → coaching. |
 
 | devin-settlement-mobile | 2026-10-31 — **DONE, pushed, tsc clean.** 'My Program' settlement-status screen (enrollment, trust account, settlements, milestones, docs) via /crm/portal/me/overview + dashboard action. Remaining gaps: portal/billing (provider-facing, B2B), settings, questions. | `settle-mobile/src/screens/SettlementScreen.tsx` |
@@ -179,3 +181,4 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 - devin | pnpm-ONLY rule recorded globally + here — never npm/yarn, never package-lock/yarn.lock.
 
 - 2026-10-31 | devin-mobile-parity | **Settle Q&A + Coaching mobile — LANDED.** QuestionsScreen (category chips, ask), QuestionDetailScreen (thread+composer), CoachingScreen (budgets/goals CRUD+progress) wired into MainStack + Profile Community card. services/questions.ts = axios helpers. Settle remaining: dedicated settings prefs (Profile covers acct mgmt), debt-snapshot, eligibility.
+- 2026-10-31 | OWNER CONVENTION | **SI not AI** — write 'SI'/'SI agent' (Super Intelligence) in state notes + new user-facing naming. Code identifiers stay ai-*. Per owner directive.
