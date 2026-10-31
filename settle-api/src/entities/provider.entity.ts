@@ -8,14 +8,26 @@ export class Provider {
   @Column({ type: 'varchar', length: 200 })
   companyName!: string;
 
+  @Column({ type: 'varchar', length: 150, nullable: true, name: 'contact_name' })
+  contactName?: string;
+
   @Column({ type: 'varchar', length: 100, unique: true })
   email!: string;
 
   @Column({ type: 'boolean', default: false, name: 'email_verified', nullable: true })
   emailVerified?: boolean;
 
-  @Column({ type: 'varchar', length: 255 })
-  password!: string;
+  // Nullable: providers who enroll via /providers/enroll have no password yet —
+  // they set one via the emailed setup link after admin approval.
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  password?: string;
+
+  // One-time password-setup token issued on approval for passwordless enrollees.
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'password_setup_token' })
+  passwordSetupToken?: string;
+
+  @Column({ type: 'timestamp', nullable: true, name: 'password_setup_expires' })
+  passwordSetupExpires?: Date;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   phone?: string;
@@ -49,6 +61,17 @@ export class Provider {
   // Pricing
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
   feePercentage?: number; // % of enrolled debt
+
+  // Free-text fee model captured at enrollment ("25% of enrolled debt",
+  // "flat monthly retainer", etc.) — feePercentage is the parsed numeric form.
+  @Column({ type: 'text', nullable: true, name: 'fee_structure' })
+  feeStructure?: string;
+
+  // Which access plan the provider picked on the /providers page
+  // (pay_per_lead, marketplace_seat, enterprise) — review signal for admins,
+  // billing itself is activated separately via Stripe.
+  @Column({ type: 'varchar', length: 60, nullable: true, name: 'plan_interest' })
+  planInterest?: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   leadPrice?: number; // Price they pay per lead

@@ -337,6 +337,9 @@ export class MatchingService {
         leadPrice: _lp,
         subscriptionType: _sbt,
         emailVerified: _ev,
+        passwordSetupToken: _pst,
+        passwordSetupExpires: _pse,
+        planInterest: _pi,
         ...safe
       } = provider;
       result.push({

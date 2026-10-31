@@ -45,6 +45,9 @@ import { AddLeadMlScoringColumns1700000000042 } from './1700000000042-AddLeadMlS
 import { RenameLeadPurchasedByColumn1700000000043 } from './1700000000043-RenameLeadPurchasedByColumn';
 import { CreateOrgSeatTables1700000000044 } from './1700000000044-CreateOrgSeatTables';
 import { BulkImportFeeder1700000000045 } from './1700000000045-BulkImportFeeder';
+import { CreateWebAuthnTables1700000000046 } from './1700000000046-CreateWebAuthnTables';
+import { AddOrgSkiptraceKey1700000000047 } from './1700000000047-AddOrgSkiptraceKey';
+import { ProviderEnrollment1700000000048 } from './1700000000048-ProviderEnrollment';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -94,6 +97,9 @@ const migrations: MigrationConstructor[] = [
   RenameLeadPurchasedByColumn1700000000043,
   CreateOrgSeatTables1700000000044,
   BulkImportFeeder1700000000045,
+  CreateWebAuthnTables1700000000046,
+  AddOrgSkiptraceKey1700000000047,
+  ProviderEnrollment1700000000048,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

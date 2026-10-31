@@ -9,12 +9,14 @@ import { Match } from '../entities/match.entity';
 import { User } from '../entities/user.entity';
 import { EmailModule } from '../email/email.module';
 import { MatchingModule } from '../matching/matching.module';
+import { ProvidersModule } from '../providers/providers.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Provider, Lead, Match, User]),
     EmailModule,
     MatchingModule,
+    ProvidersModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],

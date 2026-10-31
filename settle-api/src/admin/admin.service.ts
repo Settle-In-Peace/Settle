@@ -5,13 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
+import { Repository, FindManyOptions, In } from 'typeorm';
 import { Provider } from '../entities/provider.entity';
 import { Lead } from '../entities/lead.entity';
 import { Match } from '../entities/match.entity';
 import { User } from '../entities/user.entity';
 import { EmailService } from '../email/email.service';
 import { MatchingService } from '../matching/matching.service';
+import { ProvidersService } from '../providers/providers.service';
 
 type SafeProvider = Omit<Provider, 'password'>;
 
@@ -30,6 +31,7 @@ export class AdminService {
     private usersRepository: Repository<User>,
     private emailService: EmailService,
     private matchingService: MatchingService,
+    private providersService: ProvidersService,
   ) {}
 
   /** List all providers regardless of status. */
@@ -40,16 +42,19 @@ export class AdminService {
     return providers.map(this.stripPassword);
   }
 
-  /** List only providers awaiting approval. */
+  /** List providers awaiting approval — both self-serve signups ('pending')
+   *  and lightweight enrollments ('pending_review'). */
   async getPendingProviders(): Promise<SafeProvider[]> {
     const providers = await this.providersRepository.find({
-      where: { status: 'pending' },
+      where: { status: In(['pending', 'pending_review']) },
       order: { createdAt: 'ASC' },
     });
     return providers.map(this.stripPassword);
   }
 
-  /** Approve a provider - sets status to 'active' and sends approval email. */
+  /** Approve a provider - sets status to 'active' and sends approval email.
+   *  Enrollees without a password get a one-time setup link in the email so
+   *  they can activate portal access themselves. */
   async approveProvider(id: string): Promise<SafeProvider> {
     const provider = await this.findProviderOrFail(id);
 
@@ -61,9 +66,24 @@ export class AdminService {
     provider.emailVerified = true;
     const saved = await this.providersRepository.save(provider);
 
+    // Passwordless enrollees can't log in until they set a password —
+    // issue a one-time setup token and link it in the approval email.
+    let setupUrl: string | undefined;
+    if (!saved.password) {
+      try {
+        const token = await this.providersService.createPasswordSetupToken(saved.id);
+        const frontendUrl = process.env.FRONTEND_URL || 'https://settleinpeace.com';
+        setupUrl = `${frontendUrl}/providers/set-password?token=${token}`;
+      } catch (err) {
+        this.logger.error(
+          `Failed to issue password setup token for provider ${saved.id}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+
     // Fire-and-forget email - don't block the response on email delivery.
     this.emailService
-      .sendProviderApprovalEmail(saved.email, saved.companyName)
+      .sendProviderApprovalEmail(saved.email, saved.companyName, setupUrl)
       .then((ok) => {
         if (!ok) {
           this.logger.warn(`Approval email may not have been delivered to ${saved.email}`);
@@ -178,6 +198,16 @@ export class AdminService {
       match.status = 'purchased';
       await this.matchesRepository.save(match);
     }
+
+    // Notify the provider — a manual assignment is a lead delivery, so they
+    // get the same contact-details email as a portal purchase. Fire-and-forget.
+    this.emailService
+      .sendLeadPurchaseConfirmation(provider, lead, salePrice)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send lead-assignment email to provider ${providerId}: ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      );
 
     this.logger.log(`Lead ${leadId} manually assigned to provider ${providerId} at price ${salePrice}`);
     return this.leadsRepository.findOne({ where: { id: leadId } });

@@ -177,9 +177,47 @@ export class EmailService {
     }
   }
 
-  async sendProviderApprovalEmail(toEmail: string, companyName: string): Promise<boolean> {
+  async sendProviderEnrollmentReceived(
+    toEmail: string,
+    companyName: string,
+    contactName?: string,
+  ): Promise<boolean> {
+    const subject = 'We received your provider application — Settle In Peace';
+    const html = this.renderProviderEnrollmentTemplate(companyName, contactName);
+
+    if (!this.resend) {
+      this.logger.log(`[DEV EMAIL] To: ${toEmail} | Subject: ${subject}`);
+      return true;
+    }
+
+    try {
+      const { error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: toEmail,
+        subject,
+        html,
+      });
+
+      if (error) {
+        this.logger.error(`Failed to send provider enrollment email: ${error.message}`);
+        return false;
+      }
+
+      this.logger.log(`Provider enrollment confirmation sent to ${toEmail}`);
+      return true;
+    } catch (err) {
+      this.logger.error(`Email send error: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
+  async sendProviderApprovalEmail(
+    toEmail: string,
+    companyName: string,
+    setupUrl?: string,
+  ): Promise<boolean> {
     const subject = 'Your provider account has been approved — Settle In Peace';
-    const html = this.renderProviderApprovalTemplate(companyName);
+    const html = this.renderProviderApprovalTemplate(companyName, setupUrl);
 
     if (!this.resend) {
       this.logger.log(`[DEV EMAIL] To: ${toEmail} | Subject: ${subject}`);
@@ -244,7 +282,7 @@ export class EmailService {
   ): Promise<boolean> {
     const subject = 'New lead match on Settle In Peace';
     const portalUrl = process.env.FRONTEND_URL || 'http://localhost:3025';
-    const leadUrl = `${portalUrl}/portal/leads`;
+    const leadUrl = `${portalUrl}/portal`;
     const html = this.renderLeadMatchTemplate(provider, lead, match, leadUrl);
 
     if (!this.resend) {
@@ -545,8 +583,40 @@ export class EmailService {
     `;
   }
 
-  private renderProviderApprovalTemplate(companyName: string): string {
+  private renderProviderEnrollmentTemplate(companyName: string, contactName?: string): string {
+    const greeting = contactName ? `Hi ${contactName}` : `Hi ${companyName} team`;
+    return `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <h1 style="color: #2563eb; font-size: 24px; margin: 0;">Settle<span style="color: #60a5fa;">InPeace</span></h1>
+        </div>
+        <h2 style="color: #18181b; font-size: 20px;">We received your application</h2>
+        <p style="color: #71717a; font-size: 16px; line-height: 1.6;">
+          ${greeting}, thanks for enrolling <strong>${companyName}</strong> on the Settle In Peace marketplace. Your application is in our review queue — most providers hear back within 1–2 business days.
+        </p>
+        <p style="color: #71717a; font-size: 16px; line-height: 1.6;">
+          Once approved, we'll email you a secure link to set your portal password and start receiving matched leads.
+        </p>
+        <p style="color: #a1a1aa; font-size: 14px;">If you didn't submit this application, you can ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
+        <p style="color: #a1a1aa; font-size: 12px;">Settle In Peace Partnerships — The debt relief marketplace that puts consumers in control.</p>
+      </body>
+      </html>
+    `;
+  }
+
+  private renderProviderApprovalTemplate(companyName: string, setupUrl?: string): string {
     const portalUrl = process.env.FRONTEND_URL || 'http://localhost:3025';
+    const cta = setupUrl
+      ? `<div style="text-align: center; margin: 32px 0;">
+          <a href="${setupUrl}" style="display: inline-block; background: #2563eb; color: white; text-decoration: none; font-weight: 700; padding: 12px 32px; border-radius: 8px;">Set Your Password</a>
+        </div>
+        <p style="color: #a1a1aa; font-size: 14px;">This one-time setup link expires in 72 hours. After choosing a password you can log in to your provider portal and start receiving matched leads.</p>`
+      : `<div style="text-align: center; margin: 32px 0;">
+          <a href="${portalUrl}/login" style="display: inline-block; background: #2563eb; color: white; text-decoration: none; font-weight: 700; padding: 12px 32px; border-radius: 8px;">Go to Provider Portal</a>
+        </div>`;
     return `
       <!DOCTYPE html>
       <html>
@@ -556,11 +626,9 @@ export class EmailService {
         </div>
         <h2 style="color: #18181b; font-size: 20px;">Your provider account has been approved</h2>
         <p style="color: #71717a; font-size: 16px; line-height: 1.6;">
-          Great news! The provider account for <strong>${companyName}</strong> has been reviewed and approved. You can now log in to your provider portal to start receiving leads and managing your marketplace presence.
+          Great news! The provider account for <strong>${companyName}</strong> has been reviewed and approved. ${setupUrl ? 'Choose a password to activate your provider portal and start receiving matched leads.' : 'You can now log in to your provider portal to start receiving leads and managing your marketplace presence.'}
         </p>
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${portalUrl}/providers/portal" style="display: inline-block; background: #2563eb; color: white; text-decoration: none; font-weight: 700; padding: 12px 32px; border-radius: 8px;">Go to Provider Portal</a>
-        </div>
+        ${cta}
         <p style="color: #a1a1aa; font-size: 14px;">If you have any questions, our team is here to help.</p>
         <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
         <p style="color: #a1a1aa; font-size: 12px;">Settle In Peace, Inc. — The debt relief marketplace that puts you in control.</p>
