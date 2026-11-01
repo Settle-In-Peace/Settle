@@ -221,6 +221,24 @@ export class MatchingService {
   }
 
   /**
+   * Bankruptcy-candidate heuristics — these consumers get routed to the
+   * attorney directory (flat-rate ads, consumer-initiated contact) rather
+   * than sold as settlement leads. Conservative: only when multiple signals
+   * point away from a viable settlement program.
+   */
+  private isBankruptcyCandidate(lead: Partial<Lead>): boolean {
+    const debt = Number(lead.totalDebt) || 0;
+    const income = Number(lead.monthlyIncome) || 0;
+    const behind = Number(lead.monthsBehind) || 0;
+    if (lead.hasFiledBankruptcy) return true;
+    // ~48-month settlement program: deposit can't exceed ~25% of income
+    if (income > 0 && debt >= 20000 && debt / 48 > income * 0.25) return true;
+    if (behind >= 6 && debt >= 15000) return true;
+    if (lead.creditScore === 'poor' && debt >= 40000 && behind >= 3) return true;
+    return false;
+  }
+
+  /**
    * Find all active providers that match a lead, create/update Match records,
    * and return them sorted by score descending.
    */
@@ -258,6 +276,7 @@ export class MatchingService {
       }
       matches.push(match);
     }
+    await this.leadsRepository.save(lead);
 
     matches.sort((a, b) => b.matchScore - a.matchScore);
     return matches;

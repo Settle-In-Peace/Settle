@@ -50,6 +50,10 @@ export class Lead {
   @Column({ type: 'boolean', default: false })
   hasFiledBankruptcy!: boolean;
 
+  /** 'settlement_fit' | 'bk_candidate' — routing audit for directory handoff. */
+  @Column({ type: 'varchar', length: 40, nullable: true, name: 'match_reason' })
+  matchReason?: string;
+
   // Lead quality
   @Column({ type: 'int', default: 0 })
   qualityScore!: number; // 0-100
