@@ -146,4 +146,24 @@ export class Provider {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
+
+  // ---- attorney directory (flat-rate listing ads; never per-lead fees) ----
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  slug?: string;
+  @Column({ type: 'boolean', default: false, name: 'listing_active' })
+  listingActive?: boolean;
+  @Column({ type: 'varchar', length: 20, nullable: true, name: 'featured_tier' })
+  featuredTier?: 'founding' | 'featured' | 'exclusive' | null;
+  @Column({ type: 'simple-array', nullable: true, name: 'featured_regions' })
+  featuredRegions?: string[];
+  @Column({ type: 'timestamp', nullable: true, name: 'featured_until' })
+  featuredUntil?: Date | null;
+  @Column({ type: 'int', default: 0, name: 'directory_views' })
+  directoryViews?: number;
+  @Column({ type: 'int', default: 0, name: 'directory_clicks' })
+  directoryClicks?: number;
+  @Column({ type: 'varchar', length: 60, nullable: true, name: 'bar_number' })
+  barNumber?: string;
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  city?: string;
 }

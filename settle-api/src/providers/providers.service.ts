@@ -228,6 +228,13 @@ export class ProvidersService {
     // token would remain redeemable forever.
     provider.passwordSetupToken = null;
     provider.passwordSetupExpires = null;
+    if (provider.serviceTypes?.includes('bankruptcy')) {
+      provider.listingActive = true;
+      if (!provider.slug) {
+        provider.slug = provider.companyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
+          + '-' + provider.id.slice(0, 6);
+      }
+    }
     provider.emailVerified = true;
     await this.providersRepository.save(provider);
 
@@ -295,6 +302,101 @@ export class ProvidersService {
       avgRating: provider.avgRating,
       reviewCount: provider.reviewCount,
       isAcceptingLeads: provider.isAcceptingLeads,
+    };
+  }
+
+  /* ---------------- attorney directory (flat-rate listings) ---------------- */
+
+  private slugify(name: string): string {
+    return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  }
+
+  /** Public directory: listing_active providers, featured tiers first. */
+  async getDirectory(query: { type?: string; state?: string; city?: string }) {
+    const qb = this.providersRepository.createQueryBuilder('p')
+      .where('p.listing_active = true');
+    if (query.type === 'attorney') {
+      qb.andWhere('p."serviceTypes" LIKE \'%bankruptcy%\'');
+    }
+    if (query.state) {
+      qb.andWhere('p."statesServed" LIKE :st', { st: `%${query.state}%` });
+    }
+    if (query.city) {
+      qb.andWhere('p.city ILIKE :ct', { ct: `%${query.city}%` });
+    }
+    qb.orderBy(
+      `CASE p.featured_tier
+        WHEN 'exclusive' THEN 0
+        WHEN 'featured' THEN 1
+        WHEN 'founding' THEN 2
+        ELSE 3 END`,
+      'ASC',
+    )
+      .addOrderBy('p."avgRating"', 'DESC', 'NULLS LAST')
+      .addOrderBy('p.created_at', 'DESC');
+    const rows = await qb.getMany();
+    return { items: rows.map((r) => this.toPublicProvider(r)), total: rows.length };
+  }
+
+  /** Public attorney profile by slug — increments view count. */
+  async getAttorneyBySlug(slug: string) {
+    const provider = await this.providersRepository.findOne({ where: { slug, listingActive: true } });
+    if (!provider) throw new NotFoundException('Listing not found');
+    this.providersRepository.increment({ id: provider.id }, 'directoryViews', 1).catch(() => {});
+    return this.toPublicProvider(provider);
+  }
+
+  /** Public: record a contact click-through (email/phone/website tap). */
+  async trackDirectoryClick(slug: string) {
+    const provider = await this.providersRepository.findOne({ where: { slug } });
+    if (!provider) throw new NotFoundException('Listing not found');
+    await this.providersRepository.increment({ id: provider.id }, 'directoryClicks', 1);
+    return { ok: true };
+  }
+
+  /**
+   * Attorney claims their listing: email → password-setup token → emailed link.
+   * If the provider row doesn't exist yet, create a pending attorney stub so
+   * they can complete their profile after claiming.
+   */
+  async claimDirectoryListing(email: string) {
+    const normalized = email.trim().toLowerCase();
+    let provider = await this.providersRepository.findOne({ where: { email: normalized } });
+    if (!provider) {
+      provider = this.providersRepository.create({
+        email: normalized,
+        companyName: normalized.split('@')[0],
+        serviceTypes: ['bankruptcy'],
+        status: 'pending_review',
+        slug: this.slugify(normalized.split('@')[0]) + '-' + crypto.randomBytes(3).toString('hex'),
+      });
+      provider = await this.providersRepository.save(provider);
+    }
+    const token = await this.createPasswordSetupToken(provider.id);
+    const link = `https://settleinpeace.com/providers/set-password?token=${token}`;
+    this.emailService
+      .sendEmail(
+        normalized,
+        'Claim your Settle In Peace attorney listing',
+        `<p>Claim your listing to manage your public profile and upgrade to Featured placement.</p>
+         <p><a href="${link}">Claim my listing</a> (expires in 72 hours)</p>`,
+      )
+      .catch((err) => this.logger.error(`Directory claim email failed for ${normalized}: ${err}`));
+    return { ok: true };
+  }
+
+  /** Provider portal: listing performance stats (views/clicks/tier). */
+  async getListingStats(providerId: string) {
+    const p = await this.providersRepository.findOne({ where: { id: providerId } });
+    if (!p) throw new NotFoundException('Provider not found');
+    return {
+      listingActive: p.listingActive,
+      featuredTier: p.featuredTier,
+      featuredRegions: p.featuredRegions,
+      featuredUntil: p.featuredUntil,
+      views: p.directoryViews,
+      clicks: p.directoryClicks,
+      slug: p.slug,
     };
   }
 }

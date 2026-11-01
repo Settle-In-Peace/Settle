@@ -27,6 +27,38 @@ export class ProvidersController {
     });
   }
 
+  // ---- attorney directory (public, flat-rate listings) ----
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Get('directory')
+  async getDirectory(@Query() query: { type?: string; state?: string; city?: string }) {
+    return this.providersService.getDirectory(query);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Get('attorneys/:slug')
+  async getAttorney(@Param('slug') slug: string) {
+    return this.providersService.getAttorneyBySlug(slug);
+  }
+
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Post('attorneys/:slug/click')
+  async trackClick(@Param('slug') slug: string) {
+    return this.providersService.trackDirectoryClick(slug);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 3600000 } })
+  @Post('directory/claim')
+  async claimListing(@Body() body: { email: string }) {
+    return this.providersService.claimDirectoryListing(body.email);
+  }
+
+  @SkipThrottle()
+  @Get('portal/listing-stats')
+  @UseGuards(JwtAuthGuard, ProviderGuard)
+  async getListingStats(@Request() req) {
+    return this.providersService.getListingStats(req.user.sub);
+  }
+
   // Public: single provider profile page (internal/billing fields stripped)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get(':id')

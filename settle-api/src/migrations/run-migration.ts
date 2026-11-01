@@ -48,6 +48,7 @@ import { BulkImportFeeder1700000000045 } from './1700000000045-BulkImportFeeder'
 import { CreateWebAuthnTables1700000000046 } from './1700000000046-CreateWebAuthnTables';
 import { AddOrgSkiptraceKey1700000000047 } from './1700000000047-AddOrgSkiptraceKey';
 import { ProviderEnrollment1700000000048 } from './1700000000048-ProviderEnrollment';
+import { AddDirectoryFields1700000000049 } from './1700000000049-AddDirectoryFields';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -100,6 +101,7 @@ const migrations: MigrationConstructor[] = [
   CreateWebAuthnTables1700000000046,
   AddOrgSkiptraceKey1700000000047,
   ProviderEnrollment1700000000048,
+  AddDirectoryFields1700000000049,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {
