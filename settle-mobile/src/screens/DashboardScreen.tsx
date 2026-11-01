@@ -27,6 +27,7 @@ export default function DashboardScreen({ user }: DashboardScreenProps) {
     { label: 'My Debts', target: 'Debts', icon: '💳' },
     { label: 'My Program', target: 'Settlement' as const, icon: '🤝' },
     { label: 'Assessment', target: 'Assessment' as const, icon: '💬' },
+    { label: 'Attorneys', target: 'Attorneys' as const, icon: '⚖️' },
     { label: 'Calculators', target: 'Calculators', icon: '🧮' },
     { label: 'Learn', target: 'Learn', icon: '📚' },
     { label: 'Profile', target: 'Profile', icon: '👤' },
@@ -55,7 +56,7 @@ export default function DashboardScreen({ user }: DashboardScreenProps) {
           key={action.label}
           style={styles.actionRow}
           onPress={() => {
-            if (action.target === 'Assessment' || action.target === 'Settlement') {
+            if (action.target === 'Assessment' || action.target === 'Settlement' || action.target === 'Attorneys') {
               (mainNavigation as any).navigate(action.target);
             } else {
               tabNavigation.navigate(action.target as any);

@@ -10,6 +10,7 @@ import CalculatorsScreen from '../screens/CalculatorsScreen';
 import LearnScreen from '../screens/LearnScreen';
 import LearnArticleScreen from '../screens/LearnArticleScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AttorneysScreen from '../screens/AttorneysScreen';
 import SettlementScreen from '../screens/SettlementScreen';
 import QuestionsScreen from '../screens/QuestionsScreen';
 import QuestionDetailScreen from '../screens/QuestionDetailScreen';
@@ -31,6 +32,7 @@ export type MainStackParamList = {
   Tabs: undefined;
   Assessment: undefined;
   Settlement: undefined;
+  Attorneys: undefined;
   Questions: undefined;
   QuestionDetail: { id: string };
   Coaching: undefined;
@@ -76,6 +78,7 @@ function MainStackScreen({ user, setUser }: { user: User | null; setUser: (user:
       </MainStack.Screen>
       <MainStack.Screen name="Assessment" component={AssessmentScreen} />
       <MainStack.Screen name="Settlement" component={SettlementScreen} />
+      <MainStack.Screen name="Attorneys" component={AttorneysScreen} options={{ headerShown: true, title: 'Attorneys' }} />
       <MainStack.Screen name="Questions" component={QuestionsScreen} options={{ headerShown: true, title: 'Community Q&A' }} />
       <MainStack.Screen name="QuestionDetail" component={QuestionDetailScreen} options={{ headerShown: true, title: 'Question' }} />
       <MainStack.Screen name="Coaching" component={CoachingScreen} options={{ headerShown: true, title: 'Coaching' }} />

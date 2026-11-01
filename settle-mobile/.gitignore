@@ -47,3 +47,4 @@ Thumbs.db
 
 # EAS store credentials (never commit)
 credentials/
+credentials.json
