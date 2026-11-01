@@ -60,6 +60,19 @@ export class StripeController {
     return { url: session.url, sessionId: session.id };
   }
 
+  @Post('directory-checkout')
+  @UseGuards(JwtAuthGuard)
+  async createDirectoryCheckout(
+    @Req() req: Request & { user: any },
+    @Body('tierId') tierId: string,
+  ) {
+    if (!tierId) {
+      throw new BadRequestException('tierId is required');
+    }
+    const session = await this.stripeService.createDirectoryCheckoutSession(req.user.sub, tierId);
+    return { url: session.url, sessionId: session.id };
+  }
+
   @Post('billing-portal')
   @UseGuards(JwtAuthGuard)
   async createBillingPortal(@Req() req: Request & { user: any }) {

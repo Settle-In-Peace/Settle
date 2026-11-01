@@ -42,6 +42,13 @@ export const PROVIDER_SUBSCRIPTION_TIERS: ProviderSubscriptionTier[] = [
 export const COACHING_SUBSCRIPTION_PRICE_MONTHLY = 49;
 const COACHING_PRICE_ENV_VAR = 'STRIPE_COACHING_PRICE_ID';
 
+// Attorney directory flat-rate placements (advertising only — never per-lead).
+const DIRECTORY_TIERS = [
+  { id: 'featured', label: 'Featured', priceMonthly: 149, priceEnvVar: 'STRIPE_PRICE_DIRECTORY_FEATURED' },
+  { id: 'founding', label: 'Founding Featured', priceMonthly: 75, priceEnvVar: 'STRIPE_PRICE_DIRECTORY_FOUNDING' },
+  { id: 'exclusive', label: 'City Exclusive', priceMonthly: 299, priceEnvVar: 'STRIPE_PRICE_DIRECTORY_EXCLUSIVE' },
+];
+
 @Injectable()
 export class StripeService {
   private readonly logger = new Logger(StripeService.name);
@@ -137,6 +144,43 @@ export class StripeService {
     return session;
   }
 
+  /** Flat-rate directory placement checkout (featured/founding/exclusive). */
+  async createDirectoryCheckoutSession(
+    providerId: string,
+    tierId: string,
+  ): Promise<Stripe.Checkout.Session> {
+    const tier = DIRECTORY_TIERS.find((t) => t.id === tierId);
+    if (!tier) {
+      throw new BadRequestException(
+        `Invalid directory tier. Available: ${DIRECTORY_TIERS.map((t) => t.id).join(', ')}`,
+      );
+    }
+    const priceId = this.configService.get<string>(tier.priceEnvVar);
+    if (!priceId) {
+      throw new BadRequestException(
+        `Stripe price ID not configured for directory tier "${tier.id}" (env var ${tier.priceEnvVar}).`,
+      );
+    }
+    const provider = await this.providersService.getProviderById(providerId);
+    const customerId = await this.ensureProviderCustomer(provider as Provider);
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3025';
+    return this.stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: {
+        type: 'directory_listing',
+        providerId,
+        tier: tier.id,
+      },
+      subscription_data: {
+        metadata: { type: 'directory_listing', providerId, tier: tier.id },
+      },
+      success_url: `${frontendUrl}/portal/listing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/portal/listing/cancel`,
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Pay-per-lead purchasing — buy an individual lead via Stripe Checkout
   // ---------------------------------------------------------------------------
@@ -182,6 +226,7 @@ export class StripeService {
 
     return session;
   }
+
 
   // ---------------------------------------------------------------------------
   // Provider subscription billing — monthly marketplace seat plans
@@ -235,6 +280,7 @@ export class StripeService {
 
     return session;
   }
+
 
   // ---------------------------------------------------------------------------
   // Coaching subscription — $49/month consumer coaching
@@ -564,6 +610,21 @@ export class StripeService {
         break;
       }
 
+      case 'directory_listing': {
+        const providerId = session.metadata?.providerId;
+        const tier = session.metadata?.tier as 'founding' | 'featured' | 'exclusive' | undefined;
+        if (providerId && tier) {
+          const provider = await this.providersService.getProviderById(providerId);
+          await this.providersService.updateProvider(providerId, {
+            featuredTier: tier,
+            listingActive: true,
+            slug: provider.slug ?? undefined,
+          });
+          this.logger.log(`Provider ${providerId} activated directory tier ${tier}`);
+        }
+        break;
+      }
+
       case 'seat_subscription': {
         // DaaS per-seat billing — grant the purchased seats to the org.
         const orgId = session.metadata?.orgId;
@@ -630,6 +691,18 @@ export class StripeService {
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
     const type = subscription.metadata?.type;
 
+    if (type === 'directory_listing') {
+      const providerId = subscription.metadata?.providerId;
+      if (!providerId) return;
+      const active = ['active', 'trialing'].includes(subscription.status);
+      await this.providersService.updateProvider(providerId, {
+        featuredUntil: (subscription as any).current_period_end
+          ? new Date((subscription as any).current_period_end * 1000)
+          : undefined,
+        ...(active ? {} : { featuredTier: null }),
+      });
+    }
+
     if (type === 'provider_subscription') {
       const providerId = subscription.metadata?.providerId;
       if (!providerId) return;
@@ -686,6 +759,18 @@ export class StripeService {
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
     const type = subscription.metadata?.type;
+
+    if (type === 'directory_listing') {
+      const providerId = subscription.metadata?.providerId;
+      if (!providerId) return;
+      const active = ['active', 'trialing'].includes(subscription.status);
+      await this.providersService.updateProvider(providerId, {
+        featuredUntil: (subscription as any).current_period_end
+          ? new Date((subscription as any).current_period_end * 1000)
+          : undefined,
+        ...(active ? {} : { featuredTier: null }),
+      });
+    }
 
     if (type === 'provider_subscription') {
       const providerId = subscription.metadata?.providerId;
