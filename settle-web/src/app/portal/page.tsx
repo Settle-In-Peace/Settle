@@ -228,12 +228,18 @@ export default function PortalPage() {
         </div>
 
         {/* Buy credits button */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end gap-3 mb-6">
           <Link
             href="/portal/billing"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all text-sm"
           >
             Buy Credits →
+          </Link>
+          <Link
+            href="/portal/listing"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-xl hover:border-emerald-400 hover:text-emerald-700 transition-all text-sm"
+          >
+            Directory listing →
           </Link>
         </div>
 
