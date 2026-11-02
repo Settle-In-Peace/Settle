@@ -363,6 +363,25 @@ export class ProvidersService {
     const normalized = email.trim().toLowerCase();
     let provider = await this.providersRepository.findOne({ where: { email: normalized } });
     if (!provider) {
+      // Domain-matched claim: an attorney emailing from their firm's own domain
+      // can claim a seeded unclaimed listing whose website shares that domain.
+      const domain = normalized.split('@')[1];
+      if (domain) {
+        const candidate = await this.providersRepository
+          .createQueryBuilder('p')
+          .where("p.email LIKE 'unclaimed+%'")
+          .andWhere("p.website ILIKE :d", { d: `%${domain}%` })
+          .andWhere('p.listing_active = true')
+          .getOne();
+        if (candidate) {
+          provider = candidate;
+          provider.email = normalized;
+          await this.providersRepository.save(provider);
+          this.logger.log(`Directory listing claimed via domain match: ${candidate.slug} → ${normalized}`);
+        }
+      }
+    }
+    if (!provider) {
       provider = this.providersRepository.create({
         email: normalized,
         companyName: normalized.split('@')[0],
