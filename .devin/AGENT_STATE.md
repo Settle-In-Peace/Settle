@@ -176,7 +176,7 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 - Audited Stripe account via API (live key present in repo env). See portfolio report for cross-account details.
 
-- 2026-11-01 | devin-attorney-dir | **IN PROGRESS — directory API live.** providers dir cols + public endpoints (directory/attorney-slug/click/claim/listing-stats) deployed. Plan: `docs/ATTORNEY_DIRECTORY_PLAN.md`. bk routing + mobile AttorneysScreen done. Remaining: Stripe flat-rate checkout, seed listings, web /attorneys pages, provider portal listing tab, LeadOps outreach.
+- 2026-11-01 | devin-attorney-dir | **IN PROGRESS — directory API live.** providers dir cols + public endpoints (directory/attorney-slug/click/claim/listing-stats) deployed. Plan: `docs/ATTORNEY_DIRECTORY_PLAN.md`. CORE COMPLETE + DEPLOYED: schema, public API, claim flow, bk routing, mobile AttorneysScreen, Stripe checkout (3 price IDs live on opsbox), 15 seeded listings live at /providers/directory. Remaining: web /attorneys pages, provider portal listing tab, real-email claim matching, LeadOps outreach (needs approval).
 
 ### CRM UI (2026-10-06) — devin
 - `6600d51` — `/admin/crm` page (Pipeline/Leads/Clients) wired to settle-api `/crm/*`: funnel counts, open deals, advance/nurture/promote/lose actions, lead capture form. Linked from admin header.
