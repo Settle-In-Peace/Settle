@@ -144,6 +144,47 @@ export default function BillingPage() {
           </div>
         )}
 
+        {/* Marketplace Seat — $199/mo subscription checkout (advertised on
+            /providers; API is env-gated until STRIPE_PRICE_PROVIDER_SEAT is set) */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-black dark:text-white">Marketplace Seat — $199/mo</h3>
+              <p className="text-sm text-zinc-500 mt-1">
+                Comparison-page listing, priority lead access, 20% off all lead purchases. First 30 days free.
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                setPortalLoading(true);
+                setPortalError('');
+                try {
+                  const token = getStoredToken();
+                  const res = await fetch(`${API_URL}/stripe/provider-subscription`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ tierId: 'marketplace_seat' }),
+                  });
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
+                  } else {
+                    setPortalError(data.message || 'Seat checkout unavailable right now.');
+                    setPortalLoading(false);
+                  }
+                } catch {
+                  setPortalError('Something went wrong. Please try again.');
+                  setPortalLoading(false);
+                }
+              }}
+              disabled={portalLoading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-40 whitespace-nowrap"
+            >
+              {portalLoading ? 'Opening…' : 'Start Free Trial →'}
+            </button>
+          </div>
+        </div>
+
         {/* Manage subscription — Stripe customer portal (seat plans, payment
             methods, invoices, cancellation). */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6 mb-8">
