@@ -197,3 +197,5 @@ ack flag 4b1a777a9c7e
 - **Priority: mobile ships first.** Reid Technology = sole developer in stores. EAS cloud builds = owner-approved only (billing hold) — use `eas build --local`.
 
 - 2026-11-03 | SI browser-first rule: automate console/dashboard actions via Playwright/Puppeteer (Brave, cloned profile) BEFORE asking the owner; prompt only on real blockers (2FA, missing creds, fee gates, captcha).
+
+- 2026-11-03 | settle.aab built local (v5, zero EAS cost) via `eas build -p android -e production --local` — headless expo session works. Blocked only on Play service-account JSON + ASC record (owner-side).

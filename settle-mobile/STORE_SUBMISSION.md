@@ -1,6 +1,6 @@
 # Settle In Peace — App Store Submission Runbook
 
-Status as of 2026-10-25 (agent: devin-mobile-settle).
+Status as of 2026-11-03: `dist/settle.aab` (v5, 50.9MB) built locally — signed, submission-ready.
 
 ## Current config
 
