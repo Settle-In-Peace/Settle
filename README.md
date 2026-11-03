@@ -64,7 +64,7 @@ A comprehensive debt relief and financial coaching platform that helps people se
 - Community features and forums
 
 ### Phase 3: Advanced Services
-- AI-powered debt analysis
+- SI-powered debt analysis
 - Automated negotiation suggestions
 - Credit repair tools
 - Investment guidance

@@ -195,3 +195,5 @@ ack flag 4b1a777a9c7e
 
 ## 2026-11-03 — Mobile-first launch directive
 - **Priority: mobile ships first.** Reid Technology = sole developer in stores. EAS cloud builds = owner-approved only (billing hold) — use `eas build --local`.
+
+- 2026-11-03 | SI browser-first rule: automate console/dashboard actions via Playwright/Puppeteer (Brave, cloned profile) BEFORE asking the owner; prompt only on real blockers (2FA, missing creds, fee gates, captcha).

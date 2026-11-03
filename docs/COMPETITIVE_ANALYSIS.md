@@ -65,7 +65,7 @@ Nobody does this in the debt relief space. This is the gap.
 
 ### Pillar 1 — Consumer Marketplace (Free to Users)
 Consumers get:
-- AI-powered debt assessment that shows ALL viable options (settlement, consolidation, DIY, bankruptcy) with honest pros/cons
+- SI-powered debt assessment that shows ALL viable options (settlement, consolidation, DIY, bankruptcy) with honest pros/cons
 - Side-by-side provider comparison: fees, estimated timeline, historical success rate, reviews
 - Full cost transparency: total cost including fees, tax implications on forgiven debt, credit score impact
 - Real-time settlement progress tracker once enrolled
@@ -90,7 +90,7 @@ Providers (debt settlement companies, consolidation lenders, law firms) get:
 ### Pillar 3 — Financial Coaching Subscription
 Consumers who don't qualify for settlement (under $7.5k debt) get:
 - $49/month subscription: budget tracker, debt payoff calculator (avalanche/snowball), credit monitoring, goal setting
-- AI-powered spending analysis and savings recommendations
+- SI-powered spending analysis and savings recommendations
 - Accountability check-ins and progress milestones
 - Upgrade path: when their debt situation grows or worsens, they convert to marketplace users
 
