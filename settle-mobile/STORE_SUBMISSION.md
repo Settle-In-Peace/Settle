@@ -1,6 +1,6 @@
 # Settle In Peace — App Store Submission Runbook
 
-Status as of 2026-11-03: `dist/settle.aab` (v5, 50.9MB) built locally — signed, submission-ready.
+Status as of 2026-11-03: `dist/settle.aab` (v5, 50.9MB) + `dist/settle.ipa` (build 6, 11.3MB) built locally — both signed, submission-ready.
 
 ## Current config
 
