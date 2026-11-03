@@ -187,3 +187,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 ack flag 4b1a777a9c7e
 | devin-opsbox-failover | 2026-11-02 — opsbox 192.168.12.142 physically DOWN. API failover LIVE: local API + cloudflared quick tunnel + Worker relay route (bypasses dead CF tunnels). prime :4010→api.primetransit.com, dexana :4015→api.dexanaswap.com (crons ON — DCA scheduler), favestate :4026→api.favestate.com, settle :4025→api.settleinpeace.com, notyced :4005→api.notyced.com. Reid :4035 local+tunnel live but reidpremierfarms.com zone is on an inaccessible CF account — api.reidpremierfarms.com STILL DOWN (needs zone token or box). STILL DOWN: prime-voice :4020, ops.primetransit.com :4646, PM2, GH runners, ollama. KILL local instances when box returns (esp. dexana — duplicate cron risk). |
 - 2026-11-02 | STORE IDENTITY — mobile developer name = "Reid Technology" (DBA of Reid Family Estates, LLC). Use on Play Console developer profile, App Store Connect seller name, and all store listings — not Settle In Peace, Inc.
+
+## 2026-11-03 — SI transformation
+- Owner directive: all apps powered by **SI (Super Intelligence)**. SI Agents = the branded upgrade of AI agents.
+- Relabel user-facing AI→SI where natural (assistant names, feature labels, marketing); code identifiers/endpoints/env vars stay `ai-*` (brand layer only).
+- New features ship SI-first (Dexana's siEntry flag is the pattern). Every SI feature degrades gracefully when unconfigured.
