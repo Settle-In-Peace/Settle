@@ -192,3 +192,6 @@ ack flag 4b1a777a9c7e
 - Owner directive: all apps powered by **SI (Super Intelligence)**. SI Agents = the branded upgrade of AI agents.
 - Relabel user-facing AI→SI where natural (assistant names, feature labels, marketing); code identifiers/endpoints/env vars stay `ai-*` (brand layer only).
 - New features ship SI-first (Dexana's siEntry flag is the pattern). Every SI feature degrades gracefully when unconfigured.
+
+## 2026-11-03 — Mobile-first launch directive
+- **Priority: mobile ships first.** Reid Technology = sole developer in stores. EAS cloud builds = owner-approved only (billing hold) — use `eas build --local`.
