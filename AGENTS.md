@@ -53,7 +53,7 @@ This project uses **pnpm** as the package manager (NOT npm or yarn).
 
 ## Deployment Architecture
 
-The project uses **Cloudflare Workers** for the frontend and a **Cloudflare tunnel → PM2** setup for the backend API (opsbox). **Render and Railway are retired.**
+The project uses **Cloudflare Workers** for the frontend and a **Cloudflare tunnel → PM2** setup for the backend API (Oracle Cloud free-tier box). **Render and Railway are retired; opsbox is retired as the API host.**
 
 ### Frontend: Cloudflare Workers (OpenNext)
 - **Frontend** (`settle-web`) deploys to Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`)
@@ -68,13 +68,14 @@ The project uses **Cloudflare Workers** for the frontend and a **Cloudflare tunn
 - **Worker secrets:** Firebase env vars set via Cloudflare API (`PUT /accounts/.../workers/scripts/settleinpeace/secrets`)
 - **API token:** Stored in env var `CLOUDFLARE_API_TOKEN` for deploy (never commit)
 
-### Backend: opsbox via Cloudflare tunnel + PM2
-- **API service** — `api.settleinpeace.com` → cloudflared (`config-settle.yml`, tunnel `a202a286-ecde-43a3-89d3-64f481763d43`) → `localhost:4025` → PM2 `settle-api`
-- **Host** — `opsbox` SSH alias; app dir `~/apps/Settle/settle-api`; env in `.env` there (NOT local repo `.env`)
-- **Deploy** — `cd settle-api && pnpm build`, then `rsync -az --delete dist/ opsbox:~/apps/Settle/settle-api/dist/` and `pm2 restart settle-api` over SSH (prefix `export PATH=/Users/obdulreid/runtime/node/bin:/usr/bin:/bin:/usr/sbin:/sbin`; never `pm2 restart --update-env` — it clobbers PATH)
+### Backend: Oracle Cloud via Cloudflare tunnel + PM2
+- **API service** — `api.settleinpeace.com` → cloudflared (tunnel `a202a286-ecde-43a3-89d3-64f481763d43`) → `localhost:4025` on the oracle host → PM2 `settle-api`
+- **Host** — `ssh oracle` (SSH alias); app dir `/home/opc/apps/Settle/settle-api`; env in `.env` there (NOT local repo `.env`)
+- **Deploy** — `cd settle-api && pnpm build`, then `rsync -az --delete dist/ oracle:/home/opc/apps/Settle/settle-api/dist/` and `ssh oracle 'export PATH=/home/opc/runtime/node/bin:/usr/bin:/bin:/usr/sbin:/sbin && pm2 restart settle-api'` (never `pm2 restart --update-env` — it clobbers PATH)
+- **Health check** — `/health` on `:4025` returns 200 with `db: connected` (NOT `/api/health` — that 404s); verify via `ssh oracle 'curl -s localhost:4025/health'` or `https://api.settleinpeace.com/health`
 - **Migrations auto-run at boot** — a `pnpm build` + restart applies pending migrations
-- **Database** — external PostgreSQL via `DATABASE_URL` in the opsbox `.env`
-- **Oracle Cloud** — planned free-tier host; NOT live yet. Cutover = point the tunnel's `service:` at the Oracle host (or move cloudflared) after the API is running there
+- **Database** — external PostgreSQL via `DATABASE_URL` in the oracle `.env`
+- **Oracle Cloud** — **LIVE since 2026-11-04** (deployed commit `df06f7b`); oracle is prod — opsbox is RETIRED as the API host
 - **Render / Railway — RETIRED.** `render.yaml`/`railway.toml` removed; do not deploy or configure them
 
 ### Alternative: Railway (backend API)
@@ -94,7 +95,7 @@ The project uses **Cloudflare Workers** for the frontend and a **Cloudflare tunn
 
 **Production URLs:**
 - **Frontend**: `https://settleinpeace.settleinpeace.workers.dev` (or custom domain)
-- **Backend**: `https://api.settleinpeace.com` (opsbox → PM2 via Cloudflare tunnel)
+- **Backend**: `https://api.settleinpeace.com` (oracle → PM2 via Cloudflare tunnel)
 
 **Environment Variables:**
 - `NEXT_PUBLIC_API_URL`: Backend API URL for frontend
