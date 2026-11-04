@@ -7,7 +7,7 @@
     "scheme": "settleinpeace",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#E6F4FE",
+    "backgroundColor": "#0b1526",
     "ios": {
       "supportsTablet": true,
       "requireFullScreen": true,
@@ -26,7 +26,7 @@
       "package": "com.settleinpeace.mobile",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0b1526",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -47,7 +47,7 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#E6F4FE"
+          "backgroundColor": "#0b1526"
         }
       ],
       [

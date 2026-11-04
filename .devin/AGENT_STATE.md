@@ -25,6 +25,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| devin-sip-icon | 2026-11-04 — SIP store icon set from docs/brand mark — settle-mobile/assets/*, app.json, docs/brand/store/ |
+
 | devin-asc-submit | 2026-11-04 — **IN PROGRESS** — driving settle.ipa (b6, com.settleinpeace.mobile) to App Store review: ASC API scripts (settle-mobile/scripts/asc-api.mjs, key PPQQ3TLU4A), app-record create via Brave/Playwright if missing, altool upload, version+localization+reviewDetail+reviewSubmission. | `settle-mobile/scripts/**`, `.devin/AGENT_STATE.md` |
 
 | devin-oracle-deploy | 2026-11-04 — **DEPLOYED `df06f7b`.** settle-api rebuilt (pnpm only), rsync'd to oracle:/home/opc/apps/Settle/settle-api/dist/, pm2 restarted — /health 200 db:connected, api.settleinpeace.com live. settle-web also cf-built + deployed (worker v04311bb1). See Recently landed. | (done) |
