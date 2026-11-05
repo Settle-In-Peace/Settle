@@ -25,6 +25,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| devin-asc-review-submit | 2026-11-04 — ASC API review submission for app 6830647835 (v1.0.0 cf5eb3b1, reviewSubmission fbc4ae23): verified build b6 attached, reviewDetail+ageRating(4+)+localization complete; blockers confirmed = screenshots only (IPAD_13_PROFILE + iPhone 6.9/6.5"). Building sim app + capturing real screenshots. whatsNew n/a on v1.0.0 (Apple blocks it on first release). | `settle-mobile/scripts/**`, `settle-mobile/ios` (sim build), `.devin/AGENT_STATE.md` |
+
 | devin-sip-icon-rebuild | 2026-11-05 — local IPA rebuild w/ committed icon set (7b08cd3); b6 IPA predates branded icons → store shows Expo placeholder. Building b7 via `eas build --local` (Xcode 26.3). Output dist/settle-b7.ipa; do NOT upload (asc-submit flow owns upload). | `settle-mobile/dist`, `settle-mobile/eas.json`, `settle-mobile/app.json` |
 
 | devin-play-sweep | 2026-11-04 — **GOOGLE PLAY INTERNAL TRACK SUBMITTED.** Play Console record created for `com.settleinpeace.mobile` (app 'Settle In Peace', free) via shiply Brave-clone session; SA `eas-play-submit` granted Admin perms. Local `dist/settle.aab` (vc5, v1.0.0 — newer than EAS vc4) uploaded via androidpublisher v3 edits → **internal track release committed** (edit 07955520580245335345). en-US listing (title/short/full desc from site copy), contact support@settleinpeace.com + settleinpeace.com, icon 512 + feature 1024x500 (docs/brand/store). Open: Play declarations checklist (data safety/content rating/target audience — console-side like Favestate's 11) + account-level trader status (owner). |
