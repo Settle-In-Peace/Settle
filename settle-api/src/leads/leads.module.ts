@@ -8,6 +8,7 @@ import { MatchingModule } from '../matching/matching.module';
 import { AiModule } from '../ai/ai.module';
 import { EmailModule } from '../email/email.module';
 import { CrmModule } from '../crm/crm.module';
+import { CloseFlowModule } from '../close-flow/close-flow.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CrmModule } from '../crm/crm.module';
     AiModule,
     EmailModule,
     CrmModule,
+    CloseFlowModule,
   ],
   controllers: [LeadsController],
   providers: [LeadsService],

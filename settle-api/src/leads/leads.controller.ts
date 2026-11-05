@@ -1,6 +1,8 @@
 import { Controller, Post, Get, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { LeadsService } from './leads.service';
+import { CloseFlowService } from '../close-flow/close-flow.service';
+import { SETTLE_SITE } from '../close-flow/site.config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProviderGuard } from '../auth/guards/provider.guard';
 import { CreateLeadDto } from './dto/create-lead.dto';
@@ -8,7 +10,10 @@ import { BatchPurchaseLeadsDto } from './dto/batch-purchase-leads.dto';
 
 @Controller('leads')
 export class LeadsController {
-  constructor(private leadsService: LeadsService) {}
+  constructor(
+    private leadsService: LeadsService,
+    private closeFlow: CloseFlowService,
+  ) {}
 
   // Public: consumer submits the assessment quiz
   @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -81,5 +86,25 @@ export class LeadsController {
   @Get(':id/status')
   async getLeadStatus(@Param('id') id: string) {
     return this.leadsService.getLeadStatus(id);
+  }
+
+  // Public: (re)issue the priority-match checkout for an assessment lead —
+  // the compare-page "unlock direct contact" button and the nurture
+  // messages point here. Reuses the active sequence's link when present.
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post(':id/match-checkout')
+  async matchCheckout(@Param('id') id: string) {
+    const lead = await this.leadsService.findRawById(id);
+    if (!lead) return { action: 'not_found' };
+    const res = await this.closeFlow.reissue(id, SETTLE_SITE, {
+      leadRef: id,
+      vertical: 'match_fee',
+      email: lead.email,
+      firstName: lead.firstName,
+      lastName: lead.lastName,
+      phone: lead.phone,
+      zip: lead.zipCode,
+    });
+    return res;
   }
 }

@@ -221,3 +221,9 @@ ack flag 4b1a777a9c7e
 - 2026-11-03 | settle.aab built local (v5, zero EAS cost) via `eas build -p android -e production --local` — headless expo session works. Blocked only on Play service-account JSON + ASC record (owner-side).
 
 - 2026-11-03 | settle.ipa built local (build 6, 11.3MB, app-store signed) — both binaries staged. Only blockers: ASC app record + Play SA JSON.
+
+## SI Close-Flow (2026-11-05 — devin-closeflow)
+
+- **Shared SI close pipeline LANDED + DEPLOYED to oracle (api.settleinpeace.com).** `settle-api/src/close-flow/` — cloned from Notyced's reference impl (spec `docs/SI_CLOSE_FLOW.md`): deterministic SI score → Stripe checkout link in Telnyx SMS + Resend email → `nurture_sequences` swept every 15min (day-0/1/3 until paid/expired) → `fulfillSession` wired into `/stripe/webhook` checkout.session.completed (metadata.close_flow='1') → owner alert on money/exception only (OWNER_ALERT_* in .env).
+- **Priority-match fee LIVE on the assessment funnel.** `leads/assessment` response now carries `closeFlow.checkoutUrl` ($19 one-time, STRIPE_PRICE_MATCH_FEE `price_1UYaKTGzFIOqs48PigwujxPc`; SETTLE_MATCH_FEE_CENTS override, 0 = free mode); `POST /leads/:id/match-checkout` re-issues the link; `POST /matching/request-contact` requires `lead.matchFeePaidAt` when fee enabled; `/leads/:id/status` returns matchFeePaid/matchFeeRequired; compare page shows an unlock banner; assessment confirmation shows the checkout CTA. Migration `1700000000050-CloseFlowNurture` applied to prod (nurture_sequences + leads.match_fee_*).
+- Verified live: `/close-flow/intake` (x-internal-key) → score 65 → real `cs_live_` checkout URL; `/close-flow/pipeline` shows sequences. Webhook→paid flip code-complete, unverified (needs a real completed checkout).

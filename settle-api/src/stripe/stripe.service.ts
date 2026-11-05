@@ -11,6 +11,7 @@ import { CoachingSubscription } from '../entities/coaching-subscription.entity';
 import { Org } from '../seats/org.entity';
 import { SeatPlan } from '../seats/seat-plan.entity';
 import { EmailService } from '../email/email.service';
+import { CloseFlowService } from '../close-flow/close-flow.service';
 
 export interface CreditPackage {
   credits: number;
@@ -69,6 +70,7 @@ export class StripeService {
     private coachingSubscriptionsRepository: Repository<CoachingSubscription>,
     @InjectRepository(Org)
     private orgsRepository: Repository<Org>,
+    private closeFlow: CloseFlowService,
   ) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!secretKey) {
@@ -528,6 +530,14 @@ export class StripeService {
   }
 
   private async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+    // Shared close-flow checkouts carry metadata.close_flow='1' — hand them
+    // to the shared fulfiller (flips nurture_sequences → paid, stamps the
+    // lead's matchFeePaidAt, alerts the owner) and stop here.
+    if (session.metadata?.close_flow === '1') {
+      await this.closeFlow.fulfillSession(session);
+      return;
+    }
+
     const type = session.metadata?.type;
 
     // One-time payment fulfillments must never run on an unpaid session.

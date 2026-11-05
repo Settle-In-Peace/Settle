@@ -9,6 +9,9 @@ import { CrmService } from '../crm/crm.service';
 import { CrmLeadSource } from '../entities/crm-lead.entity';
 import { CrmDealStage, CrmDealStatus } from '../entities/crm-deal.entity';
 import { EmailService } from '../email/email.service';
+import { CloseFlowService } from '../close-flow/close-flow.service';
+import { SETTLE_SITE } from '../close-flow/site.config';
+import type { IntakeResult } from '../close-flow/close-flow.service';
 
 @Injectable()
 export class LeadsService {
@@ -22,6 +25,7 @@ export class LeadsService {
     private leadScoringService: LeadScoringService,
     private emailService: EmailService,
     private crmService: CrmService,
+    private closeFlow: CloseFlowService,
   ) {}
 
   async submitAssessment(data: Partial<Lead>): Promise<Lead> {
@@ -100,7 +104,38 @@ export class LeadsService {
       this.logger.error(`CRM sync failed for lead ${saved.id}: ${error}`);
     }
 
-    return saved;
+    // SI close-flow — score the family, hand back the priority-match
+    // checkout link, queue the nurture sequence until they pay. Never
+    // blocks the assessment itself.
+    let closeFlow: IntakeResult | null = null;
+    try {
+      closeFlow = await this.closeFlow.intake(
+        {
+          leadRef: saved.id,
+          firstName: saved.firstName,
+          lastName: saved.lastName,
+          email: saved.email,
+          phone: saved.phone,
+          zip: saved.zipCode,
+          vertical: 'match_fee',
+          budgetCents: saved.totalDebt != null ? Math.round(Number(saved.totalDebt) * 100) : null,
+          message: undefined,
+          details: {
+            state: saved.state,
+            debtTypes: saved.debtTypes,
+            monthsBehind: saved.monthsBehind,
+          },
+        },
+        SETTLE_SITE,
+      );
+      this.logger.log(
+        `close-flow ${saved.id}: ${closeFlow.action} score=${closeFlow.score}${closeFlow.checkoutUrl ? ' +checkout' : ''}`,
+      );
+    } catch (e) {
+      this.logger.error(`close-flow intake failed for lead ${saved.id}: ${e instanceof Error ? e.message : e}`);
+    }
+
+    return Object.assign(saved, { closeFlow });
   }
 
   private calculateQualityScore(data: Partial<Lead>): number {
@@ -339,10 +374,18 @@ export class LeadsService {
    * Consumer: checks whether their lead has been purchased. Returns a boolean
    * and the provider's company name if purchased.
    */
-  async getLeadStatus(leadId: string): Promise<{ purchased: boolean; providerName?: string; purchasedAt?: Date }> {
+  async getLeadStatus(leadId: string): Promise<{
+    purchased: boolean;
+    providerName?: string;
+    purchasedAt?: Date;
+    matchFeePaid: boolean;
+    matchFeeRequired: boolean;
+  }> {
     const lead = await this.leadsRepository.findOne({ where: { id: leadId } });
     if (!lead) throw new NotFoundException('Lead not found');
 
+    const matchFeePaid = !!lead.matchFeePaidAt;
+    const matchFeeRequired = !matchFeePaid;
     if (lead.status === 'sold' && lead.purchasedBy) {
       try {
         const provider = await this.providersService.getProviderById(lead.purchasedBy);
@@ -350,13 +393,20 @@ export class LeadsService {
           purchased: true,
           providerName: (provider as any).companyName,
           purchasedAt: lead.purchasedAt,
+          matchFeePaid,
+          matchFeeRequired,
         };
       } catch {
-        return { purchased: true, purchasedAt: lead.purchasedAt };
+        return { purchased: true, purchasedAt: lead.purchasedAt, matchFeePaid, matchFeeRequired };
       }
     }
 
-    return { purchased: false };
+    return { purchased: false, matchFeePaid, matchFeeRequired };
+  }
+
+  /** Raw lead lookup for the close-flow match-checkout endpoint. */
+  async findRawById(leadId: string): Promise<Lead | null> {
+    return this.leadsRepository.findOne({ where: { id: leadId } });
   }
 
   // --- helpers ---

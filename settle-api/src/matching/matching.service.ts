@@ -40,6 +40,18 @@ export interface AutoMatchResult {
   reason: string;
 }
 
+/**
+ * SI close-flow — the family-pays priority-match fee. Enabled by default at
+ * $19; SETTLE_MATCH_FEE_CENTS=0 (and no STRIPE_PRICE_MATCH_FEE) turns the
+ * gate off so the contact step stays free.
+ */
+export const matchFeeEnabled = (): boolean => {
+  if (!process.env.STRIPE_SECRET_KEY) return false;
+  if (process.env.STRIPE_PRICE_MATCH_FEE) return true;
+  const v = process.env.SETTLE_MATCH_FEE_CENTS;
+  return (v != null && v !== '' ? Number(v) : 1900) > 0;
+};
+
 @Injectable()
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
@@ -417,6 +429,16 @@ export class MatchingService {
   async requestContact(leadId: string, providerId: string): Promise<Match> {
     const lead = await this.leadsRepository.findOne({ where: { id: leadId } });
     if (!lead) throw new NotFoundException('Lead not found');
+
+    // SI close-flow paywall — direct provider contact requires the one-time
+    // priority-match fee (waived when the fee is disabled). The compare page
+    // stays free to browse; this is the funnel's close step.
+    if (matchFeeEnabled() && !lead.matchFeePaidAt) {
+      throw new BadRequestException(
+        'A one-time priority-match fee is required before contacting a provider. ' +
+          'Use POST /leads/:id/match-checkout to get your secure checkout link.',
+      );
+    }
 
     const provider = await this.providersRepository.findOne({ where: { id: providerId } });
     if (!provider) throw new NotFoundException('Provider not found');

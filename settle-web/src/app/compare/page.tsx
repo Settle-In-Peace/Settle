@@ -103,6 +103,10 @@ function CompareContent() {
   const [requesting, setRequesting] = useState<string | null>(null);
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState('');
+  // Close-flow paywall — direct provider contact needs the one-time
+  // priority-match fee; cleared automatically once the webhook stamps it.
+  const [feeRequired, setFeeRequired] = useState(false);
+  const [feeCheckoutLoading, setFeeCheckoutLoading] = useState(false);
 
   useEffect(() => {
     if (!sortBy) return;
@@ -129,6 +133,42 @@ function CompareContent() {
     fetchProviders();
   }, [leadId]);
 
+  // Check whether the priority-match fee is still outstanding for this lead.
+  useEffect(() => {
+    if (!leadId) return;
+    const check = async () => {
+      try {
+        const res = await fetch(`${API_URL}/leads/${encodeURIComponent(leadId)}/status`);
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        setFeeRequired(!!data.matchFeeRequired && !data.matchFeePaid);
+      } catch {
+        /* non-fatal */
+      }
+    };
+    check();
+  }, [leadId]);
+
+  const handleMatchCheckout = async () => {
+    if (!leadId) return;
+    setFeeCheckoutLoading(true);
+    setActionError('');
+    try {
+      const res = await fetch(`${API_URL}/leads/${encodeURIComponent(leadId)}/match-checkout`, {
+        method: 'POST',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      throw new Error('Checkout is unavailable right now — please try again in a moment.');
+    } catch (err: any) {
+      setActionError(err.message || 'Could not start checkout');
+      setFeeCheckoutLoading(false);
+    }
+  };
+
   const handleRequestContact = async (providerId: string) => {
     if (!leadId) return;
     setRequesting(providerId);
@@ -142,6 +182,9 @@ function CompareContent() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+        if (res.status === 400 && /match fee|match-checkout/i.test(String(err.message))) {
+          setFeeRequired(true);
+        }
         throw new Error(err.message || 'Failed to request contact');
       }
       setRequestedIds((prev) => new Set(prev).add(providerId));
@@ -181,6 +224,25 @@ function CompareContent() {
         {actionError && (
           <div className="mb-6 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300 text-sm">
             {actionError}
+          </div>
+        )}
+
+        {/* Priority-match fee — the funnel's close step */}
+        {isMatched && feeRequired && (
+          <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="font-semibold text-blue-900 dark:text-blue-100">Unlock direct provider contact</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                Browsing is free. A one-time priority-match fee connects you directly with the provider you choose — paid once, never again.
+              </p>
+            </div>
+            <button
+              onClick={handleMatchCheckout}
+              disabled={feeCheckoutLoading}
+              className="shrink-0 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-60"
+            >
+              {feeCheckoutLoading ? 'Opening secure checkout…' : 'Unlock now'}
+            </button>
           </div>
         )}
 

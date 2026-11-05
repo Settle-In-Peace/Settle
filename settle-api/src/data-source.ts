@@ -38,6 +38,7 @@ import { OrgMember } from './seats/org-member.entity';
 import { Seat } from './seats/seat.entity';
 import { SeatUsage } from './seats/seat-usage.entity';
 import { SeatPlan } from './seats/seat-plan.entity';
+import { NurtureSequence } from './close-flow/nurture-sequence.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -88,6 +89,7 @@ export const dataSource = new DataSource({
     Seat,
     SeatUsage,
     SeatPlan,
+    NurtureSequence,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

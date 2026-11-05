@@ -44,6 +44,7 @@ export default function AssessmentPage() {
   const [direction, setDirection] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [matchCheckoutUrl, setMatchCheckoutUrl] = useState('');
   const [leadId, setLeadId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -110,6 +111,11 @@ export default function AssessmentPage() {
         consentPageVersion: CONSENT_PAGE_VERSION,
       });
       const returnedLeadId = String(response.id ?? (response.lead as { id?: string } | undefined)?.id ?? '');
+      // Close-flow checkout for the priority-match fee — surfaced on the
+      // confirmation screen as the fastest path to a provider.
+      const cf = (response.closeFlow ?? (response.lead as { closeFlow?: { checkoutUrl?: string } } | undefined)?.closeFlow) as
+        { checkoutUrl?: string } | undefined;
+      if (cf?.checkoutUrl) setMatchCheckoutUrl(cf.checkoutUrl);
       if (!returnedLeadId) throw new Error('Assessment was submitted but no lead ID was returned.');
       // Mirror into the central LeadOps store — best-effort, never blocks UX.
       void captureLead({
@@ -153,6 +159,14 @@ export default function AssessmentPage() {
             We&apos;ve matched your profile with qualified debt relief providers. Check your options now.
           </p>
           <div className="space-y-3">
+            {matchCheckoutUrl && (
+              <a
+                href={matchCheckoutUrl}
+                className="block w-full py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-lg"
+              >
+                Get matched now — one-time priority fee →
+              </a>
+            )}
             <button
               onClick={() => leadId && router.push(`/compare?leadId=${encodeURIComponent(leadId)}`)}
               className="block w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 text-lg"

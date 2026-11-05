@@ -180,4 +180,15 @@ export class Lead {
   /** Set when the row imported without a usable phone — queue for skip-trace. */
   @Column({ type: 'boolean', name: 'needs_skip_trace', default: false })
   needsSkipTrace!: boolean;
+
+  /**
+   * SI close-flow — the family's one-time priority-match fee. Set by the
+   * Stripe webhook (close_flow 'match_fee' checkout) and gates
+   * POST /matching/request-contact.
+   */
+  @Column({ type: 'timestamp', name: 'match_fee_paid_at', nullable: true })
+  matchFeePaidAt?: Date;
+
+  @Column({ type: 'varchar', length: 128, name: 'match_fee_session_id', nullable: true })
+  matchFeeSessionId?: string;
 }
