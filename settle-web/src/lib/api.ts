@@ -819,3 +819,40 @@ export async function fetchSignedPdfObjectUrl(signatureId: string): Promise<stri
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }
+
+// ── SI credits (shared si-gateway metering) ──────────────────────────────
+// Mirrors settle-api /si-credits/* + /stripe/si-credits-checkout. Packs are
+// one-time Stripe checkouts; the webhook grants credits at the gateway.
+export interface SiCreditPack {
+  id: string;
+  name: string;
+  priceUsd: number;
+  credits: number;
+}
+
+export function getSiCreditPacks() {
+  return api()<{ configured: boolean; packs: SiCreditPack[] }>('/si-credits/packs', { method: 'GET' });
+}
+export function getSiCreditsBalance() {
+  return authenticatedApi(getToken() ?? '')<{ configured: boolean; balance: number }>(
+    '/si-credits/balance',
+    { method: 'GET' },
+  );
+}
+export function createSiCreditsCheckout(packId: string) {
+  return authenticatedApi(getToken() ?? '')<{ url: string; sessionId: string }>(
+    '/stripe/si-credits-checkout',
+    { method: 'POST', body: JSON.stringify({ packId }) },
+  );
+}
+
+/** True when an API call failed with the gateway's credit-gate 402. */
+export function isInsufficientCreditsError(err: unknown): boolean {
+  const e = err as { status?: number; data?: { error?: string }; message?: string } | null;
+  return (
+    e?.status === 402 &&
+    (e?.data?.error === 'insufficient_credits' ||
+      /insufficient_credits/i.test(e?.message || '') ||
+      /si credits/i.test(e?.message || ''))
+  );
+}

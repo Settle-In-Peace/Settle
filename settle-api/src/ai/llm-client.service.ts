@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export interface LlmChatMessage {
@@ -13,6 +13,16 @@ export interface LlmChatOptions {
   maxTokens?: number;
   /** Request response_format: { type: 'json_object' } (OpenAI-compatible) */
   jsonMode?: boolean;
+  /**
+   * End-user id — sent as `X-SI-User` so the shared gateway can meter and
+   * debit credits per account. Omit for unattributed/server-side calls.
+   */
+  userId?: string;
+  /**
+   * Sent as `X-SI-Require-Credits: true` on premium SI calls — the gateway
+   * answers 402 `insufficient_credits` when the user's balance is < 1.
+   */
+  requireCredits?: boolean;
 }
 
 export interface LlmChatResult {
@@ -38,6 +48,27 @@ export class LlmUpstreamError extends Error {
   ) {
     super(message);
     this.name = 'LlmUpstreamError';
+  }
+}
+
+/**
+ * Thrown when the SI gateway answers 402 `insufficient_credits`. Extends
+ * HttpException so it propagates through Nest as a clean client-facing
+ * 402 `{ error: 'insufficient_credits' }` instead of a 500 — callers must
+ * rethrow it rather than degrade (a billing event is not an outage).
+ */
+export class InsufficientCreditsError extends HttpException {
+  constructor() {
+    super(
+      {
+        error: 'insufficient_credits',
+        message:
+          'Out of SI credits — top up at /credits to keep using SI features.',
+        buy_url: '/credits',
+      },
+      HttpStatus.PAYMENT_REQUIRED,
+    );
+    this.name = 'InsufficientCreditsError';
   }
 }
 
@@ -126,14 +157,26 @@ export class LlmClientService {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
+            // Shared si-gateway routing — harmless on providers that ignore it.
+            'x-si-app': 'settle',
+            ...(options.userId
+              ? { 'x-si-user': String(options.userId) }
+              : {}),
+            ...(options.requireCredits
+              ? { 'x-si-require-credits': 'true' }
+              : {}),
           },
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(this.timeoutMs),
         });
 
         if (!res.ok) {
-          const retryable = res.status === 429 || res.status >= 500;
           const detail = await this.safeErrorBody(res);
+          // Gateway credit gate — surface a clean 402, never retry/degrade.
+          if (res.status === 402 && /insufficient_credits/i.test(detail)) {
+            throw new InsufficientCreditsError();
+          }
+          const retryable = res.status === 429 || res.status >= 500;
           // Log status only — never the prompt or response body with PII.
           this.logger.warn(
             `LLM request failed (attempt ${attempt}/${attempts}): HTTP ${res.status}`,
@@ -153,6 +196,8 @@ export class LlmClientService {
         return { content, model: data?.model || model };
       } catch (error: any) {
         if (error instanceof LlmUpstreamError) throw error;
+        // 402 credit gate / other HTTP exceptions are terminal, not retryable.
+        if (error instanceof HttpException) throw error;
         // AbortError / TypeError (network) — retryable
         lastError = error;
         this.logger.warn(

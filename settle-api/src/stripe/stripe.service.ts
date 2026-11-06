@@ -12,6 +12,7 @@ import { Org } from '../seats/org.entity';
 import { SeatPlan } from '../seats/seat-plan.entity';
 import { EmailService } from '../email/email.service';
 import { CloseFlowService } from '../close-flow/close-flow.service';
+import { SiCreditsService } from '../si-credits/si-credits.service';
 
 export interface CreditPackage {
   credits: number;
@@ -71,6 +72,7 @@ export class StripeService {
     @InjectRepository(Org)
     private orgsRepository: Repository<Org>,
     private closeFlow: CloseFlowService,
+    private siCredits: SiCreditsService,
   ) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!secretKey) {
@@ -105,6 +107,48 @@ export class StripeService {
   }
 
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // SI credit packs — one-time checkout → webhook → shared-gateway topup.
+  // Packs live in SiCreditsService ($5/$20/$50 → 500/2000/5000 credits).
+  // ---------------------------------------------------------------------------
+
+  async createSiCreditsCheckoutSession(
+    userId: string,
+    packId: string,
+  ): Promise<Stripe.Checkout.Session> {
+    const pack = this.siCredits.getPack(packId);
+    if (!pack) {
+      throw new BadRequestException(`Unknown SI credit pack "${packId}".`);
+    }
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3025';
+
+    return this.stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${pack.credits} SI Credits — ${pack.name}`,
+              description: `Prepaid SI credits for Settle SI features (metered at the shared gateway).`,
+            },
+            unit_amount: Math.round(pack.priceUsd * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        type: 'si_credit_pack',
+        userId,
+        packId: pack.id,
+        credits: pack.credits.toString(),
+      },
+      success_url: `${frontendUrl}/credits?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/credits?checkout=cancelled`,
+    });
+  }
+
   // Pay-per-lead credit packages (existing, kept for backward compatibility)
   // ---------------------------------------------------------------------------
 
@@ -584,6 +628,48 @@ export class StripeService {
           this.logger.warn(`could not mark credit session ${session.id} granted: ${err instanceof Error ? err.message : err}`);
         }
         this.logger.log(`Added ${credits} credits to provider ${providerId}`);
+        break;
+      }
+
+      case 'si_credit_pack': {
+        if (unpaidOneTime) {
+          this.logger.log(`si_credit_pack session ${session.id} unpaid — awaiting async settlement`);
+          break;
+        }
+        const userId = session.metadata?.userId;
+        const credits = parseInt(session.metadata?.credits || '0', 10);
+        const packId = session.metadata?.packId || 'unknown';
+        if (!userId || credits <= 0) {
+          this.logger.warn(`si_credit_pack checkout missing metadata: ${JSON.stringify(session.metadata)}`);
+          break;
+        }
+        // Idempotency: same session-metadata dedup as credit_package — Stripe
+        // redelivers events; mark the session after the gateway grant lands.
+        try {
+          const fresh = await this.stripe.checkout.sessions.retrieve(session.id);
+          if (fresh.metadata?.si_credits_granted === '1') {
+            this.logger.log(`si_credit_pack session ${session.id} already granted — skipping duplicate delivery`);
+            break;
+          }
+        } catch (err) {
+          this.logger.warn(`si_credit_pack dedup check failed for ${session.id}: ${err instanceof Error ? err.message : err}`);
+        }
+        const result = await this.siCredits.topUp(
+          userId,
+          credits,
+          `settle SI credit pack ${packId}`,
+          `stripe:${session.id}`,
+        );
+        try {
+          await this.stripe.checkout.sessions.update(session.id, {
+            metadata: { ...session.metadata, si_credits_granted: '1' },
+          });
+        } catch (err) {
+          this.logger.warn(`could not mark si_credit_pack session ${session.id} granted: ${err instanceof Error ? err.message : err}`);
+        }
+        this.logger.log(
+          `Granted ${credits} SI credits to user ${userId} (pack ${packId}, balance ${result?.balance ?? 'unknown'})`,
+        );
         break;
       }
 

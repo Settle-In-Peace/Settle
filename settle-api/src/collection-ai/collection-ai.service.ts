@@ -8,7 +8,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LlmClientService } from '../ai/llm-client.service';
+import {
+  InsufficientCreditsError,
+  LlmClientService,
+} from '../ai/llm-client.service';
 import {
   CollectionAccount,
   CollectionAccountStatus,
@@ -214,10 +217,12 @@ export class CollectionAiService {
     };
   }
 
-  /** Payment-propensity score 0-100 with reasoning. */
-  async propensity(accountId: string): Promise<PropensityResult> {
+  /** Payment-propensity score 0-100 with reasoning. Premium SI — metered
+   * per call at the gateway (`userId` = the staff account spending). */
+  async propensity(accountId: string, userId?: string): Promise<PropensityResult> {
     this.assertConfigured();
-    return this.cached(`propensity:${accountId}`, async () => {
+    const siOpts = { userId, requireCredits: true };
+    return this.cached(`propensity:${userId || 'anon'}:${accountId}`, async () => {
       const ctx = await this.loadAccountContext(accountId);
       const heuristic = this.heuristicPropensity(ctx);
 
@@ -244,7 +249,7 @@ export class CollectionAiService {
               }),
             },
           ],
-          { temperature: 0.2, maxTokens: 300 },
+          { temperature: 0.2, maxTokens: 300, ...siOpts },
         );
 
         const llmScore = this.clampScore(parsed?.score);
@@ -275,6 +280,8 @@ export class CollectionAiService {
           generatedAt: new Date().toISOString(),
         };
       } catch (error) {
+        // Billing gate is not an outage — surface the 402 for the buy prompt.
+        if (error instanceof InsufficientCreditsError) throw error;
         // Key configured but upstream failed — degrade to heuristic rather than 5xx.
         this.logger.warn(
           `Propensity LLM call failed, using heuristic: ${(error as Error)?.message?.slice(0, 120)}`,
@@ -293,13 +300,15 @@ export class CollectionAiService {
     });
   }
 
-  /** Draft an FDCPA-safe settlement offer letter — always requiresReview. */
-  async draftOffer(dto: DraftOfferDto): Promise<DraftOfferResult> {
+  /** Draft an FDCPA-safe settlement offer letter — always requiresReview.
+   * Premium SI — metered per call at the gateway. */
+  async draftOffer(dto: DraftOfferDto, userId?: string): Promise<DraftOfferResult> {
     this.assertConfigured();
+    const siOpts = { userId, requireCredits: true };
     const targetPercent = Math.min(100, Math.max(1, dto.targetPercent ?? 60));
     const termMonths = dto.termMonths ?? 0;
     return this.cached(
-      `offer:${dto.accountId}:${targetPercent}:${termMonths}:${this.hash(dto.notes || '')}`,
+      `offer:${userId || 'anon'}:${dto.accountId}:${targetPercent}:${termMonths}:${this.hash(dto.notes || '')}`,
       async () => {
         const ctx = await this.loadAccountContext(dto.accountId);
         const balance = Number(ctx.account.currentBalance) || 0;
@@ -342,7 +351,7 @@ export class CollectionAiService {
               }),
             },
           ],
-          { temperature: 0.4, maxTokens: 1200 },
+          { temperature: 0.4, maxTokens: 1200, ...siOpts },
         );
 
         let letter = parsed?.letter?.trim() || '';
@@ -378,10 +387,11 @@ export class CollectionAiService {
     );
   }
 
-  /** Next-best-action for an account. */
-  async nextAction(accountId: string): Promise<NextActionResult> {
+  /** Next-best-action for an account. Premium SI — metered per call. */
+  async nextAction(accountId: string, userId?: string): Promise<NextActionResult> {
     this.assertConfigured();
-    return this.cached(`action:${accountId}`, async () => {
+    const siOpts = { userId, requireCredits: true };
+    return this.cached(`action:${userId || 'anon'}:${accountId}`, async () => {
       const ctx = await this.loadAccountContext(accountId);
 
       // Hard compliance overrides — these beat any model suggestion.
@@ -410,7 +420,7 @@ export class CollectionAiService {
             content: JSON.stringify({ features: this.contextFeatures(ctx) }),
           },
         ],
-        { temperature: 0.3, maxTokens: 400 },
+        { temperature: 0.3, maxTokens: 400, ...siOpts },
       );
 
       const allowed: NextAction[] = ['call', 'email', 'sms', 'letter', 'settle', 'escalate'];
@@ -439,12 +449,14 @@ export class CollectionAiService {
     });
   }
 
-  /** Summarize call notes / contact log into a CRM activity summary. */
-  async summarize(dto: SummarizeDto): Promise<SummarizeResult> {
+  /** Summarize call notes / contact log into a CRM activity summary.
+   * Premium SI — metered per call. */
+  async summarize(dto: SummarizeDto, userId?: string): Promise<SummarizeResult> {
     this.assertConfigured();
+    const siOpts = { userId, requireCredits: true };
     const cacheKey = dto.accountId
-      ? `summary:${dto.accountId}`
-      : `summary:text:${this.hash(dto.text || '')}`;
+      ? `summary:${userId || 'anon'}:${dto.accountId}`
+      : `summary:text:${userId || 'anon'}:${this.hash(dto.text || '')}`;
     return this.cached(cacheKey, async () => {
       let sourceText = '';
       let sourceItemCount = 0;
@@ -506,7 +518,7 @@ export class CollectionAiService {
           },
           { role: 'user', content: sourceText },
         ],
-        { temperature: 0.2, maxTokens: 500 },
+        { temperature: 0.2, maxTokens: 500, ...siOpts },
       );
 
       return {
@@ -525,11 +537,12 @@ export class CollectionAiService {
     });
   }
 
-  /** Scan a note/script draft for FDCPA/TCPA red flags. */
-  async complianceCheck(dto: ComplianceCheckDto): Promise<ComplianceCheckResult> {
+  /** Scan a note/script draft for FDCPA/TCPA red flags. The deterministic
+   * rule pass always runs; the SI pass is premium — metered per call. */
+  async complianceCheck(dto: ComplianceCheckDto, userId?: string): Promise<ComplianceCheckResult> {
     this.assertConfigured();
     return this.cached(
-      `compliance:${dto.channel || 'any'}:${this.hash(dto.text)}`,
+      `compliance:${userId || 'anon'}:${dto.channel || 'any'}:${this.hash(dto.text)}`,
       async () => {
         const text = dto.text.slice(0, 8000);
         const flags: ComplianceFlag[] = [];
@@ -590,7 +603,7 @@ export class CollectionAiService {
                 }),
               },
             ],
-            { temperature: 0.1, maxTokens: 900 },
+            { temperature: 0.1, maxTokens: 900, userId, requireCredits: true },
           );
 
           if (Array.isArray(parsed?.flags)) {
@@ -624,6 +637,8 @@ export class CollectionAiService {
             suggestedRewrite = this.sanitize(parsed.suggestedRewrite).slice(0, 4000);
           }
         } catch (error) {
+          // Billing gate is not an outage — surface the 402 for the buy prompt.
+          if (error instanceof InsufficientCreditsError) throw error;
           this.logger.warn(
             `Compliance LLM pass failed; deterministic results only: ${(error as Error)?.message?.slice(0, 120)}`,
           );

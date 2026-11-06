@@ -3,10 +3,14 @@ import { Request } from 'express';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StripeService, CREDIT_PACKAGES } from './stripe.service';
+import { SiCreditsService } from '../si-credits/si-credits.service';
 
 @Controller('stripe')
 export class StripeController {
-  constructor(private stripeService: StripeService) {}
+  constructor(
+    private stripeService: StripeService,
+    private siCredits: SiCreditsService,
+  ) {}
 
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
@@ -57,6 +61,29 @@ export class StripeController {
       throw new BadRequestException('tierId is required');
     }
     const session = await this.stripeService.createProviderSubscriptionSession(req.user.sub, tierId);
+    return { url: session.url, sessionId: session.id };
+  }
+
+  /**
+   * SI credit pack checkout — one-time Stripe payment; the webhook
+   * (`si_credit_pack`) grants the credits at the shared gateway.
+   * Body: { packId: 'starter' | 'growth' | 'pro' } (env-overridable catalog).
+   */
+  @Post('si-credits-checkout')
+  @UseGuards(JwtAuthGuard)
+  async createSiCreditsCheckout(
+    @Req() req: Request & { user: any },
+    @Body('packId') packId: string,
+  ) {
+    if (!packId || !this.siCredits.getPack(packId)) {
+      throw new BadRequestException(
+        `Invalid SI credit pack. Available packs: ${this.siCredits.getPacks().map((p) => p.id).join(', ')}`,
+      );
+    }
+    const session = await this.stripeService.createSiCreditsCheckoutSession(
+      req.user.sub,
+      packId,
+    );
     return { url: session.url, sessionId: session.id };
   }
 

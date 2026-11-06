@@ -10,9 +10,10 @@ import { StripeController } from './stripe.controller';
 import { ProvidersModule } from '../providers/providers.module';
 import { EmailModule } from '../email/email.module';
 import { CloseFlowModule } from '../close-flow/close-flow.module';
+import { SiCreditsModule } from '../si-credits/si-credits.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Provider, Lead, User, CoachingSubscription, Org]), ProvidersModule, EmailModule, CloseFlowModule],
+  imports: [TypeOrmModule.forFeature([Provider, Lead, User, CoachingSubscription, Org]), ProvidersModule, EmailModule, CloseFlowModule, SiCreditsModule],
   controllers: [StripeController],
   providers: [StripeService],
   exports: [StripeService],

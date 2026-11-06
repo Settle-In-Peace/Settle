@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   CollectionAiComplianceCheck,
   CollectionAiDraftOffer,
@@ -13,6 +14,7 @@ import {
   getCollectionAiNextAction,
   getCollectionAiPropensity,
   getCollectionAiStatus,
+  isInsufficientCreditsError,
   summarizeCollectionAi,
 } from '@/lib/api';
 
@@ -58,6 +60,7 @@ export default function CollectionAiPanel({ accountId }: { accountId: string }) 
   const [statusLoading, setStatusLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [needsCredits, setNeedsCredits] = useState(false);
 
   const [propensity, setPropensity] = useState<CollectionAiPropensity | null>(null);
   const [offer, setOffer] = useState<CollectionAiDraftOffer | null>(null);
@@ -95,10 +98,15 @@ export default function CollectionAiPanel({ accountId }: { accountId: string }) 
   const run = async <T,>(key: string, fn: () => Promise<T>, onDone: (r: T) => void) => {
     setBusy(key);
     setError('');
+    setNeedsCredits(false);
     try {
       onDone(await fn());
     } catch (err: any) {
-      setError(err?.message || 'AI request failed');
+      if (isInsufficientCreditsError(err)) {
+        setNeedsCredits(true);
+      } else {
+        setError(err?.message || 'AI request failed');
+      }
     } finally {
       setBusy(null);
     }
@@ -128,8 +136,21 @@ export default function CollectionAiPanel({ accountId }: { accountId: string }) 
       {status?.configured && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Powered by {status.model} — results are advisory. Anything consumer-facing must be
-          reviewed by a human before use.
+          reviewed by a human before use. SI calls are metered in SI credits.
         </p>
+      )}
+
+      {needsCredits && (
+        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
+          <p className="font-medium">Out of SI credits</p>
+          <p className="mt-1 text-xs">
+            These SI features are metered per call.{' '}
+            <Link href="/credits" className="underline font-medium">
+              Buy a credit pack
+            </Link>{' '}
+            to keep using them — every result is still advisory and human-reviewed.
+          </p>
+        </div>
       )}
 
       {status?.configured && (

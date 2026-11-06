@@ -68,6 +68,7 @@ import { DebtsModule } from './debts/debts.module';
 import { ProvidersModule } from './providers/providers.module';
 import { LeadsModule } from './leads/leads.module';
 import { StripeModule } from './stripe/stripe.module';
+import { SiCreditsModule } from './si-credits/si-credits.module';
 import { AdminModule } from './admin/admin.module';
 import { MatchingModule } from './matching/matching.module';
 import { AiModule } from './ai/ai.module';
@@ -249,6 +250,7 @@ import { SeatsModule } from './seats/seats.module';
     MatchingModule,
     AiModule,
     CollectionAiModule,
+    SiCreditsModule,
     CoachingModule,
     CrmModule,
     BillingModule,
