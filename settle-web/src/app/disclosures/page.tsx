@@ -5,6 +5,7 @@ export const metadata = {
   title: 'Disclosures | Settle In Peace',
   description:
     'CFPB and FTC compliance disclosures for Settle In Peace — debt settlement marketing disclosures, fee disclosures, state-specific notices, and complaint information.',
+  alternates: { canonical: '/disclosures' },
 };
 
 export default function DisclosuresPage() {

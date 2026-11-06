@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Dialer as a Service — TCPA-compliant collections dialer | Settle In Peace',
   description:
     'Per-seat autodialer for collections and debt-relief agencies. DNC checks, consent gates, call logging, and usage-based billing built in.',
+  alternates: { canonical: '/daas' },
 };
 
 const FEATURES = [

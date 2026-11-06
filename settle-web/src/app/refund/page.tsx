@@ -4,6 +4,7 @@ export const metadata = {
   title: 'Cancellation & Refund Policy | Settle In Peace',
   description:
     'How to cancel a Settle In Peace subscription and how refunds work — separate from any agreement you may have with a third-party debt relief provider.',
+  alternates: { canonical: '/refund' },
 };
 
 export default function RefundPage() {

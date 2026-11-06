@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: 'Bankruptcy Attorneys Directory | Settle In Peace',
   description:
     'Find bankruptcy attorneys by state and city. Free and featured listings — paid placements are clearly marked Sponsored.',
+  alternates: { canonical: '/attorneys' },
 };
 
 interface Attorney {

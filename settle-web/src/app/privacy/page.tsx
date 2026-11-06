@@ -3,6 +3,7 @@ import Link from 'next/link';
 export const metadata = {
   title: 'Privacy Policy | Settle In Peace',
   description: 'Privacy Policy for Settle In Peace — how we collect, use, and protect your data.',
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {

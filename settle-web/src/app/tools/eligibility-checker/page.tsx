@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     description:
       'Six questions, honest results: which debt relief paths may fit your situation — ranked, with state-specific notes.',
     type: 'website',
+    images: ['/og-image.png'],
   },
   twitter: { card: 'summary_large_image' },
 };

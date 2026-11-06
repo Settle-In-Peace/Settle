@@ -3,6 +3,7 @@ import Link from 'next/link';
 export const metadata = {
   title: 'Terms of Service | Settle In Peace',
   description: 'Terms of Service for Settle In Peace — the debt relief marketplace.',
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

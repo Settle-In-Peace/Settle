@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     description:
       'Instant debt snapshot: payoff timeline, interest cost, and estimated settlement savings. Free, private, no credit check.',
     type: 'website',
+    images: ['/og-image.png'],
   },
 };
 

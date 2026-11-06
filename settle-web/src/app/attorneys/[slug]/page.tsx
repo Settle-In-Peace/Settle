@@ -33,6 +33,7 @@ export async function generateMetadata(
   return {
     title: `${a.companyName} — Bankruptcy Attorney${a.city ? ` in ${a.city}` : ''} | Settle In Peace`,
     description: a.description?.slice(0, 155) ?? `${a.companyName} — bankruptcy attorney listing.`,
+    alternates: { canonical: `/attorneys/${a.slug}` },
   };
 }
 

@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     description:
       'Estimate your debt-to-income ratio and see how long it will take to pay off your debt. Free, fast, and private.',
     type: 'website',
+    images: ['/og-image.png'],
   },
 };
 

@@ -4,6 +4,7 @@ export const metadata = {
   title: 'Mobile App Privacy Policy | Settle In Peace',
   description:
     'Privacy policy for the Settle In Peace mobile app — what the app collects, how debt-assessment data is shared with providers (only with your consent), and how to delete your data.',
+  alternates: { canonical: '/privacy-app' },
 };
 
 export default function AppPrivacyPage() {

@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     description:
       'Free, honest guides on debt settlement, consolidation, credit, taxes, and budgeting. Learn how debt relief really works.',
     type: 'website',
+    images: ['/og-image.png'],
   },
 };
 

@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `credit counseling ${c.name} ${s.name}`,
       `debt help ${c.name}`,
     ],
-    openGraph: { title, description, type: 'article' },
+    openGraph: { title, description, type: 'article', images: ['/og-image.png'] },
     twitter: { card: 'summary_large_image', title, description },
   };
 }
