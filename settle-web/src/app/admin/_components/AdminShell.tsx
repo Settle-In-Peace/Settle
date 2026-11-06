@@ -17,6 +17,7 @@ const NAV = [
     label: 'Workspace',
     items: [
       { href: '/admin/crm', label: 'CRM Center', icon: 'M4 5h16v4H4zM4 12h10v7H4zM17 12h3v7h-3z' },
+      { href: '/admin/crm-overview', label: 'CRM Overview', icon: 'M3 3v18h18M7 15l4-4 3 3 5-6' },
       { href: '/admin/sales', label: 'Sales CRM', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 4-6 8-6s8 2 8 6' },
       { href: '/admin/sales-agents', label: 'Sales Team', icon: 'M8 10a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6M2 20c0-3.5 3-5 6-5s6 1.5 6 5M14 15c3.5 0 8 1.5 8 5' },
     ],

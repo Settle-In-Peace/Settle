@@ -59,6 +59,7 @@ export default function Navigation() {
         { href: '/debt-snapshot', label: 'Debt Snapshot' },
         { href: '/calculators', label: 'Calculators' },
         { href: '/compare', label: 'Compare Providers' },
+        { href: '/marketplace', label: 'Marketplace' },
         { href: '/providers', label: 'For Providers' },
       ];
 

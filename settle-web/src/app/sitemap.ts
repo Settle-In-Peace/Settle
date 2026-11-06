@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/debt-snapshot', priority: 0.8 },
     { path: '/tools/eligibility-checker', priority: 0.8 },
     { path: '/providers', priority: 0.7 },
+    { path: '/marketplace', priority: 0.7 },
     { path: '/coaching', priority: 0.7 },
     { path: '/questions', priority: 0.7 },
     { path: '/roadmap', priority: 0.5 },

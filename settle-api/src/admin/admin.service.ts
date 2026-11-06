@@ -5,11 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions, In } from 'typeorm';
+import { Repository, FindManyOptions, In, IsNull, Not } from 'typeorm';
 import { Provider } from '../entities/provider.entity';
 import { Lead } from '../entities/lead.entity';
 import { Match } from '../entities/match.entity';
 import { User } from '../entities/user.entity';
+import { NurtureSequence } from '../close-flow/nurture-sequence.entity';
 import { EmailService } from '../email/email.service';
 import { MatchingService } from '../matching/matching.service';
 import { ProvidersService } from '../providers/providers.service';
@@ -29,6 +30,8 @@ export class AdminService {
     private matchesRepository: Repository<Match>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(NurtureSequence)
+    private nurtureRepository: Repository<NurtureSequence>,
     private emailService: EmailService,
     private matchingService: MatchingService,
     private providersService: ProvidersService,
@@ -306,6 +309,134 @@ export class AdminService {
     });
     this.logger.log(`Lead ${leadId} assigned to sales agent ${salesAgentId}`);
     return this.leadsRepository.findOne({ where: { id: leadId } });
+  }
+
+  /**
+   * CRM overview — single aggregate snapshot for the admin/staff CRM
+   * dashboard (GET /admin/crm via AdminCrmController, SalesGuard: admin or
+   * sales staff). One request instead of five: leads, assessments,
+   * providers, close_flow revenue + close_flow orders.
+   */
+  async getCrmOverview() {
+    const [leadStats, assessments, providers, closeFlow, users, matches] =
+      await Promise.all([
+        this.getLeadStats().catch(() => null),
+        // "Assessments" = consumer quiz submissions — leads that carry a
+        // TCPA consentTimestamp came through /leads/assessment.
+        this.leadsRepository
+          .count({ where: { consentTimestamp: Not(IsNull()) } })
+          .catch(() => 0),
+        this.getProviderBreakdown().catch(() => ({
+          total: 0,
+          byStatus: {},
+          pending: 0,
+          recent: [] as any[],
+        })),
+        this.getCloseFlowSummary().catch(() => ({
+          orders: 0,
+          revenueCents: 0,
+          revenue: 0,
+          byStatus: {},
+          recentOrders: [] as any[],
+        })),
+        this.usersRepository.count().catch(() => 0),
+        this.matchesRepository.count().catch(() => 0),
+      ]);
+
+    const recentLeads = await this.leadsRepository
+      .find({ order: { createdAt: 'DESC' }, take: 10 })
+      .catch(() => [] as Lead[]);
+
+    return {
+      leads: {
+        ...(leadStats ?? { total: 0, byStatus: {}, conversionRate: 0 }),
+        recent: recentLeads.map((l) => ({
+          id: l.id,
+          name: `${l.firstName} ${l.lastName}`.trim(),
+          email: l.email,
+          state: l.state,
+          status: l.status,
+          totalDebt: l.totalDebt ? Number(l.totalDebt) : null,
+          qualityScore: l.qualityScore,
+          mlTier: (l as any).mlTier,
+          source: l.source,
+          createdAt: l.createdAt,
+        })),
+      },
+      assessments: {
+        total: assessments,
+        note: 'Assessment submissions are stored as leads (TCPA consent stamped).',
+      },
+      providers,
+      closeFlow,
+      users: { total: users },
+      matches: { total: matches },
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  /** Provider counts grouped by status + recent signups (password stripped). */
+  private async getProviderBreakdown() {
+    const providers = await this.providersRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+    const byStatus: Record<string, number> = {};
+    for (const p of providers) {
+      byStatus[p.status || 'unknown'] = (byStatus[p.status || 'unknown'] || 0) + 1;
+    }
+    return {
+      total: providers.length,
+      byStatus,
+      pending: (byStatus['pending'] || 0) + (byStatus['pending_review'] || 0),
+      recent: providers.slice(0, 10).map((p) => this.stripPassword(p)),
+    };
+  }
+
+  /**
+   * Close-flow summary — nurture_sequences rows flipped to 'paid' are the
+   * revenue/orders; every other status is pipeline. amount_cents is stored
+   * at checkout creation (and corrected from the Stripe session on paid).
+   */
+  private async getCloseFlowSummary() {
+    const rows = await this.nurtureRepository
+      .createQueryBuilder('n')
+      .select('n.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .addSelect('COALESCE(SUM(n.amount_cents), 0)', 'amount_cents')
+      .groupBy('n.status')
+      .getRawMany();
+
+    const byStatus: Record<string, number> = {};
+    let orders = 0;
+    let revenueCents = 0;
+    for (const r of rows) {
+      byStatus[r.status] = parseInt(r.count, 10);
+      if (r.status === 'paid') {
+        orders = parseInt(r.count, 10);
+        revenueCents = parseInt(r.amount_cents, 10) || 0;
+      }
+    }
+
+    const recentOrders = await this.nurtureRepository.find({
+      where: { status: 'paid' },
+      order: { paidAt: 'DESC' },
+      take: 10,
+    });
+
+    return {
+      orders,
+      revenueCents,
+      revenue: revenueCents / 100,
+      byStatus,
+      recentOrders: recentOrders.map((n) => ({
+        id: n.id,
+        email: n.email,
+        name: n.name,
+        offer: n.offer,
+        amount: (n.amountCents ?? 0) / 100,
+        paidAt: n.paidAt,
+      })),
+    };
   }
 
   // --- helpers ---

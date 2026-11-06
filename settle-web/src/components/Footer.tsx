@@ -34,6 +34,7 @@ export default function Footer() {
               <li><Link href="/tools/eligibility-checker" className="hover:text-white transition-colors">Eligibility Checker</Link></li>
               <li><Link href="/coaching" className="hover:text-white transition-colors">Financial Coaching</Link></li>
               <li><Link href="/compare" className="hover:text-white transition-colors">Compare Providers</Link></li>
+              <li><Link href="/marketplace" className="hover:text-white transition-colors">Provider Marketplace</Link></li>
               <li><Link href="/debt-relief" className="hover:text-white transition-colors">Debt Relief by State</Link></li>
               <li><Link href="/learn" className="hover:text-white transition-colors">Learn</Link></li>
               <li><Link href="/providers" className="hover:text-white transition-colors">For Providers</Link></li>
