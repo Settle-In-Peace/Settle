@@ -2,6 +2,8 @@
 
 Format: `- <date> | <blocked> | needs: <action> | ref:`
 
+## Open
+
 - ~~2026-10-25~~ | **RESOLVED 2026-11-02** — BUFFER_ACCESS_TOKEN/BUFFER_ORG_ID/BUFFER_CHANNEL_IDS set as repo secrets on obdulr/Settle + Settle-In-Peace/Settle. Remaining owner-side: connect channels in Buffer org. | ref: social-daily.yml
 - 2026-10-25 | Buffer org has zero connected channels — even with secrets, Buffer posts to nothing | needs: publish.buffer.com → Settings → Channels → Connect channel → X (30s); FB/IG/LinkedIn optional | ref: AGENT_STATE.md "Blocked on user" (social posting never run)
 - 2026-10-25 | Optional direct-platform posting (bypass Buffer, free) | needs: any of `BLUESKY_HANDLE`/`BLUESKY_APP_PASSWORD`, `MASTODON_*`, `FB_PAGE_*`, `LINKEDIN_*`, `REDDIT_*`, `X_*`, `TUMBLR_*`, `NEXTDOOR_*` as repo secrets — each set enables that platform, unset ones skip cleanly | ref: tools/social/env.example
@@ -25,3 +27,4 @@ Format: `- <date> | <blocked> | needs: <action> | ref:`
 - 2026-10-31 | settle-mobile store submit blocked | needs: create Play Console app listing for pkg com.settleinpeace.mobile (first upload must be manual) + create App Store Connect app record for its bundle id, then share ascAppId | ref: EAS prep done 2026-10-31
 - 2026-11-01 | si-gateway multi-provider free credits | needs: free API keys for GROQ_API_KEY, GEMINI_API_KEY, CEREBRAS_API_KEY, MISTRAL_API_KEY (free signups at groqcloud/aistudio/cerebras/console.mistral.ai) — drop them on opsbox before 'pm2 restart si-gateway' to activate each pool | ref: ~/apps/si-gateway/server.mjs
 - 2026-11-01 | Meta devtools MCP configured but unauthenticated | needs: restart session → approve Meta OAuth when devtools connects (https://mcp.facebook.com/devtools) → then create SIP+Favestate apps via devtools_app_create + link portfolios + 'publish' (app mode/review is still dashboard work) | ref: ~/.config/devin/mcp_config.json
+- 2026-11-06 | Awin payout setup incomplete | needs: set up 2FA + bank details in the Awin dashboard (payouts can't run until banking is on file) | ref: Awin invite item above; audit 2026-11-06
