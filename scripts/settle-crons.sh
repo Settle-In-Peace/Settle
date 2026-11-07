@@ -37,11 +37,11 @@ trap 'rm -f "$LOCK"' EXIT
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') [$JOB] $*" >>"$LOG"; }
 
-if [ -f "$ENV" ]; then
+if head -1 "$ENV" >/dev/null 2>&1; then
   set -a && . "$ENV" && set +a
   cp "$ENV" "$ENV_CACHE" 2>/dev/null || true
 elif [ -f "$ENV_CACHE" ]; then
-  log "WARN: $ENV missing — using cached env"
+  log "WARN: $ENV missing/unreadable — using cached env"
   set -a && . "$ENV_CACHE" && set +a
 else
   log "ALERT: env file missing and no cache — creds-dependent steps will fail"
