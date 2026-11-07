@@ -3,6 +3,7 @@
 # Usage: settle-crons.sh <job>
 #
 #   social-daily      daily → cards → poster → commit state
+#   article-nightly   nightly → AI article → commit → cf deploy (feeds feed.xml → social queue)
 #
 # Posting model: X goes through Buffer (BUFFER_* in tools/social/.env);
 # Bluesky/Mastodon/FB/etc post direct when their creds exist. Platforms
@@ -69,6 +70,26 @@ case "$JOB" in
       log "ALERT: social-daily published 0 posts — check creds/queue"
     fi
     commit_state && log "done" || log "commit_state failed"
+    ;;
+  article-nightly)
+    # AI article → commit → deploy. feed.xml picks it up next build; the
+    # social-daily job queues it for Buffer the following morning.
+    OUT="$(node tools/content/generate-article.mjs 2>&1)"; echo "$OUT" >>"$LOG"
+    if echo "$OUT" | grep -q "Appended"; then
+      git config user.name "settle-social-bot"
+      git config user.email "bot@settleinpeace.com"
+      git add settle-web/src/content/articles.ts
+      git commit -qm "content(cron): AI article [skip ci]" && git push -q origin main >>"$LOG" 2>&1
+      if [ -f .env.cloudflare ]; then
+        set -a && . ./.env.cloudflare && set +a
+        (cd settle-web && pnpm cf:build && pnpm cf:deploy) >>"$LOG" 2>&1 \
+          && log "article deployed" || log "ALERT: article generated but deploy failed"
+      else
+        log "ALERT: .env.cloudflare missing — article committed but not deployed"
+      fi
+    else
+      log "no article generated (model down or topics exhausted)"
+    fi
     ;;
   *) echo "unknown job: $JOB" >&2; exit 1 ;;
 esac
