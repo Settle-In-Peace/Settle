@@ -1,5 +1,10 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import ComplianceDisclosure from '../components/ComplianceDisclosure';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default function Home() {
   return (
