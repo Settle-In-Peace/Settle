@@ -516,11 +516,11 @@ export default function AgentDialerPage() {
               {/* Script pane — collection-ai next-action */}
               {selected?.type === 'account' && (
                 <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">AI script assist</p>
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">SI script assist</p>
                   {scriptLoading ? (
                     <p className="text-xs text-zinc-500">Drafting suggestions…</p>
                   ) : script?.degraded ? (
-                    <p className="text-xs text-zinc-500">AI assist unavailable — no model configured.</p>
+                    <p className="text-xs text-zinc-500">SI assist unavailable — no model configured.</p>
                   ) : script ? (
                     <div className="space-y-2">
                       {script.action && (

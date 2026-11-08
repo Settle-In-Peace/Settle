@@ -105,7 +105,7 @@ export default function CollectionAiPanel({ accountId }: { accountId: string }) 
       if (isInsufficientCreditsError(err)) {
         setNeedsCredits(true);
       } else {
-        setError(err?.message || 'AI request failed');
+        setError(err?.message || 'SI request failed');
       }
     } finally {
       setBusy(null);
@@ -122,10 +122,10 @@ export default function CollectionAiPanel({ accountId }: { accountId: string }) 
   return (
     <div className="space-y-4">
       {statusLoading ? (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Checking AI availability…</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Checking SI availability…</p>
       ) : status && !status.configured ? (
         <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-200">
-          <p className="font-medium">AI Assist not configured</p>
+          <p className="font-medium">SI Assist not configured</p>
           <p className="mt-1 text-xs">
             Set <code>AI_API_KEY</code> (or <code>OPENAI_API_KEY</code>) on the API to enable
             propensity scoring, offer drafting, next-best-action, and compliance checks.
@@ -208,7 +208,7 @@ export default function CollectionAiPanel({ accountId }: { accountId: string }) 
           </div>
           {propensity.degraded && (
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-              Heuristic estimate — the AI model was unreachable.
+              Heuristic estimate — the SI model was unreachable.
             </p>
           )}
           <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{propensity.reasoning}</p>

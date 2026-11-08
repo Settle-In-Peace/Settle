@@ -125,6 +125,7 @@ export default function Footer() {
             <Link href="/staff/login" className="hover:text-zinc-400 transition-colors">Staff Login</Link>
           </div>
           <div>© {new Date().getFullYear()} Settle In Peace, Inc. All rights reserved. SettleInPeace.com is a trademark of Settle In Peace, Inc.</div>
+          <div>Powered by SI — Super Intelligence</div>
         </div>
       </div>
     </footer>

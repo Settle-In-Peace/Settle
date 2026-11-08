@@ -427,7 +427,7 @@ export default function CrmPage() {
                       <th className="text-left p-4">Source</th>
                       <th className="text-left p-4">Status</th>
                       <th className="text-right p-4">Score</th>
-                      <th className="text-right p-4">AI Score</th>
+                      <th className="text-right p-4">SI Score</th>
                       <th className="text-right p-4">Date</th>
                       <th className="text-right p-4">Actions</th>
                     </tr>

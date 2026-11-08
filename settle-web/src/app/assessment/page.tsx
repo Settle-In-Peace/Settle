@@ -228,7 +228,7 @@ export default function AssessmentPage() {
             href="/assessment/chat"
             className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
           >
-            Prefer to chat? Talk to our AI Debt Advisor →
+            Prefer to chat? Talk to our SI Debt Advisor →
           </Link>
         </div>
 

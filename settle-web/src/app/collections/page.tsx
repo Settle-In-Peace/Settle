@@ -1216,7 +1216,7 @@ export default function CollectionsDashboardPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${activeTab === tab ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}`}
                 >
-                  {tab === 'paymentPlan' ? 'Payment Plan' : tab === 'outreach' ? 'Outreach' : tab === 'history' ? 'History' : tab === 'payments' ? 'Take Payment' : tab === 'aiAssist' ? 'AI Assist' : tab.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
+                  {tab === 'paymentPlan' ? 'Payment Plan' : tab === 'outreach' ? 'Outreach' : tab === 'history' ? 'History' : tab === 'payments' ? 'Take Payment' : tab === 'aiAssist' ? 'SI Assist' : tab.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
                 </button>
               ))}
             </div>

@@ -231,7 +231,7 @@ export default function ChatAssessmentPage() {
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto max-w-2xl w-full mx-auto px-4 py-6 space-y-4">
         <div className="text-center mb-2">
-          <p className="text-sm text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide mb-1">AI Debt Advisor</p>
+          <p className="text-sm text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide mb-1">SI Debt Advisor</p>
           <h1 className="text-2xl font-bold text-black dark:text-white">Let&apos;s talk about your debt</h1>
         </div>
 

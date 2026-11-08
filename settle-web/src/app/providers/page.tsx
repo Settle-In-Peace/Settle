@@ -22,8 +22,8 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     step: '2',
-    title: 'Takes AI assessment',
-    desc: 'Our AI Debt Advisor collects debt details conversationally',
+    title: 'Takes SI assessment',
+    desc: 'Our SI Debt Advisor collects debt details conversationally',
   },
   {
     step: '3',
