@@ -12,6 +12,7 @@ import { DncEntry } from '../entities/dnc-entry.entity';
 import { ConsentLog } from '../entities/consent-log.entity';
 import { DebtorProfile } from '../entities/debtor-profile.entity';
 import { SkipTraceLookup } from '../entities/skip-trace-lookup.entity';
+import { CrmClient } from '../entities/crm-client.entity';
 import { Org } from '../seats/org.entity';
 import { Seat } from '../seats/seat.entity';
 import { DialerController } from './dialer.controller';
@@ -23,7 +24,7 @@ import { VicidialProvider } from './providers/vicidial.provider';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DialerCall, DncEntry, ConsentLog, DebtorProfile, Seat, Org, SkipTraceLookup]),
+    TypeOrmModule.forFeature([DialerCall, DncEntry, ConsentLog, DebtorProfile, Seat, Org, SkipTraceLookup, CrmClient]),
   ],
   controllers: [DialerController, DialerWebhookController],
   providers: [DialerService, DialerAccessGuard, TelnyxDialerProvider, VicidialProvider],

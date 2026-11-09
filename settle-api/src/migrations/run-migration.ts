@@ -49,6 +49,7 @@ import { CreateWebAuthnTables1700000000046 } from './1700000000046-CreateWebAuth
 import { AddOrgSkiptraceKey1700000000047 } from './1700000000047-AddOrgSkiptraceKey';
 import { ProviderEnrollment1700000000048 } from './1700000000048-ProviderEnrollment';
 import { AddDirectoryFields1700000000049 } from './1700000000049-AddDirectoryFields';
+import { CreateSkipTraceLookups1700000000051 } from './1700000000051-CreateSkipTraceLookups';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -102,6 +103,7 @@ const migrations: MigrationConstructor[] = [
   AddOrgSkiptraceKey1700000000047,
   ProviderEnrollment1700000000048,
   AddDirectoryFields1700000000049,
+  CreateSkipTraceLookups1700000000051,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

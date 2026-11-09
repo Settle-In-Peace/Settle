@@ -21,6 +21,7 @@ import { DncEntry } from '../entities/dnc-entry.entity';
 import { ConsentLog, ConsentType } from '../entities/consent-log.entity';
 import { DebtorProfile } from '../entities/debtor-profile.entity';
 import { SkipTraceLookup } from '../entities/skip-trace-lookup.entity';
+import { CrmClient } from '../entities/crm-client.entity';
 import { Org } from '../seats/org.entity';
 import { Seat, SeatStatus } from '../seats/seat.entity';
 import {
@@ -36,6 +37,24 @@ import {
 import { PlaceCallDto } from './dto/place-call.dto';
 
 const E164_RE = /^\+[1-9]\d{6,14}$/;
+
+/**
+ * Cheap routability screen — catches obviously-fake numbers that E.164
+ * shape alone can't (the 555-01XX fictional-reserved block, unassigned
+ * NANP ranges). Providers reject these anyway; failing here surfaces a
+ * clear reason instead of a doomed upstream call attempt.
+ */
+export function isRoutableNumber(e164: string): boolean {
+  if (e164.startsWith('+1')) {
+    // NANP area code (NPA) and exchange (NXX) must each start 2–9.
+    if (!/^\+1[2-9]\d{2}[2-9]\d{6}$/.test(e164)) return false;
+    // +1-555-NXX-XXXX — 555 is not an assigned area code.
+    if (/^\+1555\d{7}$/.test(e164)) return false;
+    // +1-NPA-555-01XX — the 555-0100–0199 block is reserved for fiction.
+    if (/^\+1\d{3}55501\d{2}$/.test(e164)) return false;
+  }
+  return true;
+}
 
 @Injectable()
 export class DialerService {
@@ -60,6 +79,8 @@ export class DialerService {
     private readonly orgsRepository: Repository<Org>,
     @InjectRepository(SkipTraceLookup)
     private readonly skipTraceLookupsRepository: Repository<SkipTraceLookup>,
+    @InjectRepository(CrmClient)
+    private readonly crmClientsRepository: Repository<CrmClient>,
   ) {
     this.providers = new Map<string, DialerProvider>([
       ['telnyx', telnyxProvider],
@@ -105,6 +126,17 @@ export class DialerService {
     if (!E164_RE.test(normalizedPhone)) {
       throw new BadRequestException(
         `Invalid destination number "${dto.to}" — must normalize to E.164.`,
+      );
+    }
+
+    // 1.5 Routability — well-formed but uncallable (fictional/reserved
+    //     ranges). Tag the linked lead so it stops cycling through queues.
+    if (!isRoutableNumber(normalizedPhone)) {
+      if (dto.contactId) {
+        void this.flagInvalidLeadNumber(dto.contactId, normalizedPhone);
+      }
+      throw new BadRequestException(
+        `Destination ${normalizedPhone} is not routable (fictional/reserved or invalid NANP range). Call blocked.`,
       );
     }
 
@@ -157,6 +189,32 @@ export class DialerService {
     }
 
     return { consentOnFile };
+  }
+
+  /**
+   * Tag a lead/contact whose number proved unroutable — best-effort so a
+   * tagging failure never blocks or changes the call decision.
+   */
+  private async flagInvalidLeadNumber(
+    contactId: string,
+    phone: string,
+  ): Promise<void> {
+    try {
+      const client = await this.crmClientsRepository.findOne({
+        where: { id: contactId },
+      });
+      if (!client) return;
+      const tag = 'invalid-number';
+      if (!client.tags?.includes(tag)) {
+        client.tags = [...(client.tags ?? []), tag];
+        await this.crmClientsRepository.save(client);
+      }
+      this.logger.log(`flagged lead ${contactId} as ${tag} (${phone})`);
+    } catch (err) {
+      this.logger.warn(
+        `flagInvalidLeadNumber(${contactId}) failed: ${(err as Error).message}`,
+      );
+    }
   }
 
   /** Look up the most recent granted TCPA consent for this phone/contact. */
