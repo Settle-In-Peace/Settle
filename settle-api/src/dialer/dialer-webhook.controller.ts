@@ -10,6 +10,7 @@ import {
 import { Request } from 'express';
 import { DialerService } from './dialer.service';
 import { TelnyxDialerProvider } from './providers/telnyx-dialer.provider';
+import { VoiceClientService } from './voice-client.service';
 
 interface TelnyxWebhookEvent {
   data: {
@@ -41,6 +42,7 @@ export class DialerWebhookController {
   constructor(
     private readonly dialerService: DialerService,
     private readonly telnyxProvider: TelnyxDialerProvider,
+    private readonly voiceClient: VoiceClientService,
   ) {}
 
   @Post('telnyx')
@@ -81,6 +83,53 @@ export class DialerWebhookController {
         `Error handling dialer webhook "${eventType}": ${message}`,
         stack,
       );
+    }
+
+    return { received: true };
+  }
+
+  /**
+   * Voice-call webhook — the per-call webhook_url settle-voice sets when it
+   * originates an AI call is `…/dialer/webhooks/voice-telnyx` (this route
+   * inherits the raw-body parser + Ed25519 verification already used by the
+   * dialer). The verified event is forwarded to the internal settle-voice
+   * service which owns the conversation loop.
+   */
+  @Post('voice-telnyx')
+  @HttpCode(200)
+  async handleVoiceTelnyxWebhook(
+    @Req() req: Request & { rawBody?: Buffer },
+    @Body() body: TelnyxWebhookEvent,
+  ): Promise<{ received: true }> {
+    const rawBody = req.rawBody
+      ? req.rawBody.toString('utf8')
+      : JSON.stringify(body ?? {});
+
+    if (
+      !this.telnyxProvider.verifyWebhookSignature?.(rawBody, req.headers)
+    ) {
+      throw new UnauthorizedException('Invalid Telnyx webhook signature');
+    }
+
+    let parsed: TelnyxWebhookEvent | undefined;
+    try {
+      parsed = Buffer.isBuffer(body) ? JSON.parse(body.toString('utf8')) : body;
+    } catch {
+      parsed = undefined;
+    }
+    const eventType = parsed?.data?.event_type ?? 'unknown';
+    this.logger.log(`Received voice Telnyx webhook: ${eventType}`);
+
+    if (parsed) {
+      try {
+        await this.voiceClient.forwardTelnyxEvent(parsed);
+      } catch (err) {
+        // settle-voice down — log and still 200 so Telnyx doesn't storm
+        // retries; the service reconciles on its own schedule.
+        this.logger.error(
+          `Voice webhook forward failed (${eventType}): ${(err as Error).message}`,
+        );
+      }
     }
 
     return { received: true };

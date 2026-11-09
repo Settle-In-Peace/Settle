@@ -35,6 +35,8 @@ import {
   VicidialUpstreamError,
 } from './providers/vicidial.provider';
 import { PlaceCallDto } from './dto/place-call.dto';
+import { PlaceVoiceCallDto } from './dto/place-voice-call.dto';
+import { VoiceClientService, VoiceServiceError } from './voice-client.service';
 
 const E164_RE = /^\+[1-9]\d{6,14}$/;
 
@@ -81,6 +83,7 @@ export class DialerService {
     private readonly skipTraceLookupsRepository: Repository<SkipTraceLookup>,
     @InjectRepository(CrmClient)
     private readonly crmClientsRepository: Repository<CrmClient>,
+    private readonly voiceClient: VoiceClientService,
   ) {
     this.providers = new Map<string, DialerProvider>([
       ['telnyx', telnyxProvider],
@@ -356,6 +359,86 @@ export class DialerService {
         `(manualDial=${manualDial}, consentConfirmed=${persisted.consentConfirmed})`,
     );
     return persisted;
+  }
+
+  /**
+   * SI voice call — outbound AI lead caller (settle-voice service).
+   *
+   * Same guardrails as autodial: manualDial is forced false so either a
+   * stored TCPA consent record or an explicit agent attestation is
+   * required. settle-voice then re-runs DNC / do-not-call / litigator /
+   * consent checks against the DB before it ever touches Telnyx, plays the
+   * AI-disclosure opener, and honors human-handoff + opt-out keywords.
+   * Call-log rows land in `voice_calls` (owned by settle-voice).
+   */
+  async placeVoiceCall(dto: PlaceVoiceCallDto, agentId: string): Promise<any> {
+    const normalizedTo = this.normalizeE164(dto.to);
+    const consentConfirmed = dto.consentConfirmed ?? false;
+
+    const { consentOnFile } = await this.assertDialable(normalizedTo, {
+      ...dto,
+      manualDial: false, // AI calls are automated — autodial consent rules
+      consentConfirmed,
+    });
+
+    if (!this.voiceClient.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'settle-voice is not configured (SETTLE_VOICE_KEY missing).',
+      );
+    }
+
+    const seat = await this.seatsRepository.findOne({
+      where: { userId: agentId, status: SeatStatus.ACTIVE },
+    });
+
+    try {
+      return await this.voiceClient.placeVoiceCall({
+        to: normalizedTo,
+        leadId: dto.leadId,
+        contactId: dto.contactId,
+        collectionAccountId: dto.collectionAccountId,
+        agentId,
+        orgId: seat?.orgId,
+        consentConfirmed: consentConfirmed || consentOnFile,
+        leadName: dto.leadName,
+      });
+    } catch (err) {
+      if (err instanceof VoiceServiceError) {
+        // Pass through real upstream blocks (403 no_consent/dnc/litigator).
+        if (err.status === 403) throw new ForbiddenException(err.message);
+        if (err.status === 400) throw new BadRequestException(err.message);
+        throw new ServiceUnavailableException(err.message);
+      }
+      throw err;
+    }
+  }
+
+  /** Recent SI voice calls (proxied from settle-voice). */
+  async listVoiceCalls(): Promise<{ calls: any[] }> {
+    if (!this.voiceClient.isConfigured()) return { calls: [] };
+    try {
+      return await this.voiceClient.listVoiceCalls();
+    } catch (err) {
+      throw new ServiceUnavailableException(
+        err instanceof Error ? err.message : 'settle-voice unreachable',
+      );
+    }
+  }
+
+  async getVoiceCall(id: string): Promise<any> {
+    if (!this.voiceClient.isConfigured()) {
+      throw new ServiceUnavailableException('settle-voice is not configured.');
+    }
+    try {
+      return await this.voiceClient.getVoiceCall(id);
+    } catch (err) {
+      if (err instanceof VoiceServiceError && err.status === 404) {
+        throw new NotFoundException(`Voice call ${id} not found`);
+      }
+      throw new ServiceUnavailableException(
+        err instanceof Error ? err.message : 'settle-voice unreachable',
+      );
+    }
   }
 
   async hangup(callId: string): Promise<DialerCall> {

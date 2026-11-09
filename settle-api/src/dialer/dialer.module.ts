@@ -21,13 +21,14 @@ import { DialerService } from './dialer.service';
 import { DialerAccessGuard } from './dialer-access.guard';
 import { TelnyxDialerProvider } from './providers/telnyx-dialer.provider';
 import { VicidialProvider } from './providers/vicidial.provider';
+import { VoiceClientService } from './voice-client.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DialerCall, DncEntry, ConsentLog, DebtorProfile, Seat, Org, SkipTraceLookup, CrmClient]),
   ],
   controllers: [DialerController, DialerWebhookController],
-  providers: [DialerService, DialerAccessGuard, TelnyxDialerProvider, VicidialProvider],
+  providers: [DialerService, DialerAccessGuard, TelnyxDialerProvider, VicidialProvider, VoiceClientService],
   exports: [DialerService],
 })
 export class DialerModule {}

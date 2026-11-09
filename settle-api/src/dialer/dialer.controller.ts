@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DialerAccessGuard } from './dialer-access.guard';
 import { DialerService } from './dialer.service';
 import { PlaceCallDto } from './dto/place-call.dto';
+import { PlaceVoiceCallDto } from './dto/place-voice-call.dto';
 
 interface AuthenticatedRequest extends Request {
   user: { sub: string; id: string; role: string; email: string };
@@ -67,6 +68,30 @@ export class DialerController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   hangup(@Param('id') id: string) {
     return this.dialerService.hangup(id);
+  }
+
+  /**
+   * POST /dialer/voice-call — originate an SI-powered AI call via
+   * settle-voice. Always autodial semantics: stored consent or agent
+   * attestation required; the callee hears an AI-disclosure opener, and
+   * "agent"/"stop calling" keywords end the AI turn.
+   */
+  @Post('voice-call')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  placeVoiceCall(@Body() dto: PlaceVoiceCallDto, @Req() req: AuthenticatedRequest) {
+    return this.dialerService.placeVoiceCall(dto, req.user.sub);
+  }
+
+  /** GET /dialer/voice-calls — recent SI voice-call rows (outcomes log). */
+  @Get('voice-calls')
+  listVoiceCalls() {
+    return this.dialerService.listVoiceCalls();
+  }
+
+  /** GET /dialer/voice-calls/:id */
+  @Get('voice-calls/:id')
+  getVoiceCall(@Param('id') id: string) {
+    return this.dialerService.getVoiceCall(id);
   }
 
   /** GET /dialer/status — which provider is active/configured (no upstream call). */

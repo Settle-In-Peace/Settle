@@ -1,0 +1,16 @@
+{
+  "name": "settle-voice",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Settle In Peace — SI-powered outbound AI lead caller (Telnyx Call Control + si-gateway)",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "postgres": "^3.4.5"
+  }
+}

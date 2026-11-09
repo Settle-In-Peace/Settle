@@ -2,4 +2,5 @@ packages:
   - 'settle-web'
   - 'settle-api'
   - 'settle-mobile'
+  - 'settle-voice'
   - 'packages/*'
