@@ -25,6 +25,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| devin-secret-remediate | 2026-11-09 — SenturyX repo-secret triage: kill `sk_test_placeholder` literal fallbacks in settle-api Stripe init (3 open findings) → env-only lazy client, fail closed when `STRIPE_SECRET_KEY` unset. | `settle-api/src/{stripe/stripe.service.ts,payment-portal/payment-portal.service.ts,close-flow/close-flow.controller.ts}`, `.devin/AGENT_STATE.md` |
+
 | devin-theme-toggle | 2026-11-08 — **VERIFIED, NO WORK (already had it).** Portfolio theme-toggle audit: settle-web already ships the pattern via next-themes — `ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem` in `src/app/providers.tsx` (localStorage + classList-attr + no-flash init baked in), `@custom-variant dark` on `[data-theme="dark"]` in globals.css, toggle in `src/components/Navigation.tsx` via `resolvedTheme`/`setTheme`. Working system — untouched. | audit only — no files touched |
 
 | devin-header-hardening | 2026-11-08 — **VERIFIED, NO WORK.** SenturyX rescan-prep: Settle web already serves full header set (CSP, HSTS, XFO, nosniff, Referrer-Policy, Permissions-Policy) — only residual LOW = script-src `unsafe-eval`, kept per portfolio baseline (Next/third-party script compat). No changes. | `.devin/AGENT_STATE.md` |

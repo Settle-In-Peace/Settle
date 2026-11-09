@@ -77,7 +77,9 @@ export class CloseFlowController {
     if (!signature || !req.rawBody) throw new BadRequestException('Missing signature/raw body');
     const secret =
       process.env.STRIPE_CLOSE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET || '';
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
+    const apiKey = process.env.STRIPE_SECRET_KEY;
+    if (!apiKey) throw new BadRequestException('STRIPE_SECRET_KEY is not configured');
+    const stripe = new Stripe(apiKey);
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(req.rawBody, signature, secret);

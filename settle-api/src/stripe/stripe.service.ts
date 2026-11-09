@@ -55,7 +55,22 @@ const DIRECTORY_TIERS = [
 @Injectable()
 export class StripeService {
   private readonly logger = new Logger(StripeService.name);
-  private stripe: Stripe;
+  private stripeClient?: Stripe;
+
+  /**
+   * Lazily built Stripe client — env-only (no literal fallback).
+   * Fails closed with a clear error when STRIPE_SECRET_KEY is unset.
+   */
+  private get stripe(): Stripe {
+    const key = this.configService.get<string>('STRIPE_SECRET_KEY');
+    if (!key) {
+      throw new BadRequestException('STRIPE_SECRET_KEY is not configured');
+    }
+    if (!this.stripeClient) {
+      this.stripeClient = new Stripe(key, { apiVersion: '2026-06-24.dahlia' });
+    }
+    return this.stripeClient;
+  }
 
   constructor(
     private configService: ConfigService,
@@ -74,13 +89,9 @@ export class StripeService {
     private closeFlow: CloseFlowService,
     private siCredits: SiCreditsService,
   ) {
-    const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!secretKey) {
+    if (!this.configService.get<string>('STRIPE_SECRET_KEY')) {
       this.logger.error('STRIPE_SECRET_KEY is not set — Stripe calls will fail until it is configured in environment variables.');
     }
-    this.stripe = new Stripe(secretKey || 'sk_test_placeholder', {
-      apiVersion: '2026-06-24.dahlia',
-    });
   }
 
   // ---------------------------------------------------------------------------
