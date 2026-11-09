@@ -1,0 +1,43 @@
+Hello App Review team,
+
+Thank you for the detailed questions on the 4.3 / 4.2.6 rejection of Settle In Peace.
+
+1. WHAT THE APP DOES
+
+Settle In Peace is the mobile client of settleinpeace.com — a debt-relief platform for US consumers, running on our own backend (api.settleinpeace.com). The app is account-based; the demo account in App Review Information opens the full product: a guided debt self-assessment capturing unsecured debts (balances, creditors, rates, hardship); a dashboard of all logged debts; settlement program tracking ("My Program" — enrollment, trust-account progress, milestones); creditor letters and documents; a Learn library on debt relief and collections rights; payoff calculators; guided coaching; a directory of licensed providers (referrals only with explicit consent); and Profile with in-app account deletion backed by a live endpoint.
+
+2. TARGET AUDIENCE
+
+US adults carrying unsecured debt (credit cards, personal loans, medical bills) who are evaluating or participating in debt settlement — both prospective enrollees educating themselves and existing customers tracking an active program.
+
+3. MARKET GAP
+
+Debt settlement is historically run by call centers — consumers get sold a program by phone and then wait for status calls. Mainstream budgeting apps do not track settlement enrollment at all. Settle In Peace is built for that moment: self-assess, learn what settlement involves, and once enrolled see trust-account progress and documents from a phone instead of calling an agent.
+
+4. BETA TESTING
+
+Internal testing only — no external beta cohort; we want to be precise. We iterated through builds 6-10 on physical devices. Applied findings: account deletion was added in-app (Profile, Delete Account — live DELETE endpoint, Guideline 5.1.1); the assessment flow was hardened so a partially completed questionnaire restores on relaunch; auth edge cases (expired token, offline start) now degrade to the login screen instead of a spinner. Reviewer path: the demo account in App Review Information lands on a populated dashboard with a completed assessment.
+
+5. SUITE OF RELATED APPS
+
+No — Settle In Peace is a standalone product. Our developer account (Reid Technology) hosts several independent products in unrelated industries; none share a product surface with it.
+
+6. COULD THIS BE A FEATURE OF ANOTHER APP ON THE ACCOUNT
+
+No. The account's other apps are independent businesses (crypto trading, fleet management, farm community). A debt-settlement tracker cannot be a feature of any of them — different backend, data model, audience, and a regulated subject area that must stay isolated and clearly scoped.
+
+7. SHARED CODE ON THE ACCOUNT
+
+None beyond open-source frameworks. Within its own monorepo, the mobile app uses our first-party typed SDK (@settle/shared-sdk — the same API client the settleinpeace.com web app uses). It is private to the Settle repository and shared with no other product on the account.
+
+8. THIRD-PARTY SHARED CODE
+
+No. Beyond standard open-source libraries — Expo SDK / React Native, React Navigation, AsyncStorage / expo-secure-store, and a passkey library — the codebase is first-party, owned by Reid Technology. No commercialized template, white-label framework, or app-generation service was used.
+
+9. CLIENT-PROVIDED APP OR CONTENT
+
+No. Settle In Peace is a first-party product; Reid Technology owns the product, brand, codebase, and platform (settleinpeace.com / api.settleinpeace.com). No client provided the app or its content; it is not a reskin.
+
+We believe the flag may reflect that several independent Reid Technology products were reviewed near-simultaneously — separate businesses and codebases, not copies of one app. Happy to provide further detail or a live walkthrough.
+
+— Reid Technology
