@@ -67,23 +67,46 @@ export async function originateCall({ to, clientState, webhookUrl }) {
   return data?.data?.call_control_id || null;
 }
 
-const VOICE = process.env.TELNYX_SPEAK_VOICE || 'female';
+// TTS voice — default is AWS Polly's neural Joanna (en-US, conversational).
+// Any Telnyx premium voice works: 'Polly.<Name>-Neural', 'Telnyx.Ultra.*'.
+// 'female'/'male' are the legacy basic voices.
+const VOICE = process.env.TELNYX_SPEAK_VOICE || 'Polly.Joanna-Neural';
 const LANGUAGE = process.env.TELNYX_SPEAK_LANGUAGE || 'en-US';
+const SPEAK_LEVEL = process.env.TELNYX_SPEAK_LEVEL || 'premium';
 
 // NOTE: call_control_id is used verbatim in the path (contains 'v3:…').
 // Do NOT encodeURIComponent it — Telnyx resolves the raw form (matches
 // settle-api's TelnyxDialerProvider).
 
-/** Speak a line into the call (openers, replies, closings). */
-export async function speak(callControlId, text) {
+/**
+ * Speak a line into the call (openers, replies, closings).
+ * opts.payloadType: 'text' | 'ssml' (SSML needs premium service_level)
+ * opts.serviceLevel: 'premium' (default) | 'basic'
+ * opts.voice / opts.language: override the env defaults.
+ */
+export async function speak(callControlId, text, opts = {}) {
+  const body = {
+    payload: text,
+    payload_type: opts.payloadType || 'text',
+    voice: opts.voice || VOICE,
+    language: opts.language || LANGUAGE,
+    service_level: opts.serviceLevel || SPEAK_LEVEL,
+  };
   return request(`/calls/${callControlId}/actions/speak`, {
     method: 'POST',
-    body: JSON.stringify({
-      payload: text,
-      payload_type: 'text',
-      voice: VOICE,
-      language: LANGUAGE,
-    }),
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Play a pre-rendered audio file into the call — Telnyx fetches the URL
+ * itself (no media fork needed). WAV and MP3 are supported. Events arrive
+ * as call.playback.started / call.playback.ended.
+ */
+export async function playbackStart(callControlId, audioUrl) {
+  return request(`/calls/${callControlId}/actions/playback_start`, {
+    method: 'POST',
+    body: JSON.stringify({ audio_url: audioUrl }),
   });
 }
 

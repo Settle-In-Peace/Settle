@@ -58,3 +58,6 @@ next-env.d.ts
 .devin/attachments/
 .devin/OWNER_FLAGS.md
 .devin/OWNER_TASKS.md
+
+# settle-voice rendered TTS files (runtime-generated)
+settle-voice/audio/

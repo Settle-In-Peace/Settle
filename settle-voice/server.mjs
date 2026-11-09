@@ -36,9 +36,10 @@ import {
   createCall, getCall, getCallByProviderId, updateCall, appendTranscript, listCalls,
 } from './db.mjs';
 import {
-  telnyxConfigured, originateCall, speak, transcriptionStart, hangup,
+  telnyxConfigured, originateCall, transcriptionStart, hangup,
   verifyWebhookSignature,
 } from './telnyx.mjs';
+import { say, prewarm, serveAudioFile, sweepTmp, ttsConfigured } from './tts.mjs';
 import { siConfigured, chat } from './si.mjs';
 import {
   OPENING_SCRIPT, HANDOFF_LINE, OPTOUT_LINE, CLOSING_LINE, DEGRADED_LINE,
@@ -153,8 +154,9 @@ async function endCall(call, s, ccid, line, outcome) {
   };
   if (line) {
     try {
-      await speak(ccid, line);
-      // Fallback if call.speak.ended never arrives (~16 chars/sec TTS + pad).
+      await say(ccid, line, { cacheable: true });
+      // Fallback if call.speak.ended/call.playback.ended never arrives
+      // (~16 chars/sec TTS + pad).
       const ms = Math.min(12_000, Math.max(3000, Math.round((line.length / 16) * 1000) + 1500));
       s.closingTimer = setTimeout(() => { s.closingTimer = null; void finish(); }, ms);
       s.closingFinish = finish;
@@ -168,13 +170,18 @@ async function endCall(call, s, ccid, line, outcome) {
   await updateCall(call.id, { outcome, status: 'completed', ended_at: new Date().toISOString() });
 }
 
-async function onAnswered(call, s, ccid) {
+/** The opener is identical across calls — static + Kokoro-cacheable. */
+function openerFor(call) {
   const nameQ = call.lead_id || call.contact_id ? 'Am I speaking with the person who requested the call?' : 'Is this a good time?';
-  const opener = `${OPENING_SCRIPT} I'm following up on the debt-relief request that came in through our website. ${nameQ}`;
+  return `${OPENING_SCRIPT} I'm following up on the debt-relief request that came in through our website. ${nameQ}`;
+}
+
+async function onAnswered(call, s, ccid) {
+  const opener = openerFor(call);
   s.messages = [{ role: 'system', content: buildSystemPrompt({ leadName: null }) }, { role: 'assistant', content: opener }];
   s.started = true;
   try {
-    await speak(ccid, opener);
+    await say(ccid, opener, { cacheable: true });
   } catch (e) {
     warn('opening speak failed', e.message);
     await endCall(call, s, ccid, null, 'degraded');
@@ -241,7 +248,7 @@ async function onCallerSpeech(call, s, ccid, speechText) {
       await appendTranscript(call.id, { role: 'agent', text: spoken, at: new Date().toISOString() });
       await updateCall(call.id, { si_provider: reply.provider });
       try {
-        await speak(ccid, spoken);
+        await say(ccid, spoken);
       } catch (e) {
         warn('reply speak failed', e.message);
         await endCall(call, s, ccid, null, 'degraded');
@@ -310,8 +317,10 @@ async function handleEvent(body) {
         }
         break;
       }
-      case 'call.speak.ended': {
-        // A closing line finished playing → now hang up.
+      case 'call.speak.ended':
+      case 'call.playback.ended': {
+        // A closing line finished playing → now hang up. (playback.ended
+        // covers the Kokoro-file path; speak.ended covers speak.)
         if (s.closing && s.closingFinish) {
           if (s.closingTimer) { clearTimeout(s.closingTimer); s.closingTimer = null; }
           const f = s.closingFinish;
@@ -360,10 +369,21 @@ const server = createServer(async (req, res) => {
       si: siConfigured ? 'configured' : 'missing_env',
       db: dbConfigured ? 'configured' : 'missing_env',
       stt: `telnyx-transcription_start(${process.env.VOICE_STT_ENGINE || 'Telnyx'})`,
-      tts: 'telnyx-speak',
+      tts: `mode=${process.env.VOICE_TTS_MODE || 'hybrid'} ` +
+        `voice=${process.env.TELNYX_SPEAK_VOICE || 'Polly.Joanna-Neural'} ` +
+        `kokoro=${process.env.PRIME_VOICE_URL ? 'on' : 'off'} ` +
+        `audio_base=${process.env.VOICE_AUDIO_PUBLIC_BASE ? 'set' : 'UNSET'}`,
       webhook: WEBHOOK_URL || 'unset',
       port: PORT,
     });
+  }
+
+  // ── rendered audio files — localhost only; settle-api proxies this at
+  //    /dialer/voice-audio/<name> so Telnyx playback_start can fetch. ──
+  const audioMatch = path.match(/^\/audio\/(.+)$/);
+  if (audioMatch && req.method === 'GET') {
+    if (serveAudioFile(decodeURIComponent(audioMatch[1]), res)) return;
+    return json(res, 404, { error: 'not_found' });
   }
 
   // ── internal API (x-voice-key) ──
@@ -424,9 +444,21 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', async () => {
   log(`listening on 127.0.0.1:${PORT}`);
-  log(`telnyx=${telnyxConfigured ? 'on' : 'OFF'} si=${siConfigured ? 'on' : 'OFF'} db=${dbConfigured ? 'on' : 'OFF'} voice_key=${VOICE_KEY ? 'set' : 'UNSET'}`);
+  log(`telnyx=${telnyxConfigured ? 'on' : 'OFF'} si=${siConfigured ? 'on' : 'OFF'} db=${dbConfigured ? 'on' : 'OFF'} voice_key=${VOICE_KEY ? 'set' : 'UNSET'} tts_mode=${process.env.VOICE_TTS_MODE || 'hybrid'}`);
   if (dbConfigured) {
     try { await ensureSchema(); log('voice_calls schema ok'); }
     catch (e) { warn('schema bootstrap failed:', e.message); }
   }
+  // Background-render the fixed lines so Kokoro files are ready before the
+  // first call (hybrid/kokoro modes; no-op in neural/basic).
+  if (ttsConfigured && (process.env.VOICE_TTS_MODE || 'hybrid') !== 'neural' &&
+      (process.env.VOICE_TTS_MODE || 'hybrid') !== 'basic') {
+    prewarm([
+      openerFor({ lead_id: 'x', contact_id: 'x' }),
+      openerFor({}),
+      HANDOFF_LINE, OPTOUT_LINE, CLOSING_LINE, DEGRADED_LINE,
+    ]);
+  }
+  // Periodic cleanup of one-shot render files.
+  setInterval(sweepTmp, 10 * 60e3).unref();
 });

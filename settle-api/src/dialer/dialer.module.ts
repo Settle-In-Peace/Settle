@@ -17,6 +17,7 @@ import { Org } from '../seats/org.entity';
 import { Seat } from '../seats/seat.entity';
 import { DialerController } from './dialer.controller';
 import { DialerWebhookController } from './dialer-webhook.controller';
+import { VoiceAudioController } from './voice-audio.controller';
 import { DialerService } from './dialer.service';
 import { DialerAccessGuard } from './dialer-access.guard';
 import { TelnyxDialerProvider } from './providers/telnyx-dialer.provider';
@@ -27,7 +28,7 @@ import { VoiceClientService } from './voice-client.service';
   imports: [
     TypeOrmModule.forFeature([DialerCall, DncEntry, ConsentLog, DebtorProfile, Seat, Org, SkipTraceLookup, CrmClient]),
   ],
-  controllers: [DialerController, DialerWebhookController],
+  controllers: [DialerController, DialerWebhookController, VoiceAudioController],
   providers: [DialerService, DialerAccessGuard, TelnyxDialerProvider, VicidialProvider, VoiceClientService],
   exports: [DialerService],
 })

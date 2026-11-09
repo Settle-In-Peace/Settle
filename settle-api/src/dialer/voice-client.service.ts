@@ -122,4 +122,21 @@ export class VoiceClientService {
       body: JSON.stringify(event),
     });
   }
+
+  /**
+   * Fetch a rendered audio file from settle-voice (GET /audio/<name>) as a
+   * raw upstream Response — the public /dialer/voice-audio route pipes it
+   * through so Telnyx playback_start can fetch over HTTPS. NOT JSON.
+   */
+  async fetchVoiceAudio(file: string): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await fetch(`${this.baseUrl}/audio/${encodeURIComponent(file)}`, {
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }

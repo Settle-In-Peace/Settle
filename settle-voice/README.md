@@ -24,8 +24,21 @@ admin dialer UI → POST /dialer/voice-call (JWT, DialerAccessGuard)
 ```
 
 STT uses Telnyx `transcription_start` (built-in `Telnyx` engine on the call
-leg, inbound track only) and TTS uses `speak` — no Deepgram key or media
-fork required. Set `VOICE_STT_ENGINE=Google` to switch engines.
+leg, inbound track only). Set `VOICE_STT_ENGINE=Google` to switch engines.
+
+### TTS — `VOICE_TTS_MODE` (default `hybrid`)
+
+| Mode | How it sounds |
+|---|---|
+| `neural` | Telnyx premium `speak` — AWS Polly `*-Neural` voice + SSML pacing. Instant, carrier-rendered. |
+| `kokoro` | Every line rendered by prime-voice (Kokoro ONNX) → file → `playback_start`. Best quality, needs local CPU headroom. |
+| `hybrid` | Kokoro file for already-cached static lines (disclosure/closers pre-rendered at boot), neural speak for dynamic replies. **Default.** |
+| `basic` | Legacy free `speak` voice `female` — debugging only. |
+
+Every mode falls back down the chain on failure — never dead air.
+Rendered files live in `settle-voice/audio/{cache,tmp}/` (gitignored); tmp
+files are swept after 30 min. settle-api exposes them to Telnyx at
+`GET /dialer/voice-audio/<name>` (unguessable names, strict regex).
 
 ## Compliance (debt relief is regulated)
 
@@ -51,7 +64,14 @@ fork required. Set `VOICE_STT_ENGINE=Google` to switch engines.
 | `VOICE_WEBHOOK_URL` | `https://api.settleinpeace.com/dialer/webhooks/voice-telnyx` |
 | `SETTLE_VOICE_KEY` | shared with settle-api (`x-voice-key`) |
 | `AI_BASE_URL` / `AI_API_KEY` / `AI_MODEL` | si-gateway (`http://localhost:4030/v1`, `si`) |
-| `TELNYX_SPEAK_VOICE` | optional, default `female` |
+| `TELNYX_SPEAK_VOICE` | optional, default `Polly.Joanna-Neural` (premium neural) |
+| `TELNYX_SPEAK_LEVEL` | optional, default `premium` |
+| `VOICE_TTS_MODE` | optional, default `hybrid` (`neural`/`kokoro`/`basic`) |
+| `PRIME_VOICE_URL` | optional, default `http://127.0.0.1:4020` (Kokoro engine) |
+| `PRIME_VOICE_ENGINE_KEY` | X-Engine-Key for prime-voice |
+| `KOKORO_VOICE` | optional, default `af_heart` |
+| `VOICE_TTS_TIMEOUT_MS` | optional Kokoro render budget, default `25000` |
+| `VOICE_AUDIO_PUBLIC_BASE` | `https://api.settleinpeace.com/dialer/voice-audio` |
 | `VOICE_STT_ENGINE` | optional, default `Telnyx` (`Google` fallback) |
 | `VOICE_MAX_TURNS` | optional, default `6` |
 | `VOICE_AMD` | optional, default `detect` |
