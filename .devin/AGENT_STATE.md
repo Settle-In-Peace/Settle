@@ -25,6 +25,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| devin-review-pass | 2026-11-09 — **DONE — 2026-11-09 baseline: ~10 commits reviewed (si-credits 6ed29d7, secret remediation — clean). Shares F2 (metadata-flag dedup is check-then-set; safe only if gateway dedupes p_ref). Report: SenturyX .devin/reviews/2026-11-09.md.** | .devin/AGENT_STATE.md |
+
 | devin-secret-remediate | 2026-11-09 — **DONE — landed `2fdd37c`, pushed.** Killed `sk_test_placeholder` literal fallbacks in 3 Stripe init sites: `stripe.service.ts` + `payment-portal.service.ts` now use lazy `get stripe()` accessor (env-only, fails closed BadRequest when `STRIPE_SECRET_KEY` unset); `close-flow.controller.ts` webhook checks env explicitly, throws BadRequest if missing. Boot log preserved in StripeService. tsc clean on touched files (pre-existing spec errors unrelated). | `settle-api/src/{stripe/stripe.service.ts,payment-portal/payment-portal.service.ts,close-flow/close-flow.controller.ts}` |
 
 | devin-theme-toggle | 2026-11-08 — **VERIFIED, NO WORK (already had it).** Portfolio theme-toggle audit: settle-web already ships the pattern via next-themes — `ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem` in `src/app/providers.tsx` (localStorage + classList-attr + no-flash init baked in), `@custom-variant dark` on `[data-theme="dark"]` in globals.css, toggle in `src/components/Navigation.tsx` via `resolvedTheme`/`setTheme`. Working system — untouched. | audit only — no files touched |
