@@ -119,7 +119,7 @@ export async function isLitigator(phone) {
 export async function hasRecordedConsent(phone, contactId) {
   const consentRows = await db()`SELECT consent_timestamp, expires_at FROM crm_consent_logs
     WHERE consent_type = 'tcpa' AND granted = true
-      AND (phone_number = ${phone} ${contactId ? db`OR client_id = ${contactId}` : db``})
+      AND (phone_number = ${phone} OR client_id = ${contactId || null})
     ORDER BY consent_timestamp DESC NULLS LAST LIMIT 1`;
   const c = consentRows[0];
   if (c) {
@@ -179,8 +179,10 @@ export async function updateCall(id, patch) {
 }
 
 export async function appendTranscript(id, entry) {
+  // sql.json() binds a real jsonb param — passing a raw string + ::jsonb
+  // cast double-encodes it into a JSON string element.
   await db()`UPDATE voice_calls
-    SET transcript = transcript || ${JSON.stringify([entry])}::jsonb,
+    SET transcript = transcript || ${db().json([entry])},
         updated_at = now()
     WHERE id = ${id}`;
 }

@@ -39,10 +39,6 @@ export const DEGRADED_LINE =
   'Thanks for your time — a Settle In Peace specialist will call you back ' +
   'soon. Goodbye.';
 
-/** Reprompt when the gather comes back with no usable speech. */
-export const REPROMPT_LINE =
-  'Sorry, I did not catch that. Are you still interested in help with your debt?';
-
 /**
  * Words that mean "get me a person". Matched against the caller transcript —
  * any hit ends the AI portion of the call (the caller still gets a polite

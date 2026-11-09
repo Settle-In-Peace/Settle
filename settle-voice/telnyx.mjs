@@ -1,11 +1,12 @@
 // telnyx.mjs — Telnyx Call Control client (fetch-based, no SDK dep).
 //
 // Flow used by settle-voice:
-//   POST /calls                     — originate (webhook_url per call)
-//   POST /calls/{id}/actions/gather_using_speech
-//                                   — speaks a prompt then listens; result
-//                                     arrives on the call.gather.ended webhook
-//   POST /calls/{id}/actions/speak  — TTS a line (closing/handoff/degraded)
+//   POST /calls                        — originate (webhook_url per call)
+//   POST /calls/{id}/actions/speak     — TTS a line into the call
+//   POST /calls/{id}/actions/transcription_start
+//                                      — real-time STT on the call leg;
+//                                        utterances arrive on the
+//                                        call.transcription webhook
 //   POST /calls/{id}/actions/hangup
 //
 // Env: TELNYX_API_KEY (Bearer), TELNYX_FROM_NUMBER (E.164),
@@ -69,40 +70,50 @@ export async function originateCall({ to, clientState, webhookUrl }) {
 const VOICE = process.env.TELNYX_SPEAK_VOICE || 'female';
 const LANGUAGE = process.env.TELNYX_SPEAK_LANGUAGE || 'en-US';
 
-/**
- * Speak a prompt then gather the caller's speech. The transcript arrives on
- * the `call.gather.ended` webhook (payload.speech.result). This is the
- * built-in Telnyx speech-to-text gather — no separate STT key needed.
- */
-export async function gatherUsingSpeech(callControlId, prompt) {
-  return request(`/calls/${encodeURIComponent(callControlId)}/actions/gather_using_speech`, {
-    method: 'POST',
-    body: JSON.stringify({
-      payload: prompt,
-      payload_type: 'text',
-      voice: VOICE,
-      language: LANGUAGE,
-    }),
-  });
-}
+// NOTE: call_control_id is used verbatim in the path (contains 'v3:…').
+// Do NOT encodeURIComponent it — Telnyx resolves the raw form (matches
+// settle-api's TelnyxDialerProvider).
 
-/** Speak a line without gathering (closings, handoff, opt-out ack). */
+/** Speak a line into the call (openers, replies, closings). */
 export async function speak(callControlId, text) {
-  return request(`/calls/${encodeURIComponent(callControlId)}/actions/speak`, {
+  return request(`/calls/${callControlId}/actions/speak`, {
     method: 'POST',
     body: JSON.stringify({
       payload: text,
       payload_type: 'text',
       voice: VOICE,
       language: LANGUAGE,
-      // Return to the gather afterwards is handled by the next
-      // gather_using_speech call from the webhook loop.
     }),
   });
 }
 
+/**
+ * Start real-time speech-to-text on the caller's audio track. Each finished
+ * utterance arrives on the `call.transcription` webhook at
+ * payload.transcription_data.{transcript,is_final,confidence}.
+ *
+ * Engine: 'Telnyx' = Telnyx's built-in STT (no external key, billed with the
+ * call). 'Google' is the fallback (Telnyx-hosted Google STT). 'inbound' track
+ * only so our own TTS is never transcribed back into the loop.
+ */
+const STT_ENGINE = process.env.VOICE_STT_ENGINE || 'Telnyx';
+
+export async function transcriptionStart(callControlId, { webhookUrl } = {}) {
+  const body = {
+    transcription_engine: STT_ENGINE,
+    language: 'en',
+    transcription_tracks: 'inbound',
+    interim_results: false,
+  };
+  if (webhookUrl) body.webhook_url = webhookUrl;
+  return request(`/calls/${callControlId}/actions/transcription_start`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
 export async function hangup(callControlId) {
-  return request(`/calls/${encodeURIComponent(callControlId)}/actions/hangup`, {
+  return request(`/calls/${callControlId}/actions/hangup`, {
     method: 'POST',
     body: JSON.stringify({}),
   });

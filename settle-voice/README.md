@@ -13,17 +13,19 @@ admin dialer UI → POST /dialer/voice-call (JWT, DialerAccessGuard)
   → POST settle-voice /calls (x-voice-key)
     → re-runs every gate against the DB (defense in depth)
     → Telnyx originate (webhook_url → settle-api /dialer/webhooks/voice-telnyx)
-    → call.answered → gather_using_speech (AI disclosure + first question)
-    → call.gather.ended {speech.result}
+    → call.answered → speak (AI disclosure + first question)
+      + transcription_start (inbound track, Telnyx STT engine)
+    → call.transcription {transcription_data.transcript, is_final}
         → opt-out keywords  → crm_dnc_list row + ack + hangup
         → handoff keywords  → specialist-callback line + hangup
-        → else              → si-gateway chat → gather_using_speech(reply)
+        → else              → si-gateway chat → speak(reply) → loop
+    → call.speak.ended → hangup after a closing line finishes playing
     → call.hangup → voice_calls row finalized
 ```
 
-STT/TTS use Telnyx's built-in `gather_using_speech` + `speak` — no Deepgram
-or separate TTS key required. (A `DEEPGRAM_API_KEY` media-fork pipeline is
-a possible future upgrade; the current loop needs zero extra providers.)
+STT uses Telnyx `transcription_start` (built-in `Telnyx` engine on the call
+leg, inbound track only) and TTS uses `speak` — no Deepgram key or media
+fork required. Set `VOICE_STT_ENGINE=Google` to switch engines.
 
 ## Compliance (debt relief is regulated)
 
@@ -50,6 +52,7 @@ a possible future upgrade; the current loop needs zero extra providers.)
 | `SETTLE_VOICE_KEY` | shared with settle-api (`x-voice-key`) |
 | `AI_BASE_URL` / `AI_API_KEY` / `AI_MODEL` | si-gateway (`http://localhost:4030/v1`, `si`) |
 | `TELNYX_SPEAK_VOICE` | optional, default `female` |
+| `VOICE_STT_ENGINE` | optional, default `Telnyx` (`Google` fallback) |
 | `VOICE_MAX_TURNS` | optional, default `6` |
 | `VOICE_AMD` | optional, default `detect` |
 
