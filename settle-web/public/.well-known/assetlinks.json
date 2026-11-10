@@ -1,10 +1,15 @@
 [
   {
-    "relation": ["delegate_permission/common.get_login_creds"],
+    "relation": [
+      "delegate_permission/common.get_login_creds",
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.settleinpeace.mobile",
-      "sha256_cert_fingerprints": ["SHA256_FINGERPRINT_PLACEHOLDER"]
+      "sha256_cert_fingerprints": [
+        "7C:F2:2A:63:F4:A3:A8:C6:09:8E:42:5C:52:B6:91:20:06:1D:40:FE:4F:B1:05:A7:58:9B:46:4F:14:D3:E6:0B"
+      ]
     }
   }
 ]

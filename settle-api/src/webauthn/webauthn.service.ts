@@ -84,10 +84,11 @@ export class WebAuthnService {
     // iOS native passkeys assert `https://<rpId>` as the origin (trust comes
     // from the AASA file, not a browser origin) — the apex must be allowed
     // alongside www or enrollment/sign-in fails verification on device.
-    // Android native would add `android:apk-key-hash:<base64url sha256>`.
+    // Android native asserts `android:apk-key-hash:<base64url sha256 of the
+    // Play app-signing cert>` (trust comes from assetlinks.json).
     const o = this.config.get<string>(
       'WEBAUTHN_ORIGIN',
-      'https://settleinpeace.com,https://www.settleinpeace.com',
+      'https://settleinpeace.com,https://www.settleinpeace.com,android:apk-key-hash:fPIqY_SjqMYJjkJcUraRIAYdQP5PsQWnWJtGTxTT5gs',
     );
     return o.split(',').map((s) => s.trim());
   }
