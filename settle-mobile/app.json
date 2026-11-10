@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "requireFullScreen": true,
       "bundleIdentifier": "com.settleinpeace.mobile",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Settle In Peace uses Face ID to securely unlock your account.",
         "ITSAppUsesNonExemptEncryption": false

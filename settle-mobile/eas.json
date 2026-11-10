@@ -22,6 +22,9 @@
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "credentialsSource": "local"
+      },
       "env": {
         "EXPO_USE_PNPM": "1",
         "EXPO_PUBLIC_API_URL": "https://api.settleinpeace.com"
