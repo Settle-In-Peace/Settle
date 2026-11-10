@@ -19,7 +19,9 @@
       },
       "associatedDomains": [
         "webcredentials:settleinpeace.com",
-        "webcredentials:www.settleinpeace.com"
+        "webcredentials:www.settleinpeace.com",
+        "applinks:settleinpeace.com",
+        "applinks:www.settleinpeace.com"
       ]
     },
     "android": {

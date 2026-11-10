@@ -35,6 +35,25 @@ export async function loginWithPasskey(email?: string): Promise<AuthResponse> {
   return data;
 }
 
+/**
+ * Passkey enrollment — requires an active session (the register/verify
+ * endpoints are JWT-guarded). Fetches creation options, opens the native
+ * sheet, then posts the attestation for server verification.
+ */
+export async function enrollPasskey(deviceName?: string): Promise<void> {
+  const optionsRes = await api.post('/auth/passkey/register/options');
+  const options = optionsRes.data;
+  if (!options?.challenge) throw new Error('Could not start passkey setup');
+
+  const credential = await Passkey.create(options);
+
+  await api.post('/auth/passkey/register/verify', {
+    credential,
+    challenge: options.challenge,
+    deviceName,
+  });
+}
+
 export function isPasskeySupported(): boolean {
   try {
     return Passkey.isSupported();

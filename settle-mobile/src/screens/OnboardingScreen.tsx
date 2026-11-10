@@ -7,7 +7,9 @@ import { Button } from '../components/Button';
 import { colors } from '../theme/colors';
 
 // First-launch flag — set once the slides are finished or skipped.
-export const ONBOARD_KEY = '@settle_onboarded';
+// Versioned key: bumping to .v2 re-shows onboarding once on installs that
+// carried the old '@settle_onboarded' flag forward through app updates.
+export const ONBOARD_KEY = '@settle_onboarded.v2';
 
 const SLIDES: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string }[] = [
   {

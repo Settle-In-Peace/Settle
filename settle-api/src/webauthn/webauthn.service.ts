@@ -81,7 +81,14 @@ export class WebAuthnService {
     return this.config.get<string>('WEBAUTHN_RP_NAME', 'Settle In Peace');
   }
   private get origins(): string[] {
-    const o = this.config.get<string>('WEBAUTHN_ORIGIN', 'https://www.settleinpeace.com');
+    // iOS native passkeys assert `https://<rpId>` as the origin (trust comes
+    // from the AASA file, not a browser origin) — the apex must be allowed
+    // alongside www or enrollment/sign-in fails verification on device.
+    // Android native would add `android:apk-key-hash:<base64url sha256>`.
+    const o = this.config.get<string>(
+      'WEBAUTHN_ORIGIN',
+      'https://settleinpeace.com,https://www.settleinpeace.com',
+    );
     return o.split(',').map((s) => s.trim());
   }
 

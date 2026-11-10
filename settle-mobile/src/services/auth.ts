@@ -94,6 +94,30 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
   return result;
 }
 
+/**
+ * Complete email-OTP verification after /auth/register — the register
+ * endpoint returns requiresVerification (no tokens); this exchanges the
+ * emailed code for the token pair.
+ */
+export async function verifyEmailOtp(email: string, code: string): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>('/auth/verify-otp', { email, code });
+  const data = response.data;
+
+  if (data.success && data.accessToken) {
+    await setToken(data.accessToken);
+    if (data.user) {
+      await storeUser(data.user);
+    }
+  }
+
+  return data;
+}
+
+export async function resendEmailOtp(email: string): Promise<{ success?: boolean; message?: string }> {
+  const response = await api.post('/auth/send-otp', { email });
+  return response.data;
+}
+
 export async function getProfile(token: string): Promise<User> {
   const response = await api.get<User>('/auth/profile', {
     headers: {
