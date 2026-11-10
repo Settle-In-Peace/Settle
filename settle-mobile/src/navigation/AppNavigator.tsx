@@ -1,5 +1,6 @@
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -108,21 +109,43 @@ function MainTabs({ user, setUser }: { user: User | null; setUser: (user: User |
     >
       <Tab.Screen
         name="Dashboard"
-        options={{ tabBarLabel: 'Home' }}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
+        }}
       >
         {(props) => <DashboardScreen {...(props as any)} user={user} />}
       </Tab.Screen>
-      <Tab.Screen name="Debts" component={DebtsScreen} />
-      <Tab.Screen name="Calculators" component={CalculatorsScreen} />
+      <Tab.Screen
+        name="Debts"
+        component={DebtsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="wallet" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Calculators"
+        component={CalculatorsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="calculator" color={color} size={size} />,
+        }}
+      />
       <Tab.Screen
         name="Learn"
-        options={{ tabBarLabel: 'Learn', headerShown: false }}
+        options={{
+          tabBarLabel: 'Learn',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <Ionicons name="book" color={color} size={size} />,
+        }}
       >
         {(props) => <LearnStackScreen {...(props as any)} />}
       </Tab.Screen>
       <Tab.Screen
         name="Profile"
-        options={{ tabBarLabel: 'Profile' }}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} />,
+        }}
       >
         {(props) => <ProfileScreen {...(props as any)} user={user} setUser={setUser} />}
       </Tab.Screen>
