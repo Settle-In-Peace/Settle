@@ -10,6 +10,7 @@ import {
   SiCreditPack,
 } from '@/lib/api';
 import { getStoredToken, getStoredUser } from '@/lib/authUtils';
+import { trackBeginCheckout } from '@/lib/ads';
 
 const creditUses = [
   'Collection SI propensity scoring per account',
@@ -87,6 +88,7 @@ function CreditsInner() {
     try {
       const session = await createSiCreditsCheckout(pack.id);
       if (!session.url) throw new Error('Checkout did not return a payment URL.');
+      trackBeginCheckout({ method: 'stripe', pack: pack.id });
       window.location.href = session.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start checkout.');

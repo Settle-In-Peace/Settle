@@ -124,7 +124,7 @@ export default function PrivacyPage() {
               <li><strong>Marketing cookies:</strong> Used to track the effectiveness of our marketing campaigns</li>
             </ul>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-3">
-              You can control cookies through your browser settings. Disabling essential cookies may affect Service functionality.
+              Analytics &amp; advertising: we may use cookie-based measurement tools (such as Google Ads and Microsoft Advertising UET) to measure the effectiveness of our advertising when those tags are enabled. You can control cookies through your browser settings. Disabling essential cookies may affect Service functionality.
             </p>
           </section>
 

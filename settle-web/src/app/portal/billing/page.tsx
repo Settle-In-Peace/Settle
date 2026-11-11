@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getStoredToken, getStoredUser } from '@/lib/authUtils';
+import { trackBeginCheckout } from '@/lib/ads';
 
 import { API_URL } from '@/lib/apiUrl';
 const CREDIT_PACKAGES = [
@@ -56,6 +57,7 @@ export default function BillingPage() {
       });
       const data = await res.json();
       if (data.url) {
+        trackBeginCheckout({ method: 'stripe', credits: pkg.credits });
         // Redirect to Stripe-hosted checkout
         window.location.href = data.url;
       } else {

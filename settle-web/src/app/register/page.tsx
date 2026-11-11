@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { startRegistration } from '@simplewebauthn/browser';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isValidEmail, clearAuth } from '../../lib/authUtils';
+import { trackSignUp } from '../../lib/ads';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Logo from '../../components/Logo';
@@ -79,6 +80,7 @@ export default function RegisterPage() {
 
       if (response.success && response.accessToken) {
         storeAuth(response.accessToken, response.user, response.refreshToken);
+        trackSignUp('password');
         setInfo('Account created! You can now add a passkey for faster login.');
         router.push('/dashboard');
       } else if (response.success && response.requiresVerification && response.email) {
@@ -147,6 +149,7 @@ export default function RegisterPage() {
       }
 
       storeAuth(regRes.accessToken, regRes.user, regRes.refreshToken);
+      trackSignUp('passkey');
 
       // Step 2: Get passkey registration options
       const optionsRes = await fetch(`${API_URL}/auth/passkey/register/options`, {

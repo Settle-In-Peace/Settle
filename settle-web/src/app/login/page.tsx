@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
 import { storeAuth, isAuthenticated, clearAuth, getStoredUser } from '../../lib/authUtils';
+import { trackLogin } from '../../lib/ads';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Logo from '../../components/Logo';
@@ -98,6 +99,7 @@ export default function LoginPage() {
 
       if (response.success && response.accessToken) {
         storeAuth(response.accessToken, response.user, response.refreshToken);
+        trackLogin('password');
         router.push(redirectByRole(response.user?.role));
       } else if (response.success && response.requiresVerification) {
         setMode('otp');
@@ -167,6 +169,7 @@ export default function LoginPage() {
 
       if (response.success && response.accessToken) {
         storeAuth(response.accessToken, response.user, response.refreshToken);
+        trackLogin('otp');
         router.push(redirectByRole(response.user?.role));
       } else {
         setError(response.error || 'Invalid code');
@@ -214,6 +217,7 @@ export default function LoginPage() {
 
       if (result.success) {
         storeAuth(result.accessToken, result.user, result.refreshToken);
+        trackLogin('passkey');
         router.push(redirectByRole(result.user?.role));
       } else if (result.error?.includes('No passkey registered')) {
         setError('No passkey found for this email. Register a passkey from your account settings first, or use password/OTP login.');

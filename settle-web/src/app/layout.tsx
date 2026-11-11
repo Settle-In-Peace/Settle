@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "../components/Navigation";
 import ConditionalFooter from "../components/ConditionalFooter";
+import AdTracking from "../components/AdTracking";
 import { Providers } from "./providers";
 
 const geistSans = Geist({
@@ -115,6 +116,7 @@ export default function RootLayout({
           {children}
           <ConditionalFooter />
         </Providers>
+        <AdTracking />
       </body>
     </html>
   );
