@@ -68,12 +68,25 @@ jobs:
           pip install pillow
           python tools/social/card_maker.py
 
+      # Buffer has no media upload endpoint — it fetches card assets by
+      # public URL at publish time (BUFFER_MEDIA_BASE below). Cards are
+      # committed to settle-web/public/social-cards and go live on the
+      # next web deploy (the launchd article-nightly job deploys nightly);
+      # the poster HEAD-checks each URL and falls back to text-only until
+      # it actually serves.
+      - name: Publish cards to web public dir
+        run: |
+          mkdir -p settle-web/public/social-cards
+          find tools/social/cards -maxdepth 1 -type f \( -name '*.png' -o -name '*.mp4' \) \
+            -exec cp {} settle-web/public/social-cards/ \;
+
       - name: Post due content
         env:
           POSTER_UA: Settle-SocialPoster/1.0
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           BUFFER_ORG_ID: ${{ secrets.BUFFER_ORG_ID }}
           BUFFER_CHANNEL_IDS: ${{ secrets.BUFFER_CHANNEL_IDS }}
+          BUFFER_MEDIA_BASE: https://settleinpeace.com/social-cards
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
@@ -107,7 +120,7 @@ jobs:
         run: |
           git config user.name "settle-social-bot"
           git config user.email "bot@settleinpeace.com"
-          git add tools/social/posted_state.json tools/social/content_queue.json tools/social/cards/
+          git add tools/social/posted_state.json tools/social/content_queue.json tools/social/cards/ settle-web/public/social-cards/
           git diff --cached --quiet || git commit -m "chore(social): posted state [skip ci]"
           # Rebase onto main first — the launchd backup cron and manual
           # pushes can move the branch between checkout and push.
