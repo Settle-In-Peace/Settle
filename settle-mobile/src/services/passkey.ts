@@ -1,6 +1,24 @@
-import { Passkey } from 'react-native-passkey';
 import { api } from './api';
 import { setToken, storeUser, AuthResponse } from './auth';
+
+/**
+ * Lazy-require the native passkey module. If the native code is absent or
+ * broken (older binary without it, Expo Go, a mislinked build) the module
+ * must degrade to "feature hidden" instead of throwing at bundle load and
+ * crashing the app — App Review rejection-class crash.
+ */
+interface PasskeyNativeModule {
+  isSupported: () => boolean;
+  get: (request: any) => Promise<any>;
+  create: (request: any) => Promise<any>;
+}
+let Passkey: PasskeyNativeModule | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  Passkey = require('react-native-passkey').Passkey ?? null;
+} catch {
+  Passkey = null;
+}
 
 /**
  * Passkey sign-in — discoverable (userless) flow.
@@ -9,6 +27,7 @@ import { setToken, storeUser, AuthResponse } from './auth';
  * itself resolves the account.
  */
 export async function loginWithPasskey(email?: string): Promise<AuthResponse> {
+  if (!Passkey) throw new Error('Passkeys are not available on this device');
   const optionsRes = await api.post('/auth/passkey/authenticate/options', email ? { email } : {});
   const options = optionsRes.data;
   if (!options?.challenge) throw new Error('Could not start passkey sign-in');
@@ -41,6 +60,7 @@ export async function loginWithPasskey(email?: string): Promise<AuthResponse> {
  * sheet, then posts the attestation for server verification.
  */
 export async function enrollPasskey(deviceName?: string): Promise<void> {
+  if (!Passkey) throw new Error('Passkeys are not available on this device');
   const optionsRes = await api.post('/auth/passkey/register/options');
   const options = optionsRes.data;
   if (!options?.challenge) throw new Error('Could not start passkey setup');
@@ -56,7 +76,7 @@ export async function enrollPasskey(deviceName?: string): Promise<void> {
 
 export function isPasskeySupported(): boolean {
   try {
-    return Passkey.isSupported();
+    return !!Passkey && Passkey.isSupported();
   } catch {
     return false;
   }

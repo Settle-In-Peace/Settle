@@ -1,11 +1,19 @@
+import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList, MainTabsParamList } from '../navigation/AppNavigator';
 import { Card } from '../components/Card';
 import { User } from '../services/auth';
+import { api } from '../services/api';
 import { colors } from '../theme/colors';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+
+const currency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
 
 function getDisplayName(user: User | null): string {
   if (!user) return 'Guest';
@@ -22,6 +30,24 @@ interface DashboardScreenProps {
 export default function DashboardScreen({ user }: DashboardScreenProps) {
   const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabsParamList>>();
   const mainNavigation = useNavigation<NativeStackScreenProps<MainStackParamList>['navigation']>();
+  const [summary, setSummary] = useState<{ totalDebt: number; debtCount: number; totalSaved: number } | null>(null);
+
+  // Live debt rollup — refresh on focus so debts added elsewhere appear.
+  // Degrades to zeros (not an error card) when the API is unreachable.
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      api
+        .get('/debts/summary')
+        .then((res) => {
+          if (alive && res.data) setSummary(res.data);
+        })
+        .catch(() => {});
+      return () => {
+        alive = false;
+      };
+    }, [])
+  );
 
   const actions = [
     { label: 'My Debts', target: 'Debts', icon: '💳' },
@@ -41,11 +67,11 @@ export default function DashboardScreen({ user }: DashboardScreenProps) {
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
           <Text style={styles.statLabel}>Total Debt</Text>
-          <Text style={styles.statValue}>$0.00</Text>
+          <Text style={styles.statValue}>{currency.format(summary?.totalDebt ?? 0)}</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={styles.statLabel}>Monthly Payment</Text>
-          <Text style={styles.statValue}>$0.00</Text>
+          <Text style={styles.statLabel}>Accounts Tracked</Text>
+          <Text style={styles.statValue}>{summary?.debtCount ?? 0}</Text>
         </Card>
       </View>
 

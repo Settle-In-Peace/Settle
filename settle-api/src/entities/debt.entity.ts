@@ -14,13 +14,13 @@ export class Debt {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   balance!: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, name: 'original_balance' })
   originalBalance?: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'interest_rate' })
   interestRate?: number;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'date', nullable: true, name: 'due_date' })
   dueDate?: Date;
 
   @Column({ type: 'varchar', length: 50, default: 'credit_card' })
