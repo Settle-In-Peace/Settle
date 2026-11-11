@@ -2,6 +2,10 @@
   Content-Type: application/json
   Cache-Control: public, max-age=300
 
+/apple-app-site-association
+  Content-Type: application/json
+  Cache-Control: public, max-age=300
+
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

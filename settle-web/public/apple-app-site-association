@@ -1,0 +1,15 @@
+{
+  "webcredentials": {
+    "apps": [
+      "987B9KG4M7.com.settleinpeace.mobile"
+    ]
+  },
+  "applinks": {
+    "details": [
+      {
+        "appID": "987B9KG4M7.com.settleinpeace.mobile",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
