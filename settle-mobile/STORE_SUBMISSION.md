@@ -118,3 +118,25 @@ npx eas-cli@latest build -p all -e preview          # internal distribution
   unused in code. Harmless; can prune later.
 - Assessment chat is a local stub — replies are canned, nothing is sent to
   the API. Fine for v1; data-safety answers already cover it.
+
+## Google Play — androidpublisher API path (droid-store-prep, 2026-12-19)
+
+- **Internal track already committed** (AAB vc5, 2026-11-04). Record exists.
+- Re-upload flow:
+  ```bash
+  ANDROID_HOME=~/Library/Android/sdk GRADLE_USER_HOME=/Volumes/Os_Sites/tools/gradle \
+    EXPO_USE_PNPM=1 eas build -p android --profile production --local \
+    --output dist/settle.aab --non-interactive
+  node scripts/play-submit.mjs dist/settle.aab
+  ```
+- SA key: `credentials/google-play-service-account.json` (also mirrored at
+  `credentials/android/play-store-service-account.json`; both gitignored,
+  shared `eas-play-submit` SA — the script autodetects either path).
+- Listing copy + reviewer creds: `../docs/store-listing.md`,
+  `../docs/play-review/credentials.md` (note the email-OTP gate: declare the
+  seeded accounts, both `email_verified=true`).
+- Remaining console-side: content rating, data-safety (answers above),
+  app-access creds, screenshots/feature graphic, privacy URL — prefer
+  https://settleinpeace.com/privacy (`/privacy-app` is the mobile-framed
+  variant; both routes exist but the worker intermittently 503s — recheck
+  at submit time).
