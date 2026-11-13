@@ -25,6 +25,8 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
+| droid-aab-2 | 2026-11-13 — **IN PROGRESS** — local signed release AAB for settle-mobile (NO EAS cloud): `expo prebuild -p android` + `gradlew bundleRelease`, new upload keystore under `credentials/android/` (gitignored), signing via `keystore.properties`, targetSdk 36 + versionCode 6 (working-tree bump kept), artifact → `dist/`. | `settle-mobile/{app.json,App.tsx,android/,credentials/android/,dist/}`, `.devin/AGENT_STATE.md` |
+
 | devin-lint-sweep | 2026-11-12 — **DONE — landed `8bb671a`, pushed.** settle-mobile ESLint 5 errors → 0 (lint+typecheck clean). Real bug fixed: conditional `useNavigation` call in `ProfileScreen.tsx` hoisted unconditional (`hookNav` + `navigation ?? hookNav`); set-state-in-effect in AttorneysScreen/CoachingScreen/QuestionsScreen → microtask-deferred loaders; `&apos;` entity; axios named `create` export; passkey lazy-require disable retargeted to `no-require-imports`; `Buffer` from `node:buffer` in asc scripts. Scaffolded `eslint.config.js` + `lint` script via expo lint auto-config. | `settle-mobile/` |
 
 | devin-ads-plumbing | 2026-12-05 — DONE `e7892e6` pushed to main — ads conversion plumbing: env-gated GTM/UET loader, sign_up/login/begin_checkout events, privacy disclosure, docs/ads-setup.md. | `settle-web/src/{app/layout.tsx,app/register,app/login,app/credits,app/portal/billing,app/privacy,components/AdTracking.tsx,lib/ads.ts}`, `docs/ads-setup.md` |
