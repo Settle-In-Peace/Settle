@@ -140,3 +140,20 @@ npx eas-cli@latest build -p all -e preview          # internal distribution
   https://settleinpeace.com/privacy (`/privacy-app` is the mobile-framed
   variant; both routes exist but the worker intermittently 503s — recheck
   at submit time).
+
+## Graphic assets (2026-11-12 — droid-assets)
+
+- **Play hi-res icon:** `settle-mobile/assets/play-icon-512.png` (512×512,
+  downscaled from the 1024 app icon)
+- **Feature graphic:** `settle-mobile/assets/play-feature-1024x500.png`
+  (1024×500 — dark brand card: mark + name + tagline, Settle/Prime recipe)
+- **Phone screenshots (5, 1080×1920 9:16):** `settle-mobile/screenshots/play/`
+  — 01–03 onboarding (Every debt one workspace / Know your options first /
+  Support when it matters), 04-login, 05-register. Captured from a real
+  `expo export --platform web` render at phone viewport — real UI; RNW deps
+  (react-native-web/react-dom/@expo/metro-runtime) added this session for the
+  export.
+- Remaining: the authenticated surfaces (dashboard, debts, assessment,
+  marketplace) need a real login — `api.settleinpeace.com` was unreachable
+  during capture, so signed-in shots of the seeded reviewer account's
+  dashboard still need a device/simulator capture when the API is up.
