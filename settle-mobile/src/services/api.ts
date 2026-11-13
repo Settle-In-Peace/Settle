@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { create } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // EXPO_PUBLIC_* vars are inlined by Metro at bundle time.
@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL || 'https://api.settleinpeace.com';
 
-export const api = axios.create({
+export const api = create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',

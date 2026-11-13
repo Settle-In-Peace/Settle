@@ -49,8 +49,10 @@ export default function CoachingScreen() {
     }
   }, []);
 
+  // Deferred to a microtask so load()'s setState calls don't run
+  // synchronously inside the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    load();
+    queueMicrotask(() => { void load(); });
   }, [load]);
 
   const addBudget = async () => {

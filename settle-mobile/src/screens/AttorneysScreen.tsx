@@ -56,7 +56,13 @@ export default function AttorneysScreen() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  // Initial fetch is deferred to a microtask so load()'s setState calls
+  // don't run synchronously inside the effect body. `load` intentionally
+  // stays out of the deps — it re-runs only when the user taps Go.
+  useEffect(() => {
+    queueMicrotask(() => { void load(); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function tap(listing: AttorneyListing, kind: 'site' | 'call') {
     api.post(`/providers/attorneys/${listing.slug}/click`).catch(() => {});
@@ -71,7 +77,7 @@ export default function AttorneysScreen() {
     <View style={s.c}>
       <Text style={s.title}>Bankruptcy Attorneys</Text>
       <Text style={s.sub}>
-        If settlement isn't the right fit, a bankruptcy attorney may be. Contact is between you and the attorney — listings marked Featured or Sponsored are paid placements.
+        If settlement isn&apos;t the right fit, a bankruptcy attorney may be. Contact is between you and the attorney — listings marked Featured or Sponsored are paid placements.
       </Text>
       <View style={s.filters}>
         <TextInput

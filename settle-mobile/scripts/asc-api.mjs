@@ -2,6 +2,7 @@
 // Usage: node asc-api.mjs GET '/apps?filter[bundleId]=com.settleinpeace.mobile'
 //        node asc-api.mjs POST /reviewSubmissions '<json body>'
 //        node asc-api.mjs PATCH /appStoreVersions/<id> '<json body>'
+import { Buffer } from 'node:buffer';
 import { createSign } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 

@@ -3,6 +3,7 @@
 //   e.g. node asc-screenshot.mjs IPHONE_FACE_ID_LARGE_PROFILE shots/iphone-1.png
 //        node asc-screenshot.mjs IPAD_13_PROFILE shots/ipad-1.png
 // Flow: find/create appScreenshotSet -> reserve appScreenshot -> PUT bytes -> commit -> poll COMPLETE.
+import { Buffer } from 'node:buffer';
 import { createSign, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';

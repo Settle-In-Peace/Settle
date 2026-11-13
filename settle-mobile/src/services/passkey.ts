@@ -14,7 +14,7 @@ interface PasskeyNativeModule {
 }
 let Passkey: PasskeyNativeModule | null = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy-require keeps the app bootable on binaries built without the native passkey module
   Passkey = require('react-native-passkey').Passkey ?? null;
 } catch {
   Passkey = null;

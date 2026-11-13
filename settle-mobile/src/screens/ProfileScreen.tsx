@@ -21,7 +21,10 @@ function getDisplayName(user: User | null): string {
 
 export default function ProfileScreen({ user, setUser, navigation }: ProfileScreenProps & { navigation?: any }) {
   const [deleting, setDeleting] = useState(false);
-  const nav = navigation ?? useNavigation<any>();
+  // Hooks must run unconditionally — call useNavigation every render and
+  // prefer the prop only when a parent passes a navigator explicitly.
+  const hookNav = useNavigation<any>();
+  const nav = navigation ?? hookNav;
 
   async function handleLogout() {
     await logout();
