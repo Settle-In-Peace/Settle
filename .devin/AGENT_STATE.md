@@ -25,7 +25,7 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 
 ## Active
 
-| droid-store-prep | 2026-12-19 — **IN PROGRESS** — revert uncommitted `slateDark:'#fff'` → `'#334155'` (was invisible input/article text on light theme), tsc clean. | `settle-mobile/src/theme/colors.ts`, `.devin/AGENT_STATE.md` |
+| droid-store-prep | 2026-12-19 — **DONE — `cd002b3`, pushed.** Reverted `slateDark:'#fff'` → `'#334155'` (git history confirmed slate-700 intent; `#fff` was invisible input/article text on light theme). `tsc --noEmit` exit 0. | `settle-mobile/src/theme/colors.ts`, `.devin/AGENT_STATE.md` |
 
 | droid-aab-2 | 2026-11-13 — **IN PROGRESS** — local signed release AAB for settle-mobile (NO EAS cloud): `expo prebuild -p android` + `gradlew bundleRelease`, new upload keystore under `credentials/android/` (gitignored), signing via `keystore.properties`, targetSdk 36 + versionCode 6 (working-tree bump kept), artifact → `dist/`. | `settle-mobile/{app.json,App.tsx,android/,credentials/android/,dist/}`, `.devin/AGENT_STATE.md` |
 
