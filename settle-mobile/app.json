@@ -74,7 +74,16 @@
           "faceIDPermission": "Allow Settle In Peace to use Face ID."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -12,6 +12,7 @@
     "@settle/shared-sdk": "workspace:*",
     "axios": "^1.18.1",
     "expo": "~56.0.24",
+    "expo-build-properties": "^58.0.12",
     "expo-local-authentication": "~56.0.4",
     "expo-secure-store": "~56.0.4",
     "expo-splash-screen": "~56.0.16",
