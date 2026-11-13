@@ -26,7 +26,7 @@
     },
     "android": {
       "package": "com.settleinpeace.mobile",
-      "versionCode": 1,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#0b1526",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -37,6 +37,22 @@
       "permissions": [
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "settleinpeace.com" },
+            { "scheme": "https", "host": "www.settleinpeace.com" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "settleinpeace" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {

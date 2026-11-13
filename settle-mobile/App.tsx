@@ -14,7 +14,11 @@ import { colors } from './src/theme/colors';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const linking: LinkingOptions<any> = {
-  prefixes: ['settleinpeace://'],
+  prefixes: [
+    'settleinpeace://',
+    'https://settleinpeace.com',
+    'https://www.settleinpeace.com',
+  ],
   config: {
     screens: {
       Auth: {
