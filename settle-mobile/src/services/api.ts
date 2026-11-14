@@ -9,6 +9,7 @@ export const API_BASE_URL =
 
 export const api = create({
   baseURL: API_BASE_URL,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },

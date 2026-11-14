@@ -51,6 +51,7 @@ import { ProviderEnrollment1700000000048 } from './1700000000048-ProviderEnrollm
 import { AddDirectoryFields1700000000049 } from './1700000000049-AddDirectoryFields';
 import { CreateSkipTraceLookups1700000000051 } from './1700000000051-CreateSkipTraceLookups';
 import { CreateVoiceCalls1700000000052 } from './1700000000052-CreateVoiceCalls';
+import { WidenQaQuestionStatus1700000000053 } from './1700000000053-WidenQaQuestionStatus';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -106,6 +107,7 @@ const migrations: MigrationConstructor[] = [
   AddDirectoryFields1700000000049,
   CreateSkipTraceLookups1700000000051,
   CreateVoiceCalls1700000000052,
+  WidenQaQuestionStatus1700000000053,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

@@ -19,22 +19,36 @@ import { OptionalJwtAuthGuard } from '../feedback/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
+const STAFF_ROLES = new Set(['admin', 'sales']);
+
 @Controller('questions')
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
-  /** Public: published + answered questions, optional ?category= filter. */
+  /**
+   * Public: published + answered questions, optional ?category= filter.
+   * Staff callers may pass ?status=pending to see the moderation queue.
+   */
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  list(@Query('category') category?: string) {
+  list(
+    @Query('category') category?: string,
+    @Query('status') status?: string,
+    @Request() req?: any,
+  ) {
+    if (status === 'pending' && req?.user?.role && STAFF_ROLES.has(req.user.role)) {
+      return this.questionsService.listPending();
+    }
     return this.questionsService.list(category);
   }
 
   /**
-   * Public: ask a question — NO account required. Anonymity is the feature;
-   * optional contactEmail is stored internally but never displayed.
+   * Ask a question — requires an account. Submissions land in 'pending' and
+   * only reach the public feed after admin review (the app's copy says
+   * "it will appear once reviewed"). Identity stays anonymous publicly.
    */
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() dto: CreateQuestionDto, @Request() req: any) {
     return this.questionsService.create(dto, req.user);
@@ -47,11 +61,12 @@ export class QuestionsController {
   }
 
   /**
-   * Any logged-in user may answer; anonymous answers are email-gated
-   * (contactEmail required when unauthenticated — never displayed).
+   * Any logged-in user may answer. Answers publish immediately, so the
+   * endpoint requires an account — anonymous write access let unauthenticated
+   * callers inject content onto public pages.
    */
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post(':id/answers')
   addAnswer(
     @Param('id') id: string,

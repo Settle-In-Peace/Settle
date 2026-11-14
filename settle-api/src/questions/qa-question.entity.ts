@@ -16,6 +16,8 @@ export enum QaCategory {
 }
 
 export enum QaQuestionStatus {
+  /** New submissions land here — invisible to public reads until an admin publishes. */
+  PENDING = 'pending',
   PUBLISHED = 'published',
   HIDDEN = 'hidden',
   ANSWERED = 'answered',
@@ -39,7 +41,7 @@ export class QaQuestion {
   @Index()
   category: QaCategory;
 
-  @Column({ length: 20, default: QaQuestionStatus.PUBLISHED })
+  @Column({ length: 20, default: QaQuestionStatus.PENDING })
   @Index()
   status: QaQuestionStatus;
 

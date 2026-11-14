@@ -88,6 +88,16 @@ export class QuestionsService {
     return rows.map((q) => this.toPublic(q));
   }
 
+  /** Staff-only moderation queue — pending submissions awaiting review. */
+  async listPending(): Promise<PublicQuestion[]> {
+    const rows = await this.questions.find({
+      where: { status: QaQuestionStatus.PENDING },
+      order: { createdAt: 'ASC' },
+      take: 200,
+    });
+    return rows.map((q) => this.toPublic(q));
+  }
+
   async getPublic(id: string): Promise<PublicQuestionDetail> {
     const q = await this.questions.findOne({
       where: {
@@ -113,10 +123,12 @@ export class QuestionsService {
     const entity = this.questions.create({
       body: dto.body.trim(),
       category: dto.category ?? QaCategory.OTHER,
-      status: QaQuestionStatus.PUBLISHED,
+      // Moderated board: nothing reaches the public feed until an admin
+      // publishes it (matches the app's "appears once reviewed" copy).
+      status: QaQuestionStatus.PENDING,
       answersCount: 0,
       authorUserId: user?.sub ?? user?.id ?? undefined,
-      contactEmail: dto.contactEmail,
+      contactEmail: dto.contactEmail ?? user?.email,
     });
     const saved = await this.questions.save(entity);
     return this.toPublic(saved);

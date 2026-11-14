@@ -22,6 +22,10 @@ export interface AuthResponse {
   expiresIn?: number;
   user?: User;
   error?: string;
+  /** Present when the account must complete email-OTP before tokens issue. */
+  requiresVerification?: boolean;
+  email?: string;
+  message?: string;
 }
 
 export async function setToken(token: string): Promise<void> {

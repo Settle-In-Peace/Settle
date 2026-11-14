@@ -29,13 +29,14 @@ export default function QuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Ask-anonymously form
+  // Ask form — account required; submissions are reviewed before publishing.
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<QaCategory>('debts');
   const [contactEmail, setContactEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [asked, setAsked] = useState(false);
   const [formError, setFormError] = useState('');
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -55,7 +56,7 @@ export default function QuestionsPage() {
     }
     setSubmitting(true);
     try {
-      const q = await askQuestion({
+      await askQuestion({
         body: body.trim(),
         category,
         contactEmail: contactEmail.trim() || undefined,
@@ -63,8 +64,12 @@ export default function QuestionsPage() {
       setAsked(true);
       setBody('');
       setContactEmail('');
-      setItems(prev => [q, ...prev]);
+      // New questions are 'pending' — they appear only after admin review,
+      // so don't inject them into the public list.
     } catch (err) {
+      if ((err as { status?: number })?.status === 401) {
+        setNeedsAuth(true);
+      }
       setFormError(err instanceof Error ? err.message : 'Could not post your question. Please try again.');
     } finally {
       setSubmitting(false);
@@ -82,7 +87,7 @@ export default function QuestionsPage() {
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 mb-8">
           Anonymous. Your question is public; your identity is not.
-          No account needed — ask, and the community (and our team) will answer.
+          Sign in to ask — questions are reviewed by our team before they appear.
         </p>
 
         {/* Ask anonymously */}
@@ -123,9 +128,21 @@ export default function QuestionsPage() {
             />
           </div>
           {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
+          {needsAuth && (
+            <p className="text-sm">
+              <Link href="/login" className="text-blue-600 font-semibold hover:underline">
+                Sign in
+              </Link>{' '}
+              <span className="text-zinc-500 dark:text-zinc-400">or</span>{' '}
+              <Link href="/register" className="text-blue-600 font-semibold hover:underline">
+                create a free account
+              </Link>{' '}
+              <span className="text-zinc-500 dark:text-zinc-400">to ask a question.</span>
+            </p>
+          )}
           {asked && (
             <p className="text-sm text-emerald-600 dark:text-emerald-400">
-              Posted — your question is live below.
+              Submitted — your question will appear once reviewed by our team.
             </p>
           )}
           <div className="flex items-center justify-between gap-4">
@@ -137,7 +154,7 @@ export default function QuestionsPage() {
               disabled={submitting}
               className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-5 py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {submitting ? 'Posting…' : 'Ask anonymously'}
+              {submitting ? 'Posting…' : 'Ask a question'}
             </button>
           </div>
         </form>

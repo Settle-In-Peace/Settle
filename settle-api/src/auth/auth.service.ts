@@ -584,8 +584,15 @@ export class AuthService {
   // ============================================================
 
   async sendEmailOtp(email: string): Promise<{ success: boolean; message: string; devCode?: string }> {
+    // Guard: an empty/missing email must never reach findOne — TypeORM drops
+    // undefined where-clauses and would match (and overwrite the OTP of) an
+    // arbitrary user row, then fail the send with "Missing `to` field".
+    if (!email || typeof email !== 'string') {
+      return { success: true, message: 'If an account exists, a verification code was sent' };
+    }
+
     const user = await this.usersRepository.findOne({ where: { email } });
-    if (!user) {
+    if (!user || !user.email) {
       // Don't reveal if email exists for security
       return { success: true, message: 'If an account exists, a verification code was sent' };
     }
@@ -600,7 +607,8 @@ export class AuthService {
       otpAttempts: 0,
     });
 
-    const sent = await this.emailService.sendOtpEmail(email, code, user.firstName);
+    // Send to the canonical address on the matched row, not the raw input.
+    const sent = await this.emailService.sendOtpEmail(user.email, code, user.firstName);
 
     // In dev mode (no RESEND_API_KEY) or if email fails, return the code for testing
     if (!process.env.RESEND_API_KEY) {

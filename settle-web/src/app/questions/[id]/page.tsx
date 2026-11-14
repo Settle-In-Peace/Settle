@@ -152,51 +152,54 @@ export default function QuestionDetailPage({
           </ul>
         )}
 
-        {/* Answer form */}
-        <form
-          onSubmit={handleAnswer}
-          className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-3"
-        >
-          <label htmlFor="qa-answer" className="block font-semibold text-black dark:text-white">
-            Share what you know
-          </label>
-          <textarea
-            id="qa-answer"
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            rows={4}
-            maxLength={2000}
-            placeholder="Your answer — general information only, not legal advice."
-            required
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-          />
-          {!authed && (
-            <input
-              type="email"
-              value={contactEmail}
-              onChange={e => setContactEmail(e.target.value)}
-              placeholder="Email (required to answer anonymously — never shown)"
+        {/* Answer form — account required; anonymous answers were removed. */}
+        {authed ? (
+          <form
+            onSubmit={handleAnswer}
+            className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-3"
+          >
+            <label htmlFor="qa-answer" className="block font-semibold text-black dark:text-white">
+              Share what you know
+            </label>
+            <textarea
+              id="qa-answer"
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="Your answer — general information only, not legal advice."
               required
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-base text-black dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
-          )}
-          {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
-          {answered && (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">Posted — thank you.</p>
-          )}
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              Answers are community guidance, not legal advice.
-            </p>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-5 py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {submitting ? 'Posting…' : 'Post answer'}
-            </button>
+            {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
+            {answered && (
+              <p className="text-sm text-emerald-600 dark:text-emerald-400">Posted — thank you.</p>
+            )}
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                Answers are community guidance, not legal advice.
+              </p>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-5 py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {submitting ? 'Posting…' : 'Post answer'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 text-sm text-zinc-600 dark:text-zinc-400">
+            <Link href="/login" className="text-blue-600 font-semibold hover:underline">
+              Sign in
+            </Link>{' '}
+            or{' '}
+            <Link href="/register" className="text-blue-600 font-semibold hover:underline">
+              create a free account
+            </Link>{' '}
+            to share your answer.
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

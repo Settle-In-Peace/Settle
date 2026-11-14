@@ -20,8 +20,8 @@ export class CreateQuestionsTables1700000000037 implements MigrationInterface {
         "body" text NOT NULL,
         "category" varchar(30) NOT NULL DEFAULT 'other'
           CHECK ("category" IN ('probate','debts','taxes','property','family','other')),
-        "status" varchar(20) NOT NULL DEFAULT 'published'
-          CHECK ("status" IN ('published','hidden','answered')),
+        "status" varchar(20) NOT NULL DEFAULT 'pending'
+          CHECK ("status" IN ('pending','published','hidden','answered')),
         "answers_count" int NOT NULL DEFAULT 0,
         "author_user_id" uuid,
         "contact_email" varchar(255),

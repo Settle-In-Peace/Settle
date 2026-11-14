@@ -25,7 +25,7 @@ export interface QaQuestionSummary {
   id: string;
   body: string;
   category: QaCategory;
-  status: 'published' | 'hidden' | 'answered';
+  status: 'pending' | 'published' | 'hidden' | 'answered';
   answersCount: number;
   anonymous: true;
   createdAt: string;

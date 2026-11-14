@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AppNavigator';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
-import { login, User } from '../services/auth';
+import { login, verifyEmailOtp, resendEmailOtp, User } from '../services/auth';
 import { loginWithPasskey, isPasskeySupported } from '../services/passkey';
 import { colors } from '../theme/colors';
 
@@ -17,6 +17,11 @@ export default function LoginScreen({ navigation, setUser }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Login can return requiresVerification (unverified email) — the API sends
+  // a code during the login call; the user confirms it here to get tokens.
+  const [awaitingCode, setAwaitingCode] = useState(false);
+  const [code, setCode] = useState('');
+  const [notice, setNotice] = useState('');
 
   async function handleLogin() {
     setError('');
@@ -25,6 +30,9 @@ export default function LoginScreen({ navigation, setUser }: LoginScreenProps) {
       const response = await login(email, password);
       if (response.success && response.user) {
         setUser(response.user);
+      } else if (response.success && response.requiresVerification) {
+        setAwaitingCode(true);
+        setNotice(response.message || `We sent a verification code to ${email}.`);
       } else {
         setError(response.error || 'Login failed');
       }
@@ -32,6 +40,33 @@ export default function LoginScreen({ navigation, setUser }: LoginScreenProps) {
       setError(err?.message || 'Invalid email or password');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleVerify() {
+    setError('');
+    setLoading(true);
+    try {
+      const response = await verifyEmailOtp(email, code.trim());
+      if (response.success && response.user) {
+        setUser(response.user);
+      } else {
+        setError(response.error || 'Verification failed');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Invalid verification code');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    try {
+      await resendEmailOtp(email);
+      setNotice('Code resent — check your email.');
+      setError('');
+    } catch {
+      setError('Could not resend the code yet — try again in a moment.');
     }
   }
 
@@ -56,6 +91,46 @@ export default function LoginScreen({ navigation, setUser }: LoginScreenProps) {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (awaitingCode) {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Check your email</Text>
+          <Text style={styles.subtitle}>Enter the 6-digit code we sent to {email}</Text>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+
+          <Input
+            label="Verification code"
+            placeholder="123456"
+            value={code}
+            onChangeText={setCode}
+            keyboardType="numeric"
+          />
+
+          <Button
+            title={loading ? 'Verifying...' : 'Verify & Sign In'}
+            onPress={handleVerify}
+            disabled={loading || code.trim().length < 6}
+          />
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Didn&apos;t get it?</Text>
+            <Text style={styles.link} onPress={handleResend}>
+              Resend code
+            </Text>
+          </View>
+          <View style={styles.footer}>
+            <Text style={styles.link} onPress={() => { setAwaitingCode(false); setCode(''); }}>
+              Back
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   return (
@@ -127,6 +202,11 @@ const styles = StyleSheet.create({
   },
   error: {
     color: colors.danger,
+    marginBottom: 12,
+    fontSize: 14,
+  },
+  notice: {
+    color: colors.primary,
     marginBottom: 12,
     fontSize: 14,
   },
