@@ -53,6 +53,7 @@ import { CreateSkipTraceLookups1700000000051 } from './1700000000051-CreateSkipT
 import { CreateVoiceCalls1700000000052 } from './1700000000052-CreateVoiceCalls';
 import { WidenQaQuestionStatus1700000000053 } from './1700000000053-WidenQaQuestionStatus';
 import { AddQaAnswerStatus1700000000054 } from './1700000000054-AddQaAnswerStatus';
+import { CreateCreditMonitoringTables1700000000055 } from './1700000000055-CreateCreditMonitoringTables';
 
 type MigrationConstructor = new () => MigrationInterface;
 
@@ -110,6 +111,7 @@ const migrations: MigrationConstructor[] = [
   CreateVoiceCalls1700000000052,
   WidenQaQuestionStatus1700000000053,
   AddQaAnswerStatus1700000000054,
+  CreateCreditMonitoringTables1700000000055,
 ];
 
 async function ensureMigrationsTable(queryRunner: QueryRunner): Promise<void> {

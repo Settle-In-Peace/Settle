@@ -39,6 +39,9 @@ import { Seat } from './seats/seat.entity';
 import { SeatUsage } from './seats/seat-usage.entity';
 import { SeatPlan } from './seats/seat-plan.entity';
 import { NurtureSequence } from './close-flow/nurture-sequence.entity';
+import { CreditMonitorEnrollment } from './credit-monitoring/entities/credit-monitor-enrollment.entity';
+import { CreditMonitorSnapshot } from './credit-monitoring/entities/credit-monitor-snapshot.entity';
+import { CreditMonitorAlert } from './credit-monitoring/entities/credit-monitor-alert.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -90,6 +93,9 @@ export const dataSource = new DataSource({
     SeatUsage,
     SeatPlan,
     NurtureSequence,
+    CreditMonitorEnrollment,
+    CreditMonitorSnapshot,
+    CreditMonitorAlert,
   ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

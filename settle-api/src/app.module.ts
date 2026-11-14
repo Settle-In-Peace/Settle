@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -84,6 +85,10 @@ import { PortfolioModule } from './portfolio/portfolio.module';
 import { PaymentPlansModule } from './payment-plans/payment-plans.module';
 import { PaymentPortalModule } from './payment-portal/payment-portal.module';
 import { CreditBureauModule } from './credit-bureau/credit-bureau.module';
+import { CreditMonitoringModule } from './credit-monitoring/credit-monitoring.module';
+import { CreditMonitorEnrollment } from './credit-monitoring/entities/credit-monitor-enrollment.entity';
+import { CreditMonitorSnapshot } from './credit-monitoring/entities/credit-monitor-snapshot.entity';
+import { CreditMonitorAlert } from './credit-monitoring/entities/credit-monitor-alert.entity';
 import { DialerModule } from './dialer/dialer.module';
 import { LeadVendorsModule } from './lead-vendors/lead-vendors.module';
 import { PaymentProcessorsModule } from './payment-processors/payment-processors.module';
@@ -99,6 +104,7 @@ import { SeatsModule } from './seats/seats.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -174,6 +180,9 @@ import { SeatsModule } from './seats/seats.module';
         Seat,
         SeatUsage,
         SeatPlan,
+        CreditMonitorEnrollment,
+        CreditMonitorSnapshot,
+        CreditMonitorAlert,
       ],
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
@@ -260,6 +269,7 @@ import { SeatsModule } from './seats/seats.module';
     PaymentPlansModule,
     PaymentPortalModule,
     CreditBureauModule,
+    CreditMonitoringModule,
     DialerModule,
     LeadVendorsModule,
     PaymentProcessorsModule,
