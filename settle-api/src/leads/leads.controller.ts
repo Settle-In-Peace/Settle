@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProviderGuard } from '../auth/guards/provider.guard';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { BatchPurchaseLeadsDto } from './dto/batch-purchase-leads.dto';
+import { matchFeeEnabled } from '../matching/matching.service';
 
 @Controller('leads')
 export class LeadsController {
@@ -79,6 +80,24 @@ export class LeadsController {
   @UseGuards(JwtAuthGuard, ProviderGuard)
   async batchPurchaseLeads(@Body() body: BatchPurchaseLeadsDto, @Request() req) {
     return this.leadsService.batchPurchaseLeads(body.leadIds, req.user.sub);
+  }
+
+  // Public: the priority-match fee disclosure — the assessment funnel and
+  // compare page render the exact amount before asking for payment.
+  // amountCents is null when the configured offer's amount can't be
+  // resolved (callers degrade to fee-existence copy without a number).
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Get('match-fee')
+  async matchFee() {
+    const enabled = matchFeeEnabled();
+    return {
+      enabled,
+      amountCents: enabled
+        ? await this.closeFlow.offerAmountCents(SETTLE_SITE.offer)
+        : null,
+      currency: 'usd',
+      productName: SETTLE_SITE.offer.productName,
+    };
   }
 
   // Consumer: check if their lead has been purchased

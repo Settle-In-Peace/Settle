@@ -208,6 +208,37 @@ export class CloseFlowService implements OnModuleInit, OnModuleDestroy {
     return { checkoutUrl: res.checkoutUrl, action: res.action, sequenceId: res.sequenceId };
   }
 
+  /**
+   * Resolve an offer's amount in cents for fee disclosure — priceCents
+   * wins; a Stripe priceId is looked up once and cached. Returns null when
+   * the amount can't be determined (callers should degrade to fee-existence
+   * copy without a number rather than guess).
+   */
+  private offerAmountCache = new Map<string, number | null>();
+  async offerAmountCents(offer: {
+    priceId?: string;
+    priceCents?: number;
+  }): Promise<number | null> {
+    if (offer.priceCents != null && offer.priceCents > 0) return offer.priceCents;
+    if (!offer.priceId) return null;
+    if (this.offerAmountCache.has(offer.priceId)) {
+      return this.offerAmountCache.get(offer.priceId) ?? null;
+    }
+    const stripe = this.stripeClient();
+    if (!stripe) return null;
+    try {
+      const price = await stripe.prices.retrieve(offer.priceId);
+      const amount = price.unit_amount ?? null;
+      this.offerAmountCache.set(offer.priceId, amount);
+      return amount;
+    } catch (e) {
+      this.logger.warn(
+        `offerAmountCents: Stripe lookup failed for ${offer.priceId}: ${e instanceof Error ? e.message : e}`,
+      );
+      return null;
+    }
+  }
+
   private async createCheckout(
     offer: NonNullable<ReturnType<typeof resolveOffer>>,
     row: NurtureRow,

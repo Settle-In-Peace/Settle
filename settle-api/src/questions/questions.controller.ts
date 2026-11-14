@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Patch,
@@ -52,6 +53,20 @@ export class QuestionsController {
   @Post()
   create(@Body() dto: CreateQuestionDto, @Request() req: any) {
     return this.questionsService.create(dto, req.user);
+  }
+
+  /**
+   * Staff-only: the full moderation queue — pending questions + pending
+   * answers in one call. Declared before @Get(':id') so 'moderation' is
+   * matched as a literal, not a param.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('moderation')
+  moderation(@Request() req: any) {
+    if (!req?.user?.role || !STAFF_ROLES.has(req.user.role)) {
+      throw new ForbiddenException('Staff access required');
+    }
+    return this.questionsService.moderationQueue();
   }
 
   /** Public: question detail + answers (hidden questions 404). */

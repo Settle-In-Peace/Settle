@@ -16,12 +16,17 @@ export default function QuestionDetailPage({
   const [notFound, setNotFound] = useState(false);
 
   const [body, setBody] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const authed = isAuthenticated();
+  // Auth state must resolve after mount — reading localStorage during
+  // render produced a hydration mismatch (SSR signed-out vs client signed-in).
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setAuthed(isAuthenticated());
+  }, []);
 
   useEffect(() => {
     getQuestion(id)
@@ -37,28 +42,13 @@ export default function QuestionDetailPage({
       setFormError('Please write your answer first.');
       return;
     }
-    if (!authed && !contactEmail.trim()) {
-      setFormError('Please leave an email to answer anonymously — it is never shown publicly.');
-      return;
-    }
     setSubmitting(true);
     try {
-      const a = await answerQuestion(id, {
-        body: body.trim(),
-        contactEmail: contactEmail.trim() || undefined,
-      });
+      await answerQuestion(id, { body: body.trim() });
       setAnswered(true);
       setBody('');
-      setContactEmail('');
-      setQuestion(prev =>
-        prev
-          ? {
-              ...prev,
-              answersCount: prev.answersCount + 1,
-              answers: [...prev.answers, a],
-            }
-          : prev,
-      );
+      // Community answers are moderated — they don't join the public list
+      // until staff publishes them, so nothing is injected optimistically.
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Could not post your answer. Please try again.');
     } finally {
@@ -152,8 +142,14 @@ export default function QuestionDetailPage({
           </ul>
         )}
 
-        {/* Answer form — account required; anonymous answers were removed. */}
-        {authed ? (
+        {/* Answer form — account required; anonymous answers were removed.
+            `authed` is null until mount so SSR and the first client render
+            match (no hydration mismatch). */}
+        {authed === null ? (
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 text-sm text-zinc-400 dark:text-zinc-500">
+            &nbsp;
+          </div>
+        ) : authed ? (
           <form
             onSubmit={handleAnswer}
             className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-3"
@@ -173,11 +169,13 @@ export default function QuestionDetailPage({
             />
             {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
             {answered && (
-              <p className="text-sm text-emerald-600 dark:text-emerald-400">Posted — thank you.</p>
+              <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                Submitted — your answer will appear once our team reviews it.
+              </p>
             )}
             <div className="flex items-center justify-between gap-4">
               <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                Answers are community guidance, not legal advice.
+                Answers are reviewed before they appear — community guidance, not legal advice.
               </p>
               <button
                 type="submit"

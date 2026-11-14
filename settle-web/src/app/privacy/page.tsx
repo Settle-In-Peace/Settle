@@ -61,6 +61,9 @@ export default function PrivacyPage() {
               <strong>With partner providers:</strong> When you complete the assessment and provide TCPA consent, we share your contact information and assessment data with matched debt relief providers so they can contact you with personalized offers. We only share your information with providers who are licensed in your state and meet our vetting criteria.
             </p>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-3">
+              <strong>With service partners:</strong> When a form on this site asks for your consent, we may share the information you submit with service partners relevant to your request, consistent with the consent language displayed on that form.
+            </p>
+            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-3">
               <strong>Service providers:</strong> We use third-party services to operate our platform, including hosting (Railway, Render), email delivery (Resend), and analytics. These providers have access to your information only to perform services on our behalf and are obligated to protect your data.
             </p>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-3">

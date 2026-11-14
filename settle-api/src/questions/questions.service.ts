@@ -10,7 +10,7 @@ import {
   QaCategory,
   QaQuestionStatus,
 } from './qa-question.entity';
-import { QaAnswer } from './qa-answer.entity';
+import { QaAnswer, QaAnswerStatus } from './qa-answer.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { CreateAnswerDto } from './dto/create-answer.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
@@ -43,6 +43,14 @@ export interface PublicAnswer {
 
 export interface PublicQuestionDetail extends PublicQuestion {
   answers: PublicAnswer[];
+}
+
+/** Staff-only row for the moderation queue — carries the question's body so
+ * reviewers can see context without a second fetch. */
+export interface PendingAnswer extends PublicAnswer {
+  status: QaAnswerStatus;
+  questionId: string;
+  questionBody: string;
 }
 
 @Injectable()
@@ -98,6 +106,39 @@ export class QuestionsService {
     return rows.map((q) => this.toPublic(q));
   }
 
+  /** Staff-only moderation queue — pending community answers, with the
+   * parent question's body attached for review context. */
+  async listPendingAnswers(): Promise<PendingAnswer[]> {
+    const rows = await this.answers.find({
+      where: { status: QaAnswerStatus.PENDING },
+      order: { createdAt: 'ASC' },
+      take: 200,
+    });
+    const qIds = [...new Set(rows.map((a) => a.questionId))];
+    const parents = qIds.length
+      ? await this.questions.find({ where: { id: In(qIds) } })
+      : [];
+    const parentById = new Map(parents.map((q) => [q.id, q]));
+    return rows.map((a) => ({
+      ...this.answerToPublic(a),
+      status: a.status,
+      questionId: a.questionId,
+      questionBody: parentById.get(a.questionId)?.body ?? '',
+    }));
+  }
+
+  /** Both staff queues in one call — the web moderation page fetches this. */
+  async moderationQueue(): Promise<{
+    questions: PublicQuestion[];
+    answers: PendingAnswer[];
+  }> {
+    const [questions, answers] = await Promise.all([
+      this.listPending(),
+      this.listPendingAnswers(),
+    ]);
+    return { questions, answers };
+  }
+
   async getPublic(id: string): Promise<PublicQuestionDetail> {
     const q = await this.questions.findOne({
       where: {
@@ -108,7 +149,7 @@ export class QuestionsService {
     if (!q) throw new NotFoundException('Question not found');
 
     const answers = await this.answers.find({
-      where: { questionId: id },
+      where: { questionId: id, status: QaAnswerStatus.PUBLISHED },
       order: { isOfficial: 'DESC', createdAt: 'ASC' },
       take: 100,
     });
@@ -161,13 +202,18 @@ export class QuestionsService {
       // Staff answers are official by default; admins can toggle via PATCH.
       isOfficial: isStaff,
       authorLabel: isStaff ? 'Settle team' : 'Community member',
+      // Community answers are moderated before they appear — the board sits
+      // on a regulated-adjacent surface, so unreviewed claims can't publish.
+      status: isStaff ? QaAnswerStatus.PUBLISHED : QaAnswerStatus.PENDING,
       authorUserId: userId ?? undefined,
       contactEmail: user?.email ?? dto.contactEmail,
     });
     const saved = await this.answers.save(answer);
 
-    // Recount authoritatively and mark staff-answered questions.
-    const count = await this.answers.count({ where: { questionId } });
+    // Recount authoritatively (published only) and mark staff-answered questions.
+    const count = await this.answers.count({
+      where: { questionId, status: QaAnswerStatus.PUBLISHED },
+    });
     q.answersCount = count;
     if (isStaff) q.status = QaQuestionStatus.ANSWERED;
     await this.questions.save(q);
@@ -184,7 +230,7 @@ export class QuestionsService {
     return this.toPublic(saved);
   }
 
-  /** Admin: flag/unflag an answer as official. */
+  /** Admin: flag/unflag an answer as official, or publish/hide it. */
   async updateAnswer(
     questionId: string,
     answerId: string,
@@ -198,7 +244,22 @@ export class QuestionsService {
       a.isOfficial = dto.isOfficial;
       if (dto.isOfficial) a.authorLabel = 'Settle team';
     }
+    if (dto.status !== undefined) a.status = dto.status;
     const saved = await this.answers.save(a);
+
+    // Keep the parent question's public answersCount in sync — only
+    // published answers are visible and counted.
+    if (dto.status !== undefined) {
+      const count = await this.answers.count({
+        where: { questionId, status: QaAnswerStatus.PUBLISHED },
+      });
+      const q = await this.questions.findOne({ where: { id: questionId } });
+      if (q) {
+        q.answersCount = count;
+        await this.questions.save(q);
+      }
+    }
+
     return this.answerToPublic(saved);
   }
 }

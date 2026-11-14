@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
 import Logo from '../../components/Logo';
 import { submitAssessment } from '@/lib/api';
 import { captureLead } from '@/lib/leadCapture';
+import { API_URL } from '@/lib/apiUrl';
 
 const STEPS = [
   { id: 'debt_amount', label: 'Debt Amount', icon: '$' },
@@ -47,6 +48,24 @@ export default function AssessmentPage() {
   const [matchCheckoutUrl, setMatchCheckoutUrl] = useState('');
   const [leadId, setLeadId] = useState<string | null>(null);
   const [error, setError] = useState('');
+
+  // Priority-match fee — the exact amount comes from the API so the fee is
+  // disclosed (with its number) before the visitor reaches checkout.
+  const [matchFeeCents, setMatchFeeCents] = useState<number | null>(null);
+  useEffect(() => {
+    fetch(`${API_URL}/leads/match-fee`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.enabled && typeof data.amountCents === 'number') {
+          setMatchFeeCents(data.amountCents);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+  const feeLabel =
+    matchFeeCents != null
+      ? `$${(matchFeeCents / 100).toFixed(matchFeeCents % 100 === 0 ? 0 : 2)}`
+      : null;
 
   const [form, setForm] = useState({
     totalDebt: '',
@@ -164,7 +183,7 @@ export default function AssessmentPage() {
                 href={matchCheckoutUrl}
                 className="block w-full py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-lg"
               >
-                Get matched now — one-time priority fee →
+                Get matched now — one-time {feeLabel ? `${feeLabel} ` : ''}priority-match fee →
               </a>
             )}
             <button
@@ -224,6 +243,11 @@ export default function AssessmentPage() {
           <p className="text-sm text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide mb-2">Free Debt Assessment</p>
           <h1 className="text-3xl font-bold text-black dark:text-white">Find your path to financial peace</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2">1 minute · No credit check · No obligation</p>
+          {feeLabel && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
+              The assessment is free. Direct provider contact carries a one-time {feeLabel} priority-match fee.
+            </p>
+          )}
           <Link
             href="/assessment/chat"
             className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
@@ -547,7 +571,7 @@ export default function AssessmentPage() {
           </span>
           <span>✓ No Credit Check</span>
           <span>✓ No Obligation</span>
-          <span>✓ 100% Free</span>
+          <span>✓ Free Assessment</span>
           <span>✓ Confidential</span>
         </div>
       </div>

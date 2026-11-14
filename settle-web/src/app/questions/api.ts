@@ -72,3 +72,41 @@ export function answerQuestion(
     body: JSON.stringify(data),
   });
 }
+
+/* ── Staff moderation ─────────────────────────────────────────────── */
+
+export interface PendingAnswer extends QaAnswer {
+  status: 'pending' | 'published' | 'hidden';
+  questionId: string;
+  questionBody: string;
+}
+
+export interface ModerationQueue {
+  questions: QaQuestionSummary[];
+  answers: PendingAnswer[];
+}
+
+/** Staff-only: pending questions + pending community answers. */
+export function getModerationQueue() {
+  return api()<ModerationQueue>('/questions/moderation', { method: 'GET' });
+}
+
+/** Admin: publish or hide a question. */
+export function updateQuestionStatus(id: string, status: 'published' | 'hidden') {
+  return api()<QaQuestionSummary>(`/questions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+/** Admin: publish or hide an answer (or toggle isOfficial). */
+export function updateAnswer(
+  questionId: string,
+  answerId: string,
+  data: { status?: 'published' | 'hidden'; isOfficial?: boolean },
+) {
+  return api()<QaAnswer>(`/questions/${questionId}/answers/${answerId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}

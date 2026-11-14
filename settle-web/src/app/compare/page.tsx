@@ -107,6 +107,21 @@ function CompareContent() {
   // priority-match fee; cleared automatically once the webhook stamps it.
   const [feeRequired, setFeeRequired] = useState(false);
   const [feeCheckoutLoading, setFeeCheckoutLoading] = useState(false);
+  // The exact fee amount comes from the API (never hardcoded) so the page
+  // can state the number at the point of the ask.
+  const [matchFee, setMatchFee] = useState<{ enabled: boolean; amountCents: number | null } | null>(null);
+
+  const feeLabel =
+    matchFee?.enabled && matchFee.amountCents != null
+      ? `$${(matchFee.amountCents / 100).toFixed(matchFee.amountCents % 100 === 0 ? 0 : 2)}`
+      : null;
+
+  useEffect(() => {
+    fetch(`${API_URL}/leads/match-fee`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setMatchFee(data))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!sortBy) return;
@@ -233,7 +248,8 @@ function CompareContent() {
             <div>
               <p className="font-semibold text-blue-900 dark:text-blue-100">Unlock direct provider contact</p>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                Browsing is free. A one-time priority-match fee connects you directly with the provider you choose — paid once, never again.
+                Browsing is free. A one-time {feeLabel ? `${feeLabel} ` : ''}priority-match fee
+                is required to contact a provider directly.
               </p>
             </div>
             <button
@@ -241,7 +257,11 @@ function CompareContent() {
               disabled={feeCheckoutLoading}
               className="shrink-0 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-60"
             >
-              {feeCheckoutLoading ? 'Opening secure checkout…' : 'Unlock now'}
+              {feeCheckoutLoading
+                ? 'Opening secure checkout…'
+                : feeLabel
+                  ? `Pay ${feeLabel} — continue to checkout`
+                  : 'Continue to checkout'}
             </button>
           </div>
         )}

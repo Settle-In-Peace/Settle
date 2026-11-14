@@ -9,6 +9,12 @@ import {
 } from 'typeorm';
 import { QaQuestion } from './qa-question.entity';
 
+export enum QaAnswerStatus {
+  PENDING = 'pending',
+  PUBLISHED = 'published',
+  HIDDEN = 'hidden',
+}
+
 /**
  * qa_answers — community/staff answers on the anonymous Q&A board.
  * `author_label` is the only identity ever exposed publicly
@@ -33,6 +39,15 @@ export class QaAnswer {
 
   @Column({ name: 'is_official', type: 'boolean', default: false })
   isOfficial: boolean;
+
+  /**
+   * Community answers land 'pending' and only appear publicly after staff
+   * review — mirrors qa_questions moderation (migration 53/54). Staff
+   * answers and pre-migration rows default to 'published'.
+   */
+  @Column({ length: 20, default: QaAnswerStatus.PUBLISHED })
+  @Index()
+  status: QaAnswerStatus;
 
   @Column({ name: 'author_label', length: 60, default: 'Community member' })
   authorLabel: string;
