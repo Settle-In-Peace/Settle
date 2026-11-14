@@ -12,7 +12,6 @@
     "cf:preview": "node node_modules/@opennextjs/cloudflare/dist/cli/index.js preview"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.20.6",
     "@settle/shared-sdk": "workspace:*",
     "@simplewebauthn/browser": "^13.3.0",
     "@stripe/react-stripe-js": "^6.7.0",
@@ -25,6 +24,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -33,6 +33,6 @@
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^4.131.1"
+    "wrangler": "^4.158.0"
   }
 }
