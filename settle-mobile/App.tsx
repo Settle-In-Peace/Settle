@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import OnboardingScreen, { ONBOARD_KEY } from './src/screens/OnboardingScreen';
-import { getToken, getProfile, getStoredUser, logout, User } from './src/services/auth';
+import { restoreSession, User } from './src/services/auth';
 import { colors } from './src/theme/colors';
 
 // Keep the native splash up until the stored session + onboarding flag resolve.
@@ -31,7 +31,7 @@ const linking: LinkingOptions<any> = {
               Dashboard: 'home',
               Debts: 'debts',
               Calculators: 'calculators',
-              Learn: { screens: { LearnList: 'learn', Article: 'learn/:id' } },
+              Learn: { screens: { LearnList: 'learn', Article: 'learn/:slug' } },
               Profile: 'profile',
             },
           },
@@ -51,25 +51,18 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  // Session restored but /auth/profile was unreachable (offline, API down) —
+  // the app boots into last-known state instead of signing the user out.
+  const [unverified, setUnverified] = useState(false);
 
   useEffect(() => {
     async function init() {
-      const [token, seenOnboard] = await Promise.all([
-        getToken(),
+      const [session, seenOnboard] = await Promise.all([
+        restoreSession(),
         AsyncStorage.getItem(ONBOARD_KEY).catch(() => null),
       ]);
-      if (token) {
-        try {
-          const profile = await getProfile(token);
-          setUser(profile);
-        } catch {
-          await logout();
-          setUser(null);
-        }
-      } else {
-        const stored = await getStoredUser();
-        if (stored) setUser(stored);
-      }
+      setUser(session.user);
+      setUnverified(session.unverified);
       setOnboarded(!!seenOnboard);
       setLoading(false);
     }
@@ -95,9 +88,18 @@ export default function App() {
       {!onboarded ? (
         <OnboardingScreen onDone={() => setOnboarded(true)} />
       ) : (
-        <NavigationContainer linking={linking}>
-          <AppNavigator user={user} setUser={setUser} />
-        </NavigationContainer>
+        <View style={styles.app}>
+          {unverified && (
+            <View style={styles.offline}>
+              <Text style={styles.offlineText}>
+                You&apos;re offline — showing saved data.
+              </Text>
+            </View>
+          )}
+          <NavigationContainer linking={linking}>
+            <AppNavigator user={user} setUser={setUser} />
+          </NavigationContainer>
+        </View>
       )}
     </SafeAreaProvider>
   );
@@ -109,5 +111,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+  },
+  app: {
+    flex: 1,
+  },
+  offline: {
+    backgroundColor: colors.slateLight,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  offlineText: {
+    fontSize: 12,
+    color: colors.textMuted,
   },
 });

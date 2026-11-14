@@ -1,19 +1,34 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// Auth service — token pair + cached profile live in services/session.ts
+// (expo-secure-store with AsyncStorage fallback). Access tokens last 1h;
+// the refresh token rotates on every /auth/refresh call.
+
 import { api } from './api';
+import {
+  getToken,
+  getFreshToken,
+  getStoredUser,
+  getRefreshToken,
+  setToken,
+  removeToken,
+  storeSession,
+  storeUser,
+  type User,
+} from './session';
 
-const TOKEN_KEY = '@settle_token';
-const USER_KEY = '@settle_user';
+export type { User };
+export {
+  getToken,
+  getFreshToken,
+  getStoredUser,
+  getRefreshToken,
+  setToken,
+  removeToken,
+  storeSession,
+  storeUser,
+};
 
-export interface User {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string;
-  role?: string;
-  phone?: string;
-  createdAt?: string;
-}
+/** Same-named export kept for existing callers — a fresh (refreshed) token. */
+export const freshToken = getFreshToken;
 
 export interface AuthResponse {
   success: boolean;
@@ -28,30 +43,40 @@ export interface AuthResponse {
   message?: string;
 }
 
-export async function setToken(token: string): Promise<void> {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
+/** True only for auth rejection — NOT network failures, timeouts, or 5xx. */
+export function isAuthError(err: unknown): boolean {
+  const status = (err as { response?: { status?: number } })?.response?.status;
+  return status === 401 || status === 403;
 }
 
-export async function getToken(): Promise<string | null> {
-  return AsyncStorage.getItem(TOKEN_KEY);
+export interface RestoredSession {
+  user: User | null;
+  /** Token kept but /auth/profile was unreachable — boot last-known state. */
+  unverified: boolean;
 }
 
-export async function removeToken(): Promise<void> {
-  await AsyncStorage.removeItem(TOKEN_KEY);
-  await AsyncStorage.removeItem(USER_KEY);
-}
-
-export async function storeUser(user: User): Promise<void> {
-  await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-export async function getStoredUser(): Promise<User | null> {
-  const userStr = await AsyncStorage.getItem(USER_KEY);
-  if (!userStr) return null;
+/**
+ * Restore at boot: get a usable access token (refreshing when stale), then
+ * confirm with GET /auth/profile. A 401/403 clears the session; a network or
+ * server failure KEEPS it (unverified) so the app still opens offline — an
+ * offline cold start must never sign the user out.
+ */
+export async function restoreSession(): Promise<RestoredSession> {
+  const token = await getFreshToken();
+  if (!token) {
+    // No usable token — a leftover cached profile is not a session; drop it.
+    await removeToken();
+    return { user: null, unverified: false };
+  }
   try {
-    return JSON.parse(userStr) as User;
-  } catch {
-    return null;
+    const user = await getProfile(token);
+    return { user, unverified: false };
+  } catch (err) {
+    if (isAuthError(err)) {
+      await logout();
+      return { user: null, unverified: false };
+    }
+    return { user: await getStoredUser(), unverified: true };
   }
 }
 
@@ -60,10 +85,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
   const data = response.data;
 
   if (data.success && data.accessToken) {
-    await setToken(data.accessToken);
-    if (data.user) {
-      await storeUser(data.user);
-    }
+    await storeSession(data);
   }
 
   return data;
@@ -89,10 +111,7 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
   const result = response.data;
 
   if (result.success && result.accessToken) {
-    await setToken(result.accessToken);
-    if (result.user) {
-      await storeUser(result.user);
-    }
+    await storeSession(result);
   }
 
   return result;
@@ -108,10 +127,7 @@ export async function verifyEmailOtp(email: string, code: string): Promise<AuthR
   const data = response.data;
 
   if (data.success && data.accessToken) {
-    await setToken(data.accessToken);
-    if (data.user) {
-      await storeUser(data.user);
-    }
+    await storeSession(data);
   }
 
   return data;
@@ -138,6 +154,11 @@ export async function getProfile(token: string): Promise<User> {
 }
 
 export async function logout(): Promise<void> {
+  // Best-effort server-side revocation — the local session clears regardless.
+  const refreshToken = await getRefreshToken();
+  if (refreshToken) {
+    await api.post('/auth/logout', { refreshToken }).catch(() => {});
+  }
   await removeToken();
 }
 

@@ -26,7 +26,7 @@ export async function listQuestions(category?: string): Promise<QaQuestion[]> {
 }
 
 export async function getQuestion(id: string): Promise<{ question: QaQuestion | null; answers: QaAnswer[] }> {
-  const res = await api.get(`/questions/${id}`);
+  const res = await api.get(`/questions/${encodeURIComponent(id)}`);
   const d = res.data;
   return {
     question: d.question ?? d ?? null,
@@ -40,20 +40,27 @@ export async function createQuestion(input: { body: string; category?: string; c
 }
 
 export async function answerQuestion(id: string, body: string) {
-  const res = await api.post(`/questions/${id}/answers`, { body });
+  const res = await api.post(`/questions/${encodeURIComponent(id)}/answers`, { body });
   return res.data;
 }
 
 /* ------------------------------- coaching ------------------------------ */
 
+// API units: every coaching amount is DOLLARS (decimal columns serialize as
+// numeric strings over the wire). There are no *Cents fields.
+export interface BudgetItem {
+  id?: string;
+  name?: string;
+  amount?: number | string;
+  category?: string;
+  recurring?: boolean;
+}
+
 export interface Budget {
   id: string;
-  name?: string;
-  category?: string;
-  amount?: number;
-  amountCents?: number;
-  spent?: number;
-  period?: string;
+  monthlyIncome?: number | string;
+  /** Eager-loaded server-side — one row per expense line item. */
+  expenses?: BudgetItem[];
   [k: string]: unknown;
 }
 
@@ -61,11 +68,10 @@ export interface Goal {
   id: string;
   title?: string;
   name?: string;
-  targetAmount?: number;
-  targetCents?: number;
-  currentAmount?: number;
-  currentCents?: number;
+  targetAmount?: number | string;
+  currentAmount?: number | string;
   deadline?: string;
+  completed?: boolean;
   [k: string]: unknown;
 }
 
@@ -86,7 +92,7 @@ export async function createBudget(input: Record<string, unknown>) {
 }
 
 export async function deleteBudget(id: string) {
-  await api.delete(`/coaching/budgets/${id}`);
+  await api.delete(`/coaching/budgets/${encodeURIComponent(id)}`);
 }
 
 export async function listGoals(): Promise<Goal[]> {
@@ -101,5 +107,5 @@ export async function createGoal(input: Record<string, unknown>) {
 }
 
 export async function deleteGoal(id: string) {
-  await api.delete(`/coaching/goals/${id}`);
+  await api.delete(`/coaching/goals/${encodeURIComponent(id)}`);
 }

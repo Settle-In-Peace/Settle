@@ -22,8 +22,13 @@ import {
 } from '../services/questions';
 import { colors } from '../theme/colors';
 
-const money = (v?: number) =>
-  v == null ? '' : `$${(Math.abs(v) >= 10000 ? v / 100 : v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+// All coaching amounts are DOLLARS — decimal columns arrive as numeric
+// strings, so coerce before formatting. No cents/magnitude guessing.
+const money = (v?: number | string | null) => {
+  const n = v == null ? NaN : Number(v);
+  if (!Number.isFinite(n)) return '';
+  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+};
 
 export default function CoachingScreen() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -60,7 +65,12 @@ export default function CoachingScreen() {
     if (busy || !bName.trim() || !amt) return;
     setBusy(true);
     try {
-      await createBudget({ name: bName.trim(), amount: amt });
+      // API model: a budget = monthlyIncome + expense line items. The app's
+      // "named monthly cap" maps to a single expense carrying the name+amount.
+      await createBudget({
+        monthlyIncome: amt,
+        expenses: [{ name: bName.trim(), amount: amt, category: 'other' }],
+      });
       setBName('');
       setBAmt('');
       load();
@@ -130,18 +140,24 @@ export default function CoachingScreen() {
     >
       <Text style={styles.section}>BUDGETS</Text>
       {budgets.length === 0 && <Text style={styles.empty}>No budgets yet — set one below.</Text>}
-      {budgets.map((b) => (
-        <View key={b.id} style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>{b.name ?? b.category ?? 'Budget'}</Text>
-            {!!b.period && <Text style={styles.rowSub}>{b.period}</Text>}
+      {budgets.map((b) => {
+        const line = b.expenses?.[0];
+        const itemCount = b.expenses?.length ?? 0;
+        return (
+          <View key={b.id} style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>{line?.name ?? 'Monthly budget'}</Text>
+              {itemCount > 1 && (
+                <Text style={styles.rowSub}>{itemCount} expense items</Text>
+              )}
+            </View>
+            <Text style={styles.rowAmt}>{money(line?.amount ?? b.monthlyIncome)}</Text>
+            <Pressable onPress={() => remove('budget', b.id)} hitSlop={10}>
+              <Text style={styles.remove}>×</Text>
+            </Pressable>
           </View>
-          <Text style={styles.rowAmt}>{money(b.amount ?? (b.amountCents as number | undefined))}</Text>
-          <Pressable onPress={() => remove('budget', b.id)} hitSlop={10}>
-            <Text style={styles.remove}>×</Text>
-          </Pressable>
-        </View>
-      ))}
+        );
+      })}
       <View style={styles.addCard}>
         <TextInput value={bName} onChangeText={setBName} placeholder="Budget name — e.g. Groceries" placeholderTextColor={colors.textMuted} style={styles.input} />
         <View style={styles.inline}>
@@ -162,8 +178,8 @@ export default function CoachingScreen() {
       <Text style={styles.section}>GOALS</Text>
       {goals.length === 0 && <Text style={styles.empty}>No goals yet — set a payoff or savings target.</Text>}
       {goals.map((g) => {
-        const target = g.targetAmount ?? (g.targetCents as number | undefined);
-        const current = g.currentAmount ?? (g.currentCents as number | undefined) ?? 0;
+        const target = Number(g.targetAmount) || 0;
+        const current = Number(g.currentAmount) || 0;
         const pct = target ? Math.min(100, Math.round((current / target) * 100)) : 0;
         return (
           <View key={g.id} style={styles.row}>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AppNavigator';
 import { Input } from '../components/Input';
@@ -26,6 +26,15 @@ export default function RegisterScreen({ navigation, setUser }: RegisterScreenPr
   const [code, setCode] = useState('');
   const [pendingPasskey, setPendingPasskey] = useState(false);
   const [notice, setNotice] = useState('');
+  // Resend cooldown — each tap fires a real email, so pace it.
+  const RESEND_COOLDOWN_S = 45;
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   async function handleRegister(wantPasskey: boolean) {
     setError('');
@@ -35,6 +44,7 @@ export default function RegisterScreen({ navigation, setUser }: RegisterScreenPr
       if (response.success) {
         setPendingPasskey(wantPasskey);
         setAwaitingCode(true);
+        setResendIn(RESEND_COOLDOWN_S); // a code was already sent by register
         setNotice(`We sent a verification code to ${email}.`);
       } else {
         setError(response.error || 'Registration failed');
@@ -73,10 +83,12 @@ export default function RegisterScreen({ navigation, setUser }: RegisterScreenPr
   }
 
   async function handleResend() {
+    if (resendIn > 0) return;
     try {
       await resendEmailOtp(email);
       setNotice('Code resent — check your email.');
       setError('');
+      setResendIn(RESEND_COOLDOWN_S);
     } catch {
       setError('Could not resend the code yet — try again in a moment.');
     }
@@ -84,41 +96,49 @@ export default function RegisterScreen({ navigation, setUser }: RegisterScreenPr
 
   if (awaitingCode) {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Check your email</Text>
-          <Text style={styles.subtitle}>Enter the 6-digit code we sent to {email}</Text>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <View style={styles.card}>
+            <Text style={styles.title}>Check your email</Text>
+            <Text style={styles.subtitle}>Enter the 6-digit code we sent to {email}</Text>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
-          <Input
-            label="Verification code"
-            placeholder="123456"
-            value={code}
-            onChangeText={setCode}
-            keyboardType="numeric"
-          />
+            <Input
+              label="Verification code"
+              placeholder="123456"
+              value={code}
+              onChangeText={setCode}
+              keyboardType="numeric"
+            />
 
-          <Button
-            title={loading ? 'Verifying...' : pendingPasskey ? 'Verify & Create Passkey' : 'Verify & Sign In'}
-            onPress={handleVerify}
-            disabled={loading || code.trim().length < 6}
-          />
+            <Button
+              title={loading ? 'Verifying...' : pendingPasskey ? 'Verify & Create Passkey' : 'Verify & Sign In'}
+              onPress={handleVerify}
+              disabled={loading || code.trim().length < 6}
+            />
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Didn&apos;t get it?</Text>
-            <Text style={styles.link} onPress={handleResend}>
-              Resend code
-            </Text>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Didn&apos;t get it?</Text>
+              <Text
+                style={[styles.link, resendIn > 0 && styles.linkDisabled]}
+                onPress={resendIn > 0 ? undefined : handleResend}
+              >
+                {resendIn > 0 ? `Resend code (${resendIn}s)` : 'Resend code'}
+              </Text>
+            </View>
+            <View style={styles.footer}>
+              <Text style={styles.link} onPress={() => { setAwaitingCode(false); setCode(''); }}>
+                Back
+              </Text>
+            </View>
           </View>
-          <View style={styles.footer}>
-            <Text style={styles.link} onPress={() => { setAwaitingCode(false); setCode(''); }}>
-              Back
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -168,6 +188,10 @@ export default function RegisterScreen({ navigation, setUser }: RegisterScreenPr
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -238,5 +262,8 @@ const styles = StyleSheet.create({
   link: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  linkDisabled: {
+    opacity: 0.5,
   },
 });

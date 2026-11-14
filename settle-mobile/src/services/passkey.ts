@@ -1,5 +1,5 @@
 import { api } from './api';
-import { setToken, storeUser, AuthResponse } from './auth';
+import { storeSession, AuthResponse } from './auth';
 
 /**
  * Lazy-require the native passkey module. If the native code is absent or
@@ -48,8 +48,7 @@ export async function loginWithPasskey(email?: string): Promise<AuthResponse> {
   const data = verifyRes.data;
 
   if (data.success && data.accessToken) {
-    await setToken(data.accessToken);
-    if (data.user) await storeUser(data.user);
+    await storeSession(data);
   }
   return data;
 }
