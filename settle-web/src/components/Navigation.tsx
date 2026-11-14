@@ -66,7 +66,7 @@ export default function Navigation() {
   // Additional account items for dropdown only
   const dropdownItems = [
     { href: '/coaching', label: 'Coaching' },
-    { href: '/portal/credit', label: 'Credit Monitoring' },
+    { href: '/dashboard/credit', label: 'Credit Monitoring' },
     { href: '/settings', label: 'Settings' },
   ];
 
