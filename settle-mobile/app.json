@@ -26,7 +26,7 @@
     },
     "android": {
       "package": "com.settleinpeace.mobile",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#0b1526",
         "foregroundImage": "./assets/android-icon-foreground.png",

@@ -310,3 +310,12 @@ ack flag 4b1a777a9c7e — read by droid-store-prep (Play store-prep pass)
 ## Recently landed (iOS resubmit 2026-11-13)
 - Pre-flight gates audit: zero invite/paywall/IAP gates; open registration present; reviewer login verified live → JWT.
 - Resubmitted v1.0.0 for App Review — PATCH submitted:true on existing UNRESOLVED_ISSUES submission (7a9f2805…) → WAITING_FOR_REVIEW. 4.3 reply thread already on file.
+
+## 2026-11-14 — Settle Play launch: SUBMITTED FOR REVIEW (15 changes)
+- All 12 setup tasks completed: sign-in creds (applereview@settleinpeace.com/Review2026! — verified), privacy URL, ads=No, app category=Finance, content rating (UGC=Yes for moderated Community Q&A → Everyone/PEGI 3, Users Interact), target audience=18+, data safety (8 types: Name/Email/UserIDs/Phone/OtherFinancial/InAppMessages/AppInteractions/UGC — Name+Email+Phone+Financial marked shared w/ matched providers per leads/matching flow), government=No, financial features=Financial advice, health=No, trader status, store settings + full store listing (7 screenshots uploaded).
+- NEW: public delete-account page live at https://www.settleinpeace.com/delete-account (commit 45bc5b5 in settle-web, deployed to CF worker settleinpeace); disclosed in data safety.
+- Closed testing Alpha track: 178 countries, Internal Testers list (3), release vc7.
+- AAB signing saga: local gradle vc7 signed w/ settle-release.jks was REJECTED (cert 93:1F.../5E:8F... ≠ registered A1:9A...). Fixed via `eas build -p android --profile production --local` → remote creds → dist/settle-vc7-remote.aab (SHA1 A1:9A:53:2A:4D:EE:F9:E2:F0:77:78:CB:9F:A5:D4:45:ED:90:1A:CA ✓, vc7 via remote autoIncrement). DO NOT upload dist/settle-vc7.aab (local key) or dist/settle.aab.
+- Quick-check blocker resolved: advertising ID declaration set to "No" (no ad SDKs).
+- Status: "Changes in review" on Publishing overview — 15 changes submitted 2026-11-14 ~3:30 AM.
+- 2026-11-14 | REVIEW PASSED — Publishing overview shows "Last published on November 14, 2026". All 15 changes approved; closed Alpha track live w/ vc7 (1.0.0), Internal Testers, 178 countries. Settle Android launch complete.
