@@ -1165,8 +1165,8 @@ export const articles: Article[] = [
         "text": "Creditors may be willing to work with you if they believe you're in a financial hardship. However, there's no guarantee they'll agree to a lower balance or a modified payment plan. Some creditors may offer a settlement, which is a one-time payment for the full amount owed, while others may prefer a monthly payment plan. It's important to be clear about what you're willing to pay and what you're asking for."
       },
       {
-        " ": "type",
-        "callout": "Negotiating credit card debt can be a great way to reduce your balance, but it’s not without risks. Some creditors may report a settlement as a negative mark on your credit report, and you might still owe taxes on forgiven debt. Always get any agreement in writing and consider consulting a financial advisor before making major decisions."
+        "type": "callout",
+        "text": "Negotiating credit card debt can be a great way to reduce your balance, but it’s not without risks. Some creditors may report a settlement as a negative mark on your credit report, and you might still owe taxes on forgiven debt. Always get any agreement in writing and consider consulting a financial advisor before making major decisions."
       },
       {
         "type": "h2",
