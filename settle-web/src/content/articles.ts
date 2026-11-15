@@ -1196,6 +1196,75 @@ export const articles: Article[] = [
     ],
   },
 
+  {
+    slug: 'statute-of-limitations-on-debt-by-state',
+    title: "Statute of Limitations on Debt by State",
+    description: "Learn how the statute of limitations on debt works in each U.S. state and how it affects your ability to settle or discharge old debt.",
+    category: "Debt Relief Options",
+    author: 'Settle In Peace Editorial Team',
+    publishedAt: '2026-11-15',
+    updatedAt: '2026-11-15',
+    readingTime: 5,
+    keywords: ["statute of limitations on debt","debt statute of limitations by state","debt collection laws","debt relief","old debt"],
+    excerpt: "The statute of limitations on debt varies by state and can impact your ability to settle or discharge old debt. Understanding your state's laws is essential for managing debt effectively.",
+    content: [
+      {
+        "type": "h2",
+        "text": "What Is the Statute of Limitations on Debt?"
+      },
+      {
+        "type": "p",
+        "text": "The statute of limitations on debt is a legal time limit that determines how long a creditor or collections agency can legally attempt to collect a debt from you. Once this time period expires, the debt is considered 'time-barred,' and you may no longer be legally responsible for paying it."
+      },
+      {
+        "type": "h2",
+        "text": "How Does It Work by State?"
+      },
+      {
+        "type": "p",
+        "text": "Each U.S. state has its own statute of limitations for different types of debt. For example, credit card debt, medical bills, and personal loans can have different time limits. These time limits typically range from 3 to 20 years, depending on the state and type of debt."
+      },
+      {
+        " ": "type",
+        "text": "Here are some examples of the statute of limitations for debt in various states:"
+      },
+      {
+        "type": "ul",
+        "items": [
+          "California: 4 years for most debts",
+          "New York: 6 years for most debts",
+          "Texas: 4 years for most debts",
+          "Florida: 5 years for most debts",
+          "Ohio: 6 years for most debts"
+        ]
+      },
+      {
+        "type": "h2",
+        "text": "What Happens When the Statute of Limitations Expires?"
+      },
+      {
+        "type": "p",
+        "text": "Once the statute of limitations on a debt expires, creditors and collectors can no longer take legal action to collect the debt, such as suing you or garnishing your wages. However, they may still contact you and attempt to collect the debt, even though they cannot legally force you to pay."
+      },
+      {
+        "type": "callout",
+        "text": "While the statute of limitations can protect you from legal action, it does not erase the debt. You may still be able to negotiate a settlement or pay a portion of the debt, but the collector may not be able to take legal action against you if the statute has expired."
+      },
+      {
+        "type": "h2",
+        "text": "How Can You Use This Knowledge?"
+      },
+      {
+        "type": "p",
+        "text": "Understanding your state's statute of limitations can help you determine whether you're still legally obligated to pay an old debt. This knowledge can also empower you to negotiate with collectors or settle debts without fear of legal consequences."
+      },
+      {
+        "type": "p",
+        "text": "If you're dealing with debt relief, consider comparing vetted options at settleinpeace.com/compare or take the free assessment at settleinpeace.com/assessment to find the best solution for your situation."
+      }
+    ],
+  },
+
 ];
 
 // ---------------------------------------------------------------
