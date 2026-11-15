@@ -126,6 +126,7 @@ function vars(prospect, args) {
     compare_url: `${args.baseUrl}/compare`,
     sender_name: args.senderName,
     unsubscribe_url: '{{unsubscribe_url}}', // sender substitutes real opt-out link
+    mailing_address: '{{mailing_address}}', // sender substitutes real postal address (CAN-SPAM)
   };
 }
 
@@ -156,7 +157,8 @@ Happy to answer questions — just reply to this email.
 — {{sender_name}}
 
 --
-You received this because {{company}} is a licensed debt-relief provider we identified for our partner network.
+You received this because {{company}} is a debt-relief provider we identified for our partner network.
+{{mailing_address}}
 Unsubscribe: {{unsubscribe_url}}`,
   },
   2: {
@@ -184,6 +186,7 @@ Apply in about 5 minutes — applications are reviewed within 1–2 business day
 — {{sender_name}}
 
 --
+{{mailing_address}}
 Not interested? Unsubscribe: {{unsubscribe_url}}`,
   },
   3: {
@@ -203,6 +206,7 @@ Either way, wishing {{company}} a strong quarter.
 — {{sender_name}}
 
 --
+{{mailing_address}}
 This is the last email in this series. Unsubscribe anytime: {{unsubscribe_url}}`,
   },
 };

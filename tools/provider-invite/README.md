@@ -2,8 +2,9 @@
 
 Generates a 3-touch outreach sequence for prospective debt-relief providers
 from a CSV of prospects. Writes ready-to-send `{to, subject, body}` rows to
-`out/` — **it does not send email.** Import the output into Resend (or your
-sender of choice); sending, throttling, and unsubscribe handling live there.
+`out/`, and a companion sender `send_provider_invites.mjs` delivers them via
+Resend (dry-run by default; `--send` refuses without `--unsubscribe-url` +
+`--mailing-address` — CAN-SPAM; suppression list `out/suppression.txt`).
 
 This is the supply side of the P0 provider-inventory gap: the marketplace has
 leads but needs enrolled providers to monetize. Recipients land on
@@ -65,3 +66,23 @@ Owner supplies the real prospect CSV (licensed debt-settlement companies by
 state — AFCC member directory, state licensing registries, DBA lists). Drop it
 next to this script as `prospects.csv` and run the commands above. `out/` is
 gitignored.
+
+## Sending (send_provider_invites.mjs)
+
+```bash
+export RESEND_API_KEY=$(grep '^RESEND_API_KEY=' ../../settle-api/.env | cut -d= -f2-)
+
+# preview — always safe
+node send_provider_invites.mjs --in out/provider-invites-1.jsonl --dry-run
+
+# real send (requires real opt-out + postal address)
+node send_provider_invites.mjs --in out/provider-invites-1.jsonl --send \
+  --unsubscribe-url "mailto:support@settleinpeace.com?subject=unsubscribe" \
+  --mailing-address "Reid Technology, <street>, <city>, <state> <zip>" \
+  --limit 25
+```
+
+- Idempotent: `(to+touch)` rows already logged `sent` in `<in>.sent.jsonl` are skipped.
+- Suppression: `out/suppression.txt` (one email/line) is enforced on every run;
+  `node send_provider_invites.mjs --suppress <email>` adds an opt-out.
+- Keep batches ≤25/day while the sending domain warms up.
