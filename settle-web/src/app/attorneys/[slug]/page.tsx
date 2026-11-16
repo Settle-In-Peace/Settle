@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { API_URL } from '../../../lib/apiUrl';
+import AttorneyContactLinks from './AttorneyContactLinks';
 
 export const revalidate = 3600;
 
@@ -67,20 +68,7 @@ export default async function AttorneyProfilePage(
         {!!a.avgRating && <p className="mt-2 font-semibold text-amber-600">★ {Number(a.avgRating).toFixed(1)}</p>}
         {a.barNumber && <p className="mt-2 text-sm text-slate-500">Bar No. {a.barNumber}</p>}
         {a.description && <p className="mt-6 leading-relaxed text-slate-700">{a.description}</p>}
-        <div className="mt-8 flex flex-wrap gap-3">
-          {a.website && (
-            <a href={a.website} target="_blank" rel="noopener noreferrer sponsored"
-              className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-              Visit website
-            </a>
-          )}
-          {a.phone && (
-            <a href={`tel:${a.phone}`}
-              className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400">
-              Call {a.phone}
-            </a>
-          )}
-        </div>
+        <AttorneyContactLinks slug={a.slug} website={a.website} phone={a.phone} />
       </div>
       <p className="mt-6 text-xs text-slate-500">
         Listings marked Featured or Sponsored are paid placements. Contact happens directly
