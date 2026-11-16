@@ -46,13 +46,31 @@ interface LeadStats {
   available?: number;
   sold?: number;
   conversionRate?: number;
+  byStatus?: Record<string, number>;
 }
 
 interface MatchStats {
   total?: number;
+  suggested?: number;
+  viewed?: number;
   requested?: number;
+  declined?: number;
   purchased?: number;
+  expired?: number;
   conversionRate?: number;
+}
+
+interface SalesAgent {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface DialerCall {
+  id: string;
+  status?: string;
+  createdAt?: string;
 }
 
 const DEBT_LABELS: Record<string, string> = {
@@ -123,6 +141,10 @@ export default function AdminPage() {
   const [depositFilter, setDepositFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [depositLoading, setDepositLoading] = useState(false);
 
+  // Command center extras
+  const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
+  const [calls, setCalls] = useState<DialerCall[]>([]);
+
   useEffect(() => {
     const token = getStoredToken();
     const parsed = getStoredUser();
@@ -141,30 +163,43 @@ export default function AdminPage() {
   const loadAll = async (token: string) => {
     const headers = authHeaders(token);
     try {
-      const [providersRes, pendingRes, leadsRes, leadStatsRes] = await Promise.all([
+      // NOTE: /admin/leads and /admin/matches are paginated endpoints that
+      // return { data, total, page, limit } — the rows live under `data`,
+      // not `leads`/`matches`. Read both so either shape works.
+      const [providersRes, pendingRes, leadsRes, leadStatsRes, agentsRes] = await Promise.all([
         fetch(`${API_URL}/admin/providers`, { headers }).catch(() => null),
         fetch(`${API_URL}/admin/providers/pending`, { headers }).catch(() => null),
-        fetch(`${API_URL}/admin/leads`, { headers }).catch(() => null),
+        fetch(`${API_URL}/admin/leads?limit=100`, { headers }).catch(() => null),
         fetch(`${API_URL}/admin/leads/stats`, { headers }).catch(() => null),
+        fetch(`${API_URL}/admin/sales-agents`, { headers }).catch(() => null),
       ]);
       if (providersRes?.ok) setProviders(await providersRes.json());
       if (pendingRes?.ok) setPendingProviders(await pendingRes.json());
       if (leadsRes?.ok) {
         const data = await leadsRes.json();
-        setLeads(Array.isArray(data) ? data : data?.leads ?? []);
+        setLeads(Array.isArray(data) ? data : data?.data ?? data?.leads ?? []);
       }
       if (leadStatsRes?.ok) setLeadStats(await leadStatsRes.json());
+      if (agentsRes?.ok) {
+        const data = await agentsRes.json();
+        setSalesAgents(Array.isArray(data) ? data : data?.data ?? []);
+      }
 
-      // Matches + match stats
-      const [matchesRes, matchStatsRes] = await Promise.all([
-        fetch(`${API_URL}/admin/matches`, { headers }).catch(() => null),
+      // Matches + match stats + dialer calls
+      const [matchesRes, matchStatsRes, callsRes] = await Promise.all([
+        fetch(`${API_URL}/admin/matches?limit=100`, { headers }).catch(() => null),
         fetch(`${API_URL}/matching/stats`, { headers }).catch(() => null),
+        fetch(`${API_URL}/dialer/calls`, { headers }).catch(() => null),
       ]);
       if (matchesRes?.ok) {
         const data = await matchesRes.json();
-        setMatches(Array.isArray(data) ? data : data?.matches ?? []);
+        setMatches(Array.isArray(data) ? data : data?.data ?? data?.matches ?? []);
       }
       if (matchStatsRes?.ok) setMatchStats(await matchStatsRes.json());
+      if (callsRes?.ok) {
+        const data = await callsRes.json();
+        setCalls(Array.isArray(data) ? data : data?.data ?? []);
+      }
     } catch {
       setError('Failed to load admin data');
     } finally {
@@ -362,6 +397,59 @@ export default function AdminPage() {
   const requestedMatches = matches.filter(m => m.status === 'requested').length;
   const matchConversion = matchStats?.conversionRate ?? (matches.length > 0 ? Math.round((purchasedMatches / matches.length) * 100) : 0);
 
+  const totalCredits = providers.reduce((sum, p) => sum + (Number(p.creditBalance) || 0), 0);
+
+  // Pipeline funnel stages from the stats endpoint (authoritative counts,
+  // not limited to the loaded page of leads).
+  const funnelStages = [
+    { label: 'New', value: leadStats?.byStatus?.new ?? leads.filter(l => l.status === 'new').length, color: 'bg-blue-500' },
+    { label: 'Available', value: leadStats?.byStatus?.available ?? availableLeads, color: 'bg-emerald-500' },
+    { label: 'Sold', value: leadStats?.byStatus?.sold ?? soldLeads, color: 'bg-violet-500' },
+    { label: 'Converted', value: leadStats?.byStatus?.converted ?? 0, color: 'bg-amber-500' },
+  ];
+  const funnelMax = Math.max(1, ...funnelStages.map(s => s.value));
+
+  // Activity feed — recent leads, pending providers, and matches merged
+  // into one chronological list.
+  const activity = [
+    ...leads.slice(0, 8).map(l => ({
+      ts: l.createdAt,
+      label: `Lead ${l.firstName || l.lastName ? `${l.firstName || ''} ${l.lastName || ''}`.trim() : l.id.slice(0, 8)} — ${l.status || 'new'}${l.state ? ` · ${l.state}` : ''}`,
+      kind: 'lead' as const,
+    })),
+    ...pendingProviders.map(p => ({
+      ts: p.createdAt,
+      label: `Provider application: ${p.companyName}`,
+      kind: 'provider' as const,
+    })),
+    ...matches.slice(0, 8).map(m => ({
+      ts: m.createdAt,
+      label: `Match ${m.leadName || m.leadId?.slice(0, 8) || '—'} ↔ ${m.providerName || m.providerId?.slice(0, 8) || '—'} — ${m.status || 'matched'}`,
+      kind: 'match' as const,
+    })),
+  ]
+    .filter(a => a.ts)
+    .sort((a, b) => new Date(b.ts!).getTime() - new Date(a.ts!).getTime())
+    .slice(0, 10);
+
+  const quickActions = [
+    { label: 'Import Leads', href: '/dashboard/import', desc: 'Bulk CSV lead intake' },
+    { label: 'Dialer', href: '/dashboard/dialer', desc: 'Outbound call console' },
+    { label: 'CRM Center', href: '/admin/crm', desc: 'Pipeline, clients & deals' },
+    { label: 'CRM Overview', href: '/admin/crm-overview', desc: 'Aggregate snapshot' },
+    { label: 'Q&A Review', href: '/admin/questions', desc: 'Moderation queue' },
+    { label: 'Sales Team', href: '/admin/sales-agents', desc: 'Manage agents' },
+  ];
+
+  const kpis: { label: string; value: string | number; accent: string; sub?: string }[] = [
+    { label: 'Total Leads', value: leadStats?.total ?? leads.length, accent: 'text-zinc-100' },
+    { label: 'Calls', value: calls.length, accent: 'text-zinc-100', sub: 'recent' },
+    { label: 'Conversion', value: `${leadConversion}%`, accent: 'text-emerald-400', sub: `${soldLeads} sold` },
+    { label: 'Agents', value: salesAgents.length, accent: 'text-zinc-100' },
+    { label: 'Pending Providers', value: pendingProviders.length, accent: pendingProviders.length > 0 ? 'text-amber-400' : 'text-zinc-100' },
+    { label: 'Provider Credits', value: `$${totalCredits.toLocaleString()}`, accent: 'text-emerald-400' },
+  ];
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -379,6 +467,76 @@ export default function AdminPage() {
             <button onClick={() => setSuccessMsg('')} className="ml-4 text-emerald-500 hover:text-emerald-400">✕</button>
           </div>
         )}
+
+        {/* Command center — KPI row */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          {kpis.map(k => (
+            <div key={k.label} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+              <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">{k.label}</div>
+              <div className={`text-2xl font-black ${k.accent}`}>{k.value}</div>
+              {k.sub && <div className="text-[11px] text-zinc-500 mt-0.5">{k.sub}</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* Pipeline funnel + quick actions + activity feed */}
+        <div className="grid lg:grid-cols-3 gap-4 mb-8">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <h2 className="text-sm font-bold text-zinc-100 mb-4">Lead Pipeline</h2>
+            <div className="space-y-3">
+              {funnelStages.map(s => (
+                <div key={s.label}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-zinc-400">{s.label}</span>
+                    <span className="font-bold text-zinc-100">{s.value}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                    <div className={`h-full ${s.color} rounded-full`} style={{ width: `${Math.max(4, Math.round((s.value / funnelMax) * 100))}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-zinc-800/60 grid grid-cols-2 gap-2 text-[11px] text-zinc-500">
+              <span>Match conv: <span className="text-zinc-300 font-semibold">{matchConversion}%</span></span>
+              <span>Purchased: <span className="text-zinc-300 font-semibold">{matchStats?.purchased ?? purchasedMatches}</span></span>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <h2 className="text-sm font-bold text-zinc-100 mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {quickActions.map(a => (
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 transition hover:border-emerald-600/50 hover:bg-emerald-500/5"
+                >
+                  <div className="text-sm font-semibold text-zinc-100">{a.label}</div>
+                  <div className="text-[11px] text-zinc-500">{a.desc}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <h2 className="text-sm font-bold text-zinc-100 mb-4">Recent Activity</h2>
+            {activity.length === 0 ? (
+              <p className="text-sm text-zinc-500">No activity yet.</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {activity.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-xs">
+                    <span className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${a.kind === 'lead' ? 'bg-blue-400' : a.kind === 'provider' ? 'bg-amber-400' : 'bg-violet-400'}`} />
+                    <div className="min-w-0">
+                      <div className="text-zinc-300 truncate">{a.label}</div>
+                      <div className="text-[10px] text-zinc-600">{new Date(a.ts!).toLocaleString()}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">

@@ -134,14 +134,14 @@ export default function SalesTeamPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-zinc-500">Loading...</div>;
+    return <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center text-zinc-500">Loading...</div>;
   }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-zinc-900 text-zinc-100">Sales Team Management</h1>
+          <h1 className="text-2xl font-bold text-zinc-100">Sales Team Management</h1>
           <button
             onClick={() => setIsAdding(true)}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium"
@@ -150,12 +150,12 @@ export default function SalesTeamPage() {
           </button>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
-        {success && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">{success}</div>}
+        {error && <div className="mb-4 p-3 border border-red-500/30 bg-red-500/10 text-red-400 text-sm rounded-lg">{error}</div>}
+        {success && <div className="mb-4 p-3 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm rounded-lg">{success}</div>}
 
         {isAdding && (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4 text-zinc-900 text-zinc-100">Add New User</h2>
+            <h2 className="text-lg font-semibold mb-4 text-zinc-100">Add New User</h2>
             <form onSubmit={handleCreate} className="grid sm:grid-cols-2 gap-4">
               <input
                 type="email"
@@ -207,7 +207,7 @@ export default function SalesTeamPage() {
                 <button
                   type="button"
                   onClick={() => setIsAdding(false)}
-                  className="px-4 py-2 text-zinc-600 text-zinc-300 hover:underline text-sm"
+                  className="px-4 py-2 text-zinc-400 hover:underline text-sm"
                 >
                   Cancel
                 </button>
@@ -225,7 +225,7 @@ export default function SalesTeamPage() {
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden shadow-sm">
           <table className="min-w-full text-sm">
-            <thead className="bg-zinc-800/50 bg-zinc-950">
+            <thead className="bg-zinc-800/50">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-zinc-400">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-zinc-400">Email</th>

@@ -1225,7 +1225,7 @@ export const articles: Article[] = [
         "text": "Each U.S. state has its own statute of limitations for different types of debt. For example, credit card debt, medical bills, and personal loans can have different time limits. These time limits typically range from 3 to 20 years, depending on the state and type of debt."
       },
       {
-        " ": "type",
+        "type": "p",
         "text": "Here are some examples of the statute of limitations for debt in various states:"
       },
       {

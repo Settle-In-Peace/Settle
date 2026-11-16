@@ -215,7 +215,7 @@ export default function AdminSalesPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-zinc-800/50 text-zinc-500 text-zinc-400 text-xs uppercase tracking-wide">
+                <thead className="bg-zinc-800/50 text-zinc-400 text-xs uppercase tracking-wide">
                   <tr>
                     <th className="text-left p-4">Lead</th>
                     <th className="text-left p-4">State</th>
