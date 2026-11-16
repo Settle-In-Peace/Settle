@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, ServiceUnavailableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -212,8 +212,15 @@ export class ProvidersService {
    * verified at the same time.
    */
   async setPasswordWithToken(token: string, password: string): Promise<{ success: true }> {
+    // Directory claim tokens bind the proposed email to the random secret.
+    // Store only a digest, and never accept that stored digest as a bearer token.
+    if (typeof token !== 'string' || token.startsWith('claim:')) {
+      throw new BadRequestException('This setup link is invalid or has expired');
+    }
+    const isClaim = token.startsWith('claim.');
+    const lookupToken = isClaim ? `claim:${crypto.createHash('sha256').update(token).digest('hex')}` : token;
     const provider = await this.providersRepository.findOne({
-      where: { passwordSetupToken: token },
+      where: { passwordSetupToken: lookupToken },
     });
     if (
       !provider ||
@@ -223,12 +230,22 @@ export class ProvidersService {
       throw new BadRequestException('This setup link is invalid or has expired');
     }
 
+    if (isClaim) {
+      const parts = token.split('.');
+      if (parts.length !== 3) throw new BadRequestException('Invalid claim link');
+      const email = Buffer.from(parts[2], 'base64url').toString('utf8');
+      const existing = await this.providersRepository.findOne({ where: { email } });
+      if (existing && existing.id !== provider.id) throw new ConflictException('Email already in use');
+      // Only verified inbox possession transfers a seeded listing's identity.
+      provider.email = email;
+    }
     provider.password = await bcrypt.hash(password, 10);
     // Must be null, not undefined — save() skips undefined columns and the
     // token would remain redeemable forever.
     provider.passwordSetupToken = null;
     provider.passwordSetupExpires = null;
-    if (provider.serviceTypes?.includes('bankruptcy')) {
+    if (provider.serviceTypes?.includes('bankruptcy') && provider.status !== 'pending_review') {
+      // Inbox verification is not bar/firm verification: new applicants stay hidden.
       provider.listingActive = true;
       if (!provider.slug) {
         provider.slug = provider.companyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
@@ -236,7 +253,15 @@ export class ProvidersService {
       }
     }
     provider.emailVerified = true;
-    await this.providersRepository.save(provider);
+    const redeemed = await this.providersRepository.update(
+      { id: provider.id, passwordSetupToken: lookupToken },
+      {
+        email: provider.email, password: provider.password, emailVerified: true,
+        passwordSetupToken: null, passwordSetupExpires: null,
+        listingActive: provider.listingActive, slug: provider.slug,
+      },
+    );
+    if (!redeemed.affected) throw new BadRequestException('This setup link is invalid or has expired');
 
     this.logger.log(`Provider ${provider.id} set a password via setup link`);
     return { success: true };
@@ -348,7 +373,7 @@ export class ProvidersService {
 
   /** Public: record a contact click-through (email/phone/website tap). */
   async trackDirectoryClick(slug: string) {
-    const provider = await this.providersRepository.findOne({ where: { slug } });
+    const provider = await this.providersRepository.findOne({ where: { slug, listingActive: true } });
     if (!provider) throw new NotFoundException('Listing not found');
     await this.providersRepository.increment({ id: provider.id }, 'directoryClicks', 1);
     return { ok: true };
@@ -360,25 +385,30 @@ export class ProvidersService {
    * they can complete their profile after claiming.
    */
   async claimDirectoryListing(email: string) {
+    if (typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      throw new BadRequestException('A valid email is required');
+    }
     const normalized = email.trim().toLowerCase();
+    if (normalized.startsWith('unclaimed+')) throw new BadRequestException('Use your firm email');
     let provider = await this.providersRepository.findOne({ where: { email: normalized } });
     if (!provider) {
-      // Domain-matched claim: an attorney emailing from their firm's own domain
-      // can claim a seeded unclaimed listing whose website shares that domain.
       const domain = normalized.split('@')[1];
-      if (domain) {
-        const candidate = await this.providersRepository
+      const sharedDomains = new Set(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'aol.com', 'icloud.com', 'live.com', 'proton.me', 'protonmail.com']);
+      if (!sharedDomains.has(domain)) {
+        const candidates = await this.providersRepository
           .createQueryBuilder('p')
           .where("p.email LIKE 'unclaimed+%'")
-          .andWhere("p.website ILIKE :d", { d: `%${domain}%` })
           .andWhere('p.listing_active = true')
-          .getOne();
-        if (candidate) {
-          provider = candidate;
-          provider.email = normalized;
-          await this.providersRepository.save(provider);
-          this.logger.log(`Directory listing claimed via domain match: ${candidate.slug} → ${normalized}`);
-        }
+          .andWhere('p."serviceTypes" LIKE :service', { service: '%bankruptcy%' })
+          .getMany();
+        const matches = candidates.filter((candidate) => {
+          try {
+            const website = new URL(candidate.website || '');
+            return ['http:', 'https:'].includes(website.protocol) && website.hostname.toLowerCase().replace(/^www\./, '') === domain;
+          } catch { return false; }
+        });
+        // Ambiguous domains require review, never pick an arbitrary firm.
+        if (matches.length === 1) provider = matches[0];
       }
     }
     if (!provider) {
@@ -391,16 +421,19 @@ export class ProvidersService {
       });
       provider = await this.providersRepository.save(provider);
     }
-    const token = await this.createPasswordSetupToken(provider.id);
-    const link = `https://settleinpeace.com/providers/set-password?token=${token}`;
-    this.emailService
-      .sendEmail(
+    const token = `claim.${crypto.randomBytes(32).toString('hex')}.${Buffer.from(normalized).toString('base64url')}`;
+    await this.providersRepository.update(provider.id, {
+      passwordSetupToken: `claim:${crypto.createHash('sha256').update(token).digest('hex')}`,
+      passwordSetupExpires: new Date(Date.now() + ProvidersService.SETUP_TOKEN_TTL_MS),
+    });
+    const link = `https://settleinpeace.com/providers/set-password?token=${encodeURIComponent(token)}`;
+    const sent = await this.emailService.sendEmail(
         normalized,
         'Claim your Settle In Peace attorney listing',
         `<p>Claim your listing to manage your public profile and upgrade to Featured placement.</p>
          <p><a href="${link}">Claim my listing</a> (expires in 72 hours)</p>`,
-      )
-      .catch((err) => this.logger.error(`Directory claim email failed for ${normalized}: ${err}`));
+      );
+    if (!sent) throw new ServiceUnavailableException('Unable to send claim email. Please try again later.');
     return { ok: true };
   }
 
