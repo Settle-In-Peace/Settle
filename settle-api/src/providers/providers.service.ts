@@ -248,7 +248,7 @@ export class ProvidersService {
       // Inbox verification is not bar/firm verification: new applicants stay hidden.
       provider.listingActive = true;
       if (!provider.slug) {
-        provider.slug = provider.companyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
+        provider.slug = (provider.companyName || 'provider').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
           + '-' + provider.id.slice(0, 6);
       }
     }
