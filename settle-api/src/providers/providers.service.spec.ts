@@ -89,4 +89,20 @@ describe('attorney directory claims', () => {
     expect(repo.findOne).toHaveBeenCalledWith({ where: { slug: 'private', listingActive: true } });
     expect(repo.increment).not.toHaveBeenCalled();
   });
+  it.each([
+    ['website', 'directoryWebsiteClicks'],
+    ['phone', 'directoryPhoneClicks'],
+  ] as const)('records %s clicks on the matching per-target counter', async (target, field) => {
+    repo.findOne.mockResolvedValue(listing);
+    await service.trackDirectoryClick('firm', target);
+    expect(repo.increment).toHaveBeenCalledWith({ id: 'firm' }, 'directoryClicks', 1);
+    expect(repo.increment).toHaveBeenCalledWith({ id: 'firm' }, field, 1);
+    expect(repo.increment).toHaveBeenCalledTimes(2);
+  });
+  it('bumps only the aggregate counter when no target is given', async () => {
+    repo.findOne.mockResolvedValue(listing);
+    await service.trackDirectoryClick('firm');
+    expect(repo.increment).toHaveBeenCalledTimes(1);
+    expect(repo.increment).toHaveBeenCalledWith({ id: 'firm' }, 'directoryClicks', 1);
+  });
 });

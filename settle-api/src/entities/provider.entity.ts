@@ -162,6 +162,10 @@ export class Provider {
   directoryViews?: number;
   @Column({ type: 'int', default: 0, name: 'directory_clicks' })
   directoryClicks?: number;
+  @Column({ type: 'int', default: 0, name: 'directory_website_clicks' })
+  directoryWebsiteClicks?: number;
+  @Column({ type: 'int', default: 0, name: 'directory_phone_clicks' })
+  directoryPhoneClicks?: number;
   @Column({ type: 'varchar', length: 60, nullable: true, name: 'bar_number' })
   barNumber?: string;
   @Column({ type: 'varchar', length: 120, nullable: true })

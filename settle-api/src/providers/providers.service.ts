@@ -372,10 +372,16 @@ export class ProvidersService {
   }
 
   /** Public: record a contact click-through (email/phone/website tap). */
-  async trackDirectoryClick(slug: string) {
+  async trackDirectoryClick(slug: string, target?: 'website' | 'phone') {
     const provider = await this.providersRepository.findOne({ where: { slug, listingActive: true } });
     if (!provider) throw new NotFoundException('Listing not found');
     await this.providersRepository.increment({ id: provider.id }, 'directoryClicks', 1);
+    // Per-target counters let listing-stats break down website vs phone taps.
+    // Unknown/absent targets only bump the aggregate, matching legacy callers.
+    if (target === 'website' || target === 'phone') {
+      const targetField = target === 'website' ? 'directoryWebsiteClicks' : 'directoryPhoneClicks';
+      await this.providersRepository.increment({ id: provider.id }, targetField, 1);
+    }
     return { ok: true };
   }
 
@@ -448,6 +454,8 @@ export class ProvidersService {
       featuredUntil: p.featuredUntil,
       views: p.directoryViews,
       clicks: p.directoryClicks,
+      websiteClicks: p.directoryWebsiteClicks ?? 0,
+      phoneClicks: p.directoryPhoneClicks ?? 0,
       slug: p.slug,
     };
   }

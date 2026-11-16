@@ -7,6 +7,7 @@ import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { EnrollProviderDto } from './dto/enroll-provider.dto';
 import { SetProviderPasswordDto } from './dto/set-password.dto';
+import { TrackDirectoryClickDto } from './dto/track-click.dto';
 
 @Controller('providers')
 export class ProvidersController {
@@ -42,8 +43,8 @@ export class ProvidersController {
 
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('attorneys/:slug/click')
-  async trackClick(@Param('slug') slug: string) {
-    return this.providersService.trackDirectoryClick(slug);
+  async trackClick(@Param('slug') slug: string, @Body() body?: TrackDirectoryClickDto) {
+    return this.providersService.trackDirectoryClick(slug, body?.target);
   }
 
   @Throttle({ default: { limit: 5, ttl: 3600000 } })
