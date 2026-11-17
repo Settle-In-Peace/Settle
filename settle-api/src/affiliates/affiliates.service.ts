@@ -62,6 +62,9 @@ export class AffiliatesService {
       clickId: this.pick(params, [
         'click_id',
         'clickId',
+        'clickref',
+        'click_ref',
+        'clickRef',
         'sub_id',
         'subid',
         'subId',
@@ -74,7 +77,7 @@ export class AffiliatesService {
       ),
       payoutCents: this.payoutToCents(params),
       currency: (
-        this.pick(params, ['currency', 'currency_code']) || 'USD'
+        this.pick(params, ['currency', 'currency_code', 'transactionCurrency', 'transaction_currency']) || 'USD'
       )
         .toUpperCase()
         .slice(0, 8),
