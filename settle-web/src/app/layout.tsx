@@ -71,6 +71,7 @@ const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: SITE_NAME,
+  alternateName: "SettleInPeace",
   url: SITE_URL,
   logo: `${SITE_URL}/brand/sp-mark.png`,
   description: DEFAULT_DESCRIPTION,

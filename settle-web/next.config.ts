@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         async redirects() {
           return [
             {
+              source: '/:path*',
+              has: [{ type: 'host', value: 'www.settleinpeace.com' }],
+              destination: 'https://settleinpeace.com/:path*',
+              permanent: true,
+            },
+            {
               source: '/portal/leads',
               destination: '/portal',
               permanent: true,

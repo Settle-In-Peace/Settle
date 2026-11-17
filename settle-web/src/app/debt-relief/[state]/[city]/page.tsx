@@ -70,6 +70,17 @@ export default async function CityDebtReliefPage({ params }: Props) {
     })),
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://settleinpeace.com' },
+      { '@type': 'ListItem', position: 2, name: 'Debt Relief', item: 'https://settleinpeace.com/debt-relief' },
+      { '@type': 'ListItem', position: 3, name: s.name, item: `https://settleinpeace.com/debt-relief/${s.slug}` },
+      { '@type': 'ListItem', position: 4, name: c.name },
+    ],
+  };
+
   const options = [
     {
       name: 'Debt settlement',
@@ -101,6 +112,7 @@ export default async function CityDebtReliefPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       <div className="max-w-3xl mx-auto px-4 pt-8">
         <nav className="text-sm text-zinc-500 dark:text-zinc-400">
