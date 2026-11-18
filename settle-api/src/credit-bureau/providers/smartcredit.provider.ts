@@ -48,7 +48,11 @@ export class SmartCreditProvider implements CreditProvider {
         secret: process.env.SMARTCREDIT_API_SECRET,
       }),
     });
-    const data = await res.json().catch(() => ({}));
+    const data = (await res.json().catch(() => ({}))) as {
+      token?: string;
+      message?: string;
+      expires_in?: number;
+    };
     if (!res.ok || !data.token) {
       throw new Error(
         `SmartCredit auth failed: ${res.status} ${data.message || ''}`.trim(),
@@ -67,7 +71,7 @@ export class SmartCreditProvider implements CreditProvider {
     const res = await fetch(`${this.baseUrl}${path}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json().catch(() => ({}));
+    const data = (await res.json().catch(() => ({}))) as { message?: string } & Record<string, unknown>;
     if (!res.ok) {
       throw new Error(
         `SmartCredit ${path} failed: ${res.status} ${data.message || ''}`.trim(),

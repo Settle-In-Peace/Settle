@@ -157,12 +157,12 @@ export class WebAuthnService {
     const saved = await this.credentials.save(
       this.credentials.create({
         userId,
-        credentialId: info.credentialID,
-        publicKey: Buffer.from(info.credentialPublicKey).toString('base64url'),
-        counter: String(info.counter),
-        transports: (info as any).transports,
+        credentialId: info.credential.id,
+        publicKey: Buffer.from(info.credential.publicKey).toString('base64url'),
+        counter: String(info.credential.counter),
+        transports: info.credential.transports as string[] | undefined,
         deviceName: deviceName?.slice(0, 120),
-        backedUp: (info as any).credentialBackedUp ?? false,
+        backedUp: info.credentialBackedUp ?? false,
       }),
     );
     this.logger.log(`Passkey registered for user ${userId} (cred ${saved.id})`);
