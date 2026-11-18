@@ -1265,6 +1265,70 @@ export const articles: Article[] = [
     ],
   },
 
+  {
+    slug: 'what-happens-if-you-ignore-collections',
+    title: "What Happens If You Ignore Collections",
+    description: "Ignoring collections can lead to serious financial consequences. Learn what happens when you don't address collection accounts and how to protect yourself.",
+    category: "Collections",
+    author: 'Settle In Peace Editorial Team',
+    publishedAt: '2026-11-18',
+    updatedAt: '2026-11-18',
+    readingTime: 5,
+    keywords: ["collections","debt collection","ignored collections","collection accounts","financial consequences"],
+    excerpt: "Ignoring collection accounts can lead to severe financial consequences, including damaged credit, legal action, and more. Learn how to protect yourself and what to do next.",
+    content: [
+      {
+        "type": "h2",
+        "text": "What Are Collection Accounts?"
+      },
+      {
+        "type": "p",
+        "text": "A collection account is created when a creditor transfers the debt to a third-party collection agency because you've failed to make payments. This can happen after a few missed payments or if you've defaulted on a loan. Collection accounts are typically reported to credit bureaus, which can significantly impact your credit score."
+      },
+      {
+        "type": "h2",
+        "text": "What Happens If You Ignore Collections?"
+      },
+      {
+        "type": "p",
+        "text": "Ignoring collections doesn't make the debt go away. In fact, it can make things worse. Collection agencies may take legal action against you, such as suing for the debt or reporting the account to the credit bureaus, which can lower your credit score even further."
+      },
+      {
+        "type": "ul",
+        "items": [
+          "Your credit score could drop dramatically.",
+          "You may face legal action or a lawsuit.",
+          "Collection agencies may sell your debt to another collector.",
+          "You could be forced to pay more in fees and interest."
+        ]
+      },
+      {
+        "type": "h2",
+        "text": "The Risks of Ignoring Collections"
+      },
+      {
+        "type": "p",
+        "text": "Ignoring collections can lead to long-term financial consequences. Your credit report may show the collection account for up to seven years, which can make it harder to get approved for loans, credit cards, or even a rental agreement. Additionally, if the debt is sold to a debt buyer, you may be contacted by a different collector with new collection tactics."
+      },
+      {
+        "type": "callout",
+        "text": "Pros of Ignoring Collections: You may avoid immediate contact or pressure. Cons: Your credit score could drop, you may face legal action, and the debt could be sold to a debt buyer, leading to more aggressive collection tactics."
+      },
+      {
+        "type": "h2",
+        "text": "What Should You Do Instead?"
+      },
+      {
+        "type": "p",
+        "text": "If you're facing collections, it's important to take action. You can negotiate with the collector, dispute the debt if it's incorrect, or seek help from a debt relief professional. Ignoring the issue can lead to more serious consequences, so it's better to address the debt before it becomes a bigger problem."
+      },
+      {
+        "type": "p",
+        "text": "You can compare vetted debt relief options at settleinpeace.com/compare or take the free assessment at settleinpeace.com/assessment to find the best solution for your situation."
+      }
+    ],
+  },
+
 ];
 
 // ---------------------------------------------------------------
