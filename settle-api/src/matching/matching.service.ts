@@ -339,8 +339,15 @@ export class MatchingService {
   /**
    * For consumers: returns matched providers with scores (public-facing).
    * Excludes sensitive provider fields (password, stripeCustomerId, etc.).
+   * Provider direct-contact fields (email, phone, contactName) are stripped
+   * until the lead's priority-match fee is paid — otherwise this public
+   * endpoint bypasses the request-contact paywall.
    */
   async getRecommendedProviders(leadId: string): Promise<ProviderWithMatch[]> {
+    const lead = await this.leadsRepository.findOne({ where: { id: leadId } });
+    if (!lead) throw new NotFoundException('Lead not found');
+    const contactUnlocked = !!lead.matchFeePaidAt;
+
     const matches = await this.findMatchesForLead(leadId);
 
     const providerIds = matches.map((m) => m.providerId);
@@ -371,10 +378,21 @@ export class MatchingService {
         passwordSetupToken: _pst,
         passwordSetupExpires: _pse,
         planInterest: _pi,
+        email: _em,
+        phone: _ph,
+        contactName: _cn,
         ...safe
       } = provider;
       result.push({
         ...safe,
+        // Re-attach direct-contact fields only after the match fee is paid.
+        ...(contactUnlocked
+          ? {
+              email: provider.email,
+              phone: provider.phone,
+              contactName: provider.contactName,
+            }
+          : {}),
         matchId: match.id,
         matchScore: match.matchScore,
         matchReasons: match.matchReasons ?? [],

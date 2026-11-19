@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { MatchingService } from './matching.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProviderGuard } from '../auth/guards/provider.guard';
@@ -16,7 +17,14 @@ export class MatchingController {
     return this.matchingService.getRecommendedProviders(leadId);
   }
 
-  /** Consumer requests contact from a provider (body: { leadId, providerId }). */
+  /**
+   * Consumer requests contact from a provider (body: { leadId, providerId }).
+   * Auth model: the leadId itself is the bearer capability (unguessable UUID)
+   * and the service additionally requires the lead's priority-match fee to be
+   * paid when the fee gate is enabled. No per-user session exists for
+   * anonymous assessment leads, so throttling is the abuse backstop.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('request-contact')
   async requestContact(@Body() body: { leadId: string; providerId: string }) {
     return this.matchingService.requestContact(body.leadId, body.providerId);
@@ -62,8 +70,10 @@ export class MatchingController {
   @Get('all')
   @UseGuards(JwtAuthGuard, AdminGuard)
   async getAllMatches(@Query('page') page?: string, @Query('limit') limit?: string) {
-    const p = page ? parseInt(page, 10) : 1;
-    const l = limit ? parseInt(limit, 10) : 20;
+    const parsedPage = Number.parseInt(page ?? '', 10);
+    const parsedLimit = Number.parseInt(limit ?? '', 10);
+    const p = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const l = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 100) : 20;
     return this.matchingService.getAllMatches(p, l);
   }
 }

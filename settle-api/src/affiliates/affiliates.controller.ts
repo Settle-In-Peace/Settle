@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Query,
   UseGuards,
@@ -30,10 +29,14 @@ export class AffiliatesController {
     @Query('status') status?: string,
     @Query('limit') limit?: string,
   ) {
+    const parsedLimit = Number.parseInt(limit ?? '', 10);
     return this.affiliatesService.list({
       network,
       status,
-      limit: limit ? Number.parseInt(limit, 10) : undefined,
+      limit:
+        Number.isFinite(parsedLimit) && parsedLimit > 0
+          ? Math.min(parsedLimit, 500)
+          : undefined,
     });
   }
 

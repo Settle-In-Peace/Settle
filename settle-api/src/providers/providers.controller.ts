@@ -21,10 +21,16 @@ export class ProvidersController {
     @Query('state') state?: string,
     @Query('minDebt') minDebt?: string,
   ) {
+    // Bounded parse — reject non-numeric input and clamp to a sane debt range
+    // (the debt marketplace operates in dollars, $0–$10M is generous).
+    const parsedMinDebt = Number.parseFloat(minDebt ?? '');
     return this.providersService.getAllActiveProviders({
       debtType,
       state,
-      minDebt: minDebt ? parseFloat(minDebt) : undefined,
+      minDebt:
+        Number.isFinite(parsedMinDebt) && parsedMinDebt >= 0
+          ? Math.min(parsedMinDebt, 10_000_000)
+          : undefined,
     });
   }
 

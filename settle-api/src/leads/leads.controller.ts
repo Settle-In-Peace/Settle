@@ -5,6 +5,7 @@ import { CloseFlowService } from '../close-flow/close-flow.service';
 import { SETTLE_SITE } from '../close-flow/site.config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProviderGuard } from '../auth/guards/provider.guard';
+import { AdminGuard } from '../admin/admin.guard';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { BatchPurchaseLeadsDto } from './dto/batch-purchase-leads.dto';
 import { matchFeeEnabled } from '../matching/matching.service';
@@ -59,9 +60,10 @@ export class LeadsController {
     return this.leadsService.getLeadsByProvider(req.user.sub);
   }
 
-  // Admin/internal: stats
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  // Admin/internal: stats — marketplace funnel counts are internal-only
+  @SkipThrottle()
   @Get('stats')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async getStats() {
     return this.leadsService.getLeadStats();
   }
