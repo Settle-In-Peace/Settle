@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { startRegistration } from '@simplewebauthn/browser';
 import { createJsonApiClient } from '@settle/shared-sdk/auth';
@@ -13,8 +13,28 @@ import Logo from '../../components/Logo';
 import PasswordInput from '../../components/PasswordInput';
 
 import { API_URL } from '@/lib/apiUrl';
+
+/**
+ * ?next= post-signup redirect — internal paths only. Rejects absolute URLs,
+ * protocol-relative (//host), whitespace, and backslash tricks so the param
+ * can't become an open redirect.
+ */
+const safeNextPath = (v: string | null): string | null =>
+  v && v.startsWith('/') && !v.startsWith('//') && !/[\s\\]/.test(v) ? v : null;
+
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <RegisterContent />
+    </Suspense>
+  );
+}
+
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get('next'));
+  const postSignupPath = next ?? '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -82,10 +102,11 @@ export default function RegisterPage() {
         storeAuth(response.accessToken, response.user, response.refreshToken);
         trackSignUp('password');
         setInfo('Account created! You can now add a passkey for faster login.');
-        router.push('/dashboard');
+        router.push(postSignupPath);
       } else if (response.success && response.requiresVerification && response.email) {
         const query = new URLSearchParams({ mode: 'otp', email: response.email, sent: '1' });
         if (response.devCode) query.set('devCode', response.devCode);
+        if (next) query.set('next', next);
         router.push(`/login?${query.toString()}`);
       } else {
         setError(response.error || 'Registration failed');
@@ -139,6 +160,7 @@ export default function RegisterPage() {
       if (regRes.requiresVerification && regRes.email) {
         const query = new URLSearchParams({ mode: 'otp', email: regRes.email, sent: '1' });
         if (regRes.devCode) query.set('devCode', regRes.devCode);
+        if (next) query.set('next', next);
         router.push(`/login?${query.toString()}`);
         return;
       }
@@ -176,11 +198,11 @@ export default function RegisterPage() {
       const result = await verifyRes.json();
 
       if (result.verified) {
-        setInfo('Passkey registered! Redirecting to dashboard...');
-        router.push('/dashboard');
+        setInfo('Passkey registered! Redirecting...');
+        router.push(postSignupPath);
       } else {
         setInfo('Account created, but passkey setup failed. You can add it later in settings.');
-        router.push('/dashboard');
+        router.push(postSignupPath);
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'NotAllowedError') {

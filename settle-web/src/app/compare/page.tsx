@@ -92,6 +92,58 @@ export default function ComparePage() {
   );
 }
 
+/**
+ * Sponsored partner offers (affiliate CPA links) — rendered regardless of
+ * whether marketplace providers exist, clearly labeled as partner offers.
+ * Links route through /out/:id for click tracking and keep
+ * rel="sponsored nofollow noopener" (FTC disclosure).
+ */
+function SponsoredPartners() {
+  return (
+    <div>
+      <div className="text-center mb-6">
+        <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-2">Sponsored partners</p>
+        <h2 className="text-3xl font-black text-black dark:text-white">Partner programs you can explore today</h2>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-2 max-w-2xl mx-auto text-sm">
+          Settle In Peace may earn a commission if you enroll through these links — at no cost to you. Offers are provided by third parties; eligibility and results vary.
+        </p>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        {PARTNER_OFFERS.map((offer) => (
+          <div
+            key={offer.id}
+            className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-2">
+              {offer.tag}
+            </span>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{offer.name}</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 flex-1">{offer.blurb}</p>
+            <a
+              href={`/out/${offer.id}`}
+              target="_blank"
+              rel="sponsored nofollow noopener"
+              className="mt-4 inline-flex justify-center items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              {offer.cta} →
+            </a>
+            {offer.providerLine && (
+              <p className="mt-4 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+                {offer.providerLine}
+              </p>
+            )}
+            {offer.disclaimer && (
+              <p className="mt-2 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+                {offer.disclaimer}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CompareContent() {
   const searchParams = useSearchParams();
   const leadId = searchParams.get('leadId');
@@ -311,48 +363,8 @@ function CompareContent() {
               </div>
             </div>
 
-            {/* Partner offers — affiliate links bridge the gap while the marketplace fills in */}
-            <div>
-              <div className="text-center mb-6">
-                <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-2">Available now</p>
-                <h2 className="text-3xl font-black text-black dark:text-white">Partner programs you can explore today</h2>
-                <p className="text-zinc-500 dark:text-zinc-400 mt-2 max-w-2xl mx-auto text-sm">
-                  Settle In Peace may earn a commission if you enroll through these links — at no cost to you. Offers are provided by third parties; eligibility and results vary.
-                </p>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {PARTNER_OFFERS.map((offer) => (
-                  <div
-                    key={offer.id}
-                    className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col"
-                  >
-                    <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-2">
-                      {offer.tag}
-                    </span>
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{offer.name}</h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 flex-1">{offer.blurb}</p>
-                    <a
-                      href={offer.url}
-                      target="_blank"
-                      rel="sponsored nofollow noopener"
-                      className="mt-4 inline-flex justify-center items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
-                    >
-                      {offer.cta} →
-                    </a>
-                    {offer.providerLine && (
-                      <p className="mt-4 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 border-t border-zinc-200 dark:border-zinc-800 pt-3">
-                        {offer.providerLine}
-                      </p>
-                    )}
-                    {offer.disclaimer && (
-                      <p className="mt-2 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
-                        {offer.disclaimer}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Sponsored partner offers — affiliate links bridge the gap while the marketplace fills in */}
+            <SponsoredPartners />
 
             {/* How we vet */}
             <div>
@@ -597,6 +609,14 @@ function CompareContent() {
               ))}
             </div>
           </>
+        )}
+
+        {/* Sponsored partner offers — render below provider results too, so
+            affiliate revenue doesn't depend on an empty marketplace. */}
+        {!loading && providers.length > 0 && (
+          <div className="mt-16">
+            <SponsoredPartners />
+          </div>
         )}
 
         {/* Compliance disclosures */}
