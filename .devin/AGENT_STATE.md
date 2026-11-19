@@ -190,6 +190,7 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 - **Lead vendor credentials**: no real vendor accounts yet. To enable a vendor (boberdoo / LeadsPedia / LeadProsper / etc.), set `LEADVENDOR_NAMES=<name>` plus `LEADVENDOR_<NAME>_PING_URL`/`_POST_URL`/`_ORDER_URL`/`_KEY` (auth style via `_AUTH`, wire format via `_FORMAT`) on settle-api — see `.env.example`. For inbound delivery, set `LEADVENDOR_<NAME>_WEBHOOK_SECRET` and point the vendor at `POST /lead-vendors/import/webhook?vendor=<name>` with `X-Lead-Vendor-Signature` (HMAC-SHA256 of raw body). Until configured, `/lead-vendors` shows "not configured" and purchase returns 503.
 
 ## Recently landed
+| buffer-unblock | 2026-11-19 — instagram fix landed `1238ceb` (bundles upload_media_public port). Buffer login verified (settleinpeacenow@gmail.com), org `6ad50d34b15361b8758c2877` Free Plan/0 channels. X account exists but password unknown + verify-code inbox unreadable — see NEEDS_HUMAN. | `tools/social/social_poster.py` |
 - 2026-11-17 | GSC: property verified via HTML file (google9863225d62b293bf.html, deployed + committed); sitemap.xml confirmed in console; Bing WMT GSC-import pending (Google 429 cooldown)
 
 
