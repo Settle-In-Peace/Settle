@@ -121,7 +121,7 @@ const EMAIL_TEMPLATES: Record<string, { subject: string; body: string }> = {
   },
   quote: {
     subject: 'Your debt relief options — Settle In Peace',
-    body: `<p>Hi {{firstName}},</p><p>Thank you for your interest in Settle In Peace. Based on the information you provided, here's what we can offer:</p><p><strong>Estimated Debt:</strong> {{totalDebt}}<br/><strong>Program Length:</strong> 24-48 months<br/><strong>Estimateed Savings:</strong> Up to 50% of enrolled debt</p><p>I'd be happy to walk you through the details on a call. Please let me know a good time.</p><p>Best regards,<br/>{{agentName}}<br/>Settle In Peace</p>`,
+    body: `<p>Hi {{firstName}},</p><p>Thank you for your interest in Settle In Peace. Based on the information you provided, here's what we can offer:</p><p><strong>Estimated Debt:</strong> {{totalDebt}}<br/><strong>Program Length:</strong> 24-48 months<br/><strong>Estimated Savings:</strong> Potential savings vary by enrolled debt and program outcome</p><p>I'd be happy to walk you through the details on a call. Please let me know a good time.</p><p>Best regards,<br/>{{agentName}}<br/>Settle In Peace</p>`,
   },
   custom: { subject: '', body: '' },
 };

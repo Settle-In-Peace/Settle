@@ -338,7 +338,7 @@ export default function Home() {
               {
                 icon: '🔒',
                 title: 'Your data stays yours',
-                desc: 'We don\'t sell your information. We match you with providers only when you ask us to. You can delete your account and data anytime.',
+                desc: 'We\'re a marketplace that connects you with debt relief providers — partner compensation is disclosed on our Disclosures page. We share your contact info with providers only with your consent, and you can delete your account and data anytime.',
               },
               {
                 icon: '💬',
@@ -373,7 +373,7 @@ export default function Home() {
             {[
               {
                 q: 'Is this really free?',
-                a: 'Yes. Our assessment, comparison tools, and provider matching are 100% free for consumers. We get paid by providers when they successfully help you, never by you.',
+                a: 'Our assessment, comparison tools, and provider matching are free. The only consumer charge is an optional one-time priority-match fee if you choose to contact a provider directly through us — the exact amount is disclosed before any payment.',
               },
               {
                 q: 'Are you a debt settlement company?',

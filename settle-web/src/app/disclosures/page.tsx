@@ -87,10 +87,12 @@ export default function DisclosuresPage() {
               3. Fee Disclosure
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              <strong>Settle In Peace does not charge consumers any fees.</strong> Our assessment
-              tool is free. There is no cost to create an account, compare providers, or request
-              contact with a provider through our platform. We are compensated by our partner
-              providers, not by consumers.
+              <strong>Assessment and comparison are free.</strong> There is no cost to create an
+              account, take our assessment, or compare providers on our platform. If you choose to
+              contact a matched provider directly through Settle In Peace, we charge a one-time{' '}
+              <strong>priority-match fee</strong> (currently $19). The exact amount is disclosed to
+              you at the point of purchase, before any payment is collected. All other compensation
+              we receive comes from partner providers, not from consumers.
             </p>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-3">
               <strong>Provider fees:</strong> The debt relief providers in our marketplace typically
@@ -341,8 +343,9 @@ export default function DisclosuresPage() {
               memberships (AFCC, IAPDA).
             </p>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-3">
-              <strong>We do not receive any compensation from consumers.</strong> Our assessment is
-              free, and we do not sell consumer data to data brokers. Consumer contact information
+              <strong>Other than the one-time priority-match fee described in Section 3, we do not
+              receive any compensation from consumers.</strong> Our assessment is free, and we do
+              not sell consumer data to data brokers. Consumer contact information
               is shared with partner providers only when the consumer provides explicit consent
               (TCPA opt-in) during the assessment process.
             </p>
