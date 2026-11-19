@@ -338,6 +338,7 @@ ack flag 4b1a777a9c7e — read by droid-store-prep (Play store-prep pass)
 - 2026-12-19 | droid-store-shots | **Authenticated Play screenshots captured + pushed `739fe0a`.** Emulator → release-signed universal APK → login applereview@settleinpeace.com → 7 shots in `store-assets/screenshots/auth/`: dashboard ($16.9k/3 accts seeded), debts list, my-program (not enrolled), assessment step-1, calculators, learn, profile+delete-account. Reviewer path verified E2E, no gates.
 
 ## Recently landed (iOS resubmit 2026-11-13)
+| devin-social-ops | 2026-11-19 — **DONE — landed, pushed.** Queue refresh for the dormant pipeline: appended 7 items 11-20→11-26 (assessment/learn/attorneys verticals, YMYL-safe copy). Still NEEDS_HUMAN: Buffer org `6ad50d34` has 0 channels — owner connects X at publish.buffer.com, then `~/settle-deploy` cron (verified current) auto-posts daily. Foreign WIP in repo (social_poster.py, env.example, social-daily.yml, dialer files) left untouched. | `tools/social/content_queue.json`, `.devin/AGENT_STATE.md` |
 - Pre-flight gates audit: zero invite/paywall/IAP gates; open registration present; reviewer login verified live → JWT.
 - Resubmitted v1.0.0 for App Review — PATCH submitted:true on existing UNRESOLVED_ISSUES submission (7a9f2805…) → WAITING_FOR_REVIEW. 4.3 reply thread already on file.
 
