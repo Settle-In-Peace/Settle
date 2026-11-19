@@ -21,7 +21,7 @@ export default function Footer() {
     <footer className="bg-black border-t border-zinc-900 mt-auto">
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           <div>
             <h3 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -76,6 +76,14 @@ export default function Footer() {
             <h3 className="text-white font-semibold text-sm mb-4">Contact</h3>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li><a href="mailto:help@settleinpeace.com" className="hover:text-white transition-colors">help@settleinpeace.com</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-white font-semibold text-sm mb-4">From Reid Technology</h3>
+            <ul className="space-y-2 text-sm text-zinc-400">
+              <li><a href="https://clipstakes.com" target="_blank" rel="noopener" className="hover:text-white transition-colors">ClipStakes</a></li>
+              <li><a href="https://favestate.com" target="_blank" rel="noopener" className="hover:text-white transition-colors">Favestate</a></li>
+              <li><a href="https://notyced.com" target="_blank" rel="noopener" className="hover:text-white transition-colors">Notyced</a></li>
             </ul>
           </div>
         </div>
