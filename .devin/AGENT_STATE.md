@@ -159,7 +159,7 @@ Daily ritual: **round table 8:00 AM PT** — new ideas get ranked into P1–P3 t
 | devin-social | daily social-posting GH workflow hardening — DONE — ack flag 4b1a777a9c7e | .github/workflows/social-daily.yml, tools/social/{social_poster.py,blog_to_queue.mjs,content_queue.json}, .devin/{AGENT_STATE,NEEDS_HUMAN}.md |
 
 | devin-mobile-settle | **App-store submission prep — DONE (code side), blocked on store accounts.** Landed: production app.json (name "Settle In Peace", `com.settleinpeace.mobile` both platforms, buildNumber/versionCode, splash+FaceID plugins, ITSAppUsesNonExemptEncryption), eas.json build/submit profiles, EAS project `@notyced/settle-mobile` created+linked, API base-URL fix (was hardcoded localhost:4025 → `EXPO_PUBLIC_API_URL` || api.settleinpeace.com), delete-account UI wired to `DELETE /auth/account`, dep alignment via `expo install --fix` + gesture-handler (doctor 21/22 — only flag: Hermes regression needing SDK 57), `settle-mobile/STORE_SUBMISSION.md` runbook + privacy/data-safety answers. Kept uncommitted `src/theme/colors.ts` slateDark→#fff tweak (flagged: may render muted text white-on-white — verify before release). | `settle-mobile/**`, `pnpm-lock.yaml`, `.devin/{AGENT_STATE,NEEDS_HUMAN}.md` |
-| devin-xsell-mesh | 2026-12-31 — Reid Technology ecosystem footer column (cross-sell sister links) | `settle-web/src/components/Footer.tsx`, `.devin/AGENT_STATE.md` |
+| devin-xsell-mesh | 2026-12-31 — **DONE — landed `edc4f07`, pushed.** Reid Technology ecosystem footer column (cross-sell sister links: ClipStakes, Favestate, Notyced — rel=noopener). | `settle-web/src/components/Footer.tsx`, `.devin/AGENT_STATE.md` |
 
 
 
