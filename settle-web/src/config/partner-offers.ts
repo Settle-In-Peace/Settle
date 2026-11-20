@@ -27,13 +27,14 @@ export const PARTNER_OFFERS: PartnerOffer[] = [
     vertical: 'debt',
     tag: 'Debt Relief',
     blurb:
-      'Free, no-obligation evaluation for consumers carrying $10,000+ in unsecured debt. Explore settlement options that may reduce what you owe.',
+      'Free, no-obligation evaluation for consumers carrying $10,000+ in unsecured debt — debt amount is only one factor and does not determine qualification. Explore settlement options that may be available for your situation.',
     cta: 'Explore Options',
     url: 'https://lp.curadebt.com/lp/see-debt-relief-options?utm_source=SETTLE&utm_medium=affiliate&utm_campaign=debt_ppl',
     providerLine:
       'Debt relief services are provided by CuraDebt Systems, LLC, a third-party company. Settle In Peace is a comparison marketplace — not a debt relief provider.',
+    // Verbatim disclosure mandated by CuraDebt partner team (creative #177 decision, 2026-10-16).
     disclaimer:
-      'CuraDebt works with unsecured debts such as credit cards, medical bills, and personal loans. Federal student loans, mortgages, auto loans, and other secured debts are not eligible. Not available in all states; eligibility and results vary. Debt settlement may negatively affect your credit score, and forgiven debt may be taxable. Fees are charged only on debts enrolled in and settled through the program.',
+      'Disclosure: Settle In Peace is an affiliate of CuraDebt and may be compensated for referrals. CuraDebt connects consumers with independent debt relief providers. Results not guaranteed. Not all consumers qualify, and not all debts are eligible. Creditors are not required to agree to settlements. Debt relief services may adversely affect your creditworthiness. Typical program duration is 24 to 48 months.',
   },
   {
     id: 'community-tax',
