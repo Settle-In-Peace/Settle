@@ -834,6 +834,41 @@ def post_buffer(text: str, link: str | None, media: Path | None = None,
 
 # ---------------------------------------------------------------------------
 
+# Env-var requirements mirroring each adapter's "not set" guard. An item
+# whose remaining platforms are all unconfigured stays "due" forever and
+# keeps the daily run red ("0 posts published" exit 2) even though the
+# configured platforms already posted. expected() therefore only counts
+# platforms the env can actually satisfy.
+def _platform_ready(name: str) -> bool:
+    env = os.environ.get
+    if name == "bluesky":
+        return bool(env("BLUESKY_HANDLE") and env("BLUESKY_APP_PASSWORD"))
+    if name == "mastodon":
+        return bool(env("MASTODON_INSTANCE") and env("MASTODON_ACCESS_TOKEN"))
+    if name == "facebook":
+        return bool(env("FB_PAGE_ID") and env("FB_PAGE_ACCESS_TOKEN"))
+    if name == "linkedin":
+        return bool(env("LINKEDIN_ACCESS_TOKEN")
+                    and (env("LINKEDIN_PERSON_ID") or env("LINKEDIN_ORG_ID")))
+    if name == "nextdoor":
+        return bool(env("NEXTDOOR_ACCESS_TOKEN")
+                    or (env("NEXTDOOR_CLIENT_ID") and env("NEXTDOOR_CLIENT_SECRET")
+                        and env("NEXTDOOR_REFRESH_TOKEN")))
+    if name == "tumblr":
+        return bool(env("TUMBLR_ACCESS_TOKEN")
+                    or (env("TUMBLR_CLIENT_ID") and env("TUMBLR_CLIENT_SECRET")
+                        and env("TUMBLR_REFRESH_TOKEN")))
+    if name == "x":
+        return bool(env("X_API_KEY") and env("X_API_SECRET")
+                    and env("X_ACCESS_TOKEN") and env("X_ACCESS_TOKEN_SECRET"))
+    if name == "buffer":
+        return bool(env("BUFFER_ACCESS_TOKEN"))
+    if name == "reddit":
+        return bool(env("REDDIT_CLIENT_ID") and env("REDDIT_CLIENT_SECRET")
+                    and env("REDDIT_USERNAME") and env("REDDIT_PASSWORD"))
+    return False
+
+
 def load_state() -> dict:
     if STATE_FILE.exists():
         return json.loads(STATE_FILE.read_text())
@@ -875,7 +910,9 @@ def main() -> int:
         plats = set(platforms)
         if (item.get("platforms") or {}).get("reddit"):
             plats.add("reddit")
-        return plats
+        # Creds-less platforms would only ever skip — drop them so they
+        # can't hold an item due (and the daily GH run red) forever.
+        return {n for n in plats if _platform_ready(n)}
 
     due = sorted(
         (item for item in queue
