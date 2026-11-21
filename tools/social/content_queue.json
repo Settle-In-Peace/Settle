@@ -170,5 +170,58 @@
     "date": "2026-11-26",
     "text": "You don't fix debt by avoiding it. You fix it with a plan.\n\nThe plan starts with knowing your real options — free, two minutes, zero obligation.",
     "link": "https://settleinpeace.com/assessment"
+  },
+  {
+    "date": "2026-11-27",
+    "text": "Holiday receipts are already adding up.\n\nBefore December spending starts, know what you're paying each month — and where it's actually going.",
+    "link": "https://settleinpeace.com/calculators"
+  },
+  {
+    "date": "2026-11-28",
+    "text": "Minimum payments are designed to keep the balance, not kill it.\n\nOn a high-APR card, most of the payment feeds interest. Run your own numbers before the next statement.",
+    "link": "https://settleinpeace.com/learn",
+    "platforms": {
+      "reddit": {
+        "subreddit": "settleinpeace",
+        "title": "Minimum payments keep the balance — most of it feeds interest"
+      }
+    }
+  },
+  {
+    "date": "2026-11-29",
+    "text": "Settlement negotiates the balance down. Consolidation restructures what you owe.\n\nDifferent tools, different costs, different timelines — know which fits before you commit to either.",
+    "link": "https://settleinpeace.com/learn/debt-settlement-vs-consolidation",
+    "platforms": {
+      "reddit": {
+        "subreddit": "settleinpeace",
+        "title": "Debt settlement vs consolidation — different tools, different costs"
+      }
+    }
+  },
+  {
+    "date": "2026-11-30",
+    "text": "Collectors have rules they must follow. You have rights they can't take.\n\nLearn both sides before the next call.",
+    "link": "https://settleinpeace.com/learn/how-to-negotiate-with-creditors"
+  },
+  {
+    "date": "2026-12-01",
+    "text": "The most expensive way to pay for December is a 24% APR card.\n\nIf the balance is already unmanageable, adding to it isn't a plan — it's deferral. Real options exist.",
+    "link": "https://settleinpeace.com/assessment"
+  },
+  {
+    "date": "2026-12-02",
+    "text": "Honest tradeoff: settling debt costs your credit in the short term.\n\nSo does a balance that keeps growing. The question is which cost is lower — both belong on the table.",
+    "link": "https://settleinpeace.com/learn/debt-settlement-credit-score-impact",
+    "platforms": {
+      "reddit": {
+        "subreddit": "settleinpeace",
+        "title": "Settlement costs credit short-term — so does a growing balance"
+      }
+    }
+  },
+  {
+    "date": "2026-12-03",
+    "text": "A plan beats another month of minimum payments.\n\nFree assessment, two minutes, no obligation — see what your real options are.",
+    "link": "https://settleinpeace.com/assessment"
   }
 ]
