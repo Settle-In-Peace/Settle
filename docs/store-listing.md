@@ -29,3 +29,29 @@ data), user-entered assessment text — all App Functionality, linked to
 user. Not shared with third parties (backend shares with relief providers
 only with explicit consent). Encrypted in transit. Deletable in-app
 (Profile → Delete Account). Adults only — do not select 13 & under.
+
+## App Store (ASC) metadata
+
+- **Subtitle (≤30):** Debt relief, made clear
+- **Keywords (≤100, comma-separated, no spaces needed):**
+  `debt,debt relief,debt settlement,budget,credit card debt,payoff,debt calculator,bankruptcy,debt free` (100 chars)
+
+## Screenshots (devin-settle-shots, 2026-11-23)
+
+Real UI captured from `expo export --platform web` at exact store sizes via
+`settle-mobile/scripts/capture-store-shots.mjs` (Playwright + Brave; authed
+shots seeded with the applereview@ reviewer login — real dashboard/debt/
+attorney data from prod API).
+
+| Dir | Device class | Size | Notes |
+|---|---|---|---|
+| `settle-mobile/screenshots/ios/` | iPhone 6.7" (IPHONE_67) | 1290×2796 | 12 shots: onboarding×3, login, register, dashboard, debts, assessment, attorneys, coaching, learn, calculators |
+| `settle-mobile/screenshots/ios-6.5/` | iPhone 6.5" (IPHONE_65) | 1242×2688 | same 12 |
+| `settle-mobile/screenshots/ipad/` | iPad 12.9" (IPAD_13) | 2048×2732 | same 12 |
+| `settle-mobile/screenshots/play/` | Android phone | 1080×2400 | same 12 |
+| `settle-mobile/screenshots/play-tablet/` | Android tablet | 1600×2560 | same 12 |
+
+Upload: ASC → `node settle-mobile/scripts/asc-screenshot.mjs IPHONE_67 screenshots/ios/*.png`
+(IPHONE_65 / IPAD_13 likewise); Play → Play Console listing image picker or
+`eas-play-submit` images API. Feature graphic + hi-res icon already at
+`settle-mobile/assets/play-feature-1024x500.png` / `play-icon-512.png`.
