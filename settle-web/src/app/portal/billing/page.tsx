@@ -165,7 +165,7 @@ export default function BillingPage() {
                   const res = await fetch(`${API_URL}/stripe/provider-subscription`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ tierId: 'marketplace_seat' }),
+                    body: JSON.stringify({ tierId: 'marketplace_seat_founding' }),
                   });
                   const data = await res.json();
                   if (data.url) {

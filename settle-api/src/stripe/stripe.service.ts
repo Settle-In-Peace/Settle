@@ -36,6 +36,7 @@ export interface ProviderSubscriptionTier {
 }
 
 export const PROVIDER_SUBSCRIPTION_TIERS: ProviderSubscriptionTier[] = [
+  { id: 'marketplace_seat_founding', label: 'Marketplace Seat — Founding (locked 12 mo)', priceMonthly: 99, seats: 1, priceEnvVar: 'STRIPE_PRICE_PROVIDER_SEAT_FOUNDING' },
   { id: 'marketplace_seat', label: 'Marketplace Seat', priceMonthly: 199, seats: 1, priceEnvVar: 'STRIPE_PRICE_PROVIDER_SEAT' },
   { id: 'starter', label: 'Starter', priceMonthly: 500, seats: 5, priceEnvVar: 'STRIPE_PRICE_PROVIDER_STARTER' },
   { id: 'growth', label: 'Growth', priceMonthly: 1000, seats: 15, priceEnvVar: 'STRIPE_PRICE_PROVIDER_GROWTH' },
