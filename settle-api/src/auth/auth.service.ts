@@ -342,14 +342,28 @@ export class AuthService {
     );
 
     // Send email OTP for verification (logged to console in dev mode when no RESEND_API_KEY)
-    const otpResult = await this.sendEmailOtp(user.email);
+    if (process.env.NODE_ENV === 'development' && !process.env.RESEND_API_KEY) {
+      const otpResult = await this.sendEmailOtp(user.email);
+      return {
+        success: true,
+        requiresVerification: true,
+        email: user.email,
+        message: otpResult.message || 'Check your email for a verification code.',
+        ...(otpResult.devCode ? { devCode: otpResult.devCode } : {}),
+      };
+    }
+
+    // Fire-and-forget in prod — a slow mail provider must not stall signup.
+    // The user can always re-request the code from the verify screen.
+    this.sendEmailOtp(user.email).catch((err) =>
+      this.logger.warn(`Registration OTP send failed for ${user.email}: ${err instanceof Error ? err.message : err}`),
+    );
 
     return {
       success: true,
       requiresVerification: true,
       email: user.email,
-      message: otpResult.message || 'Check your email for a verification code.',
-      ...(otpResult.devCode && process.env.NODE_ENV === 'development' ? { devCode: otpResult.devCode } : {}),
+      message: 'Check your email for a verification code.',
     };
   }
 
