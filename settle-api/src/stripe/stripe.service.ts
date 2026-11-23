@@ -43,7 +43,21 @@ export const PROVIDER_SUBSCRIPTION_TIERS: ProviderSubscriptionTier[] = [
 ];
 
 export const COACHING_SUBSCRIPTION_PRICE_MONTHLY = 49;
-const COACHING_PRICE_ENV_VAR = 'STRIPE_COACHING_PRICE_ID';
+const COACHING_PRICE_ENV_VAR = 'STRIPE_COACHING_PRICE_ID'; // legacy env var — backs the 'pro' tier
+
+/**
+ * Consumer coaching subscription tiers — both are live Stripe recurring
+ * prices on product prod_V8SgkDZB1Nxcau ("Settle Coaching Subscription"):
+ *   basic $19/mo → STRIPE_COACHING_PRICE_ID_BASIC
+ *   pro   $49/mo → STRIPE_COACHING_PRICE_ID (original env var, kept so
+ *                  existing deployments/envs keep working)
+ * Both tiers unlock the same coaching entitlement today.
+ */
+export const COACHING_SUBSCRIPTION_TIERS = [
+  { id: 'basic', priceMonthly: 19, priceEnvVar: 'STRIPE_COACHING_PRICE_ID_BASIC' },
+  { id: 'pro', priceMonthly: 49, priceEnvVar: COACHING_PRICE_ENV_VAR },
+] as const;
+export type CoachingTierId = (typeof COACHING_SUBSCRIPTION_TIERS)[number]['id'];
 
 // Attorney directory flat-rate placements (advertising only — never per-lead).
 const DIRECTORY_TIERS = [
@@ -341,14 +355,27 @@ export class StripeService {
 
 
   // ---------------------------------------------------------------------------
-  // Coaching subscription — $49/month consumer coaching
+  // Coaching subscription — $19/$49 per-month consumer coaching tiers
   // ---------------------------------------------------------------------------
 
-  async createCoachingCheckoutSession(user: User, returnUrl: string): Promise<Stripe.Checkout.Session> {
-    const priceId = this.configService.get<string>(COACHING_PRICE_ENV_VAR);
+  async createCoachingCheckoutSession(
+    user: User,
+    returnUrl: string,
+    tierId?: string,
+  ): Promise<Stripe.Checkout.Session> {
+    const tier = tierId
+      ? COACHING_SUBSCRIPTION_TIERS.find((t) => t.id === tierId)
+      : COACHING_SUBSCRIPTION_TIERS.find((t) => t.id === 'pro');
+    if (!tier) {
+      throw new BadRequestException(
+        `Invalid coaching tier "${tierId}". Available: ${COACHING_SUBSCRIPTION_TIERS.map((t) => t.id).join(', ')}`,
+      );
+    }
+
+    const priceId = this.configService.get<string>(tier.priceEnvVar);
     if (!priceId) {
       throw new BadRequestException(
-        `Stripe price ID not configured for coaching subscription (env var ${COACHING_PRICE_ENV_VAR}).`,
+        `Stripe price ID not configured for coaching tier "${tier.id}" (env var ${tier.priceEnvVar}).`,
       );
     }
 

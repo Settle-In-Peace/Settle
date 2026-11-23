@@ -30,11 +30,15 @@ export class StripeController {
 
   @Post('coaching/checkout')
   @UseGuards(JwtAuthGuard)
-  async createCoachingCheckout(@Req() req: Request & { user: any }, @Body('returnUrl') returnUrl: string) {
+  async createCoachingCheckout(
+    @Req() req: Request & { user: any },
+    @Body('returnUrl') returnUrl: string,
+    @Body('tier') tier?: string,
+  ) {
     if (!returnUrl) {
       throw new BadRequestException('returnUrl is required');
     }
-    const session = await this.stripeService.createCoachingCheckoutSession(req.user, returnUrl);
+    const session = await this.stripeService.createCoachingCheckoutSession(req.user, returnUrl, tier);
     return { url: session.url, sessionId: session.id };
   }
 
