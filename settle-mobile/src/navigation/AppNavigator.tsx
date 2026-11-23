@@ -16,6 +16,7 @@ import SettlementScreen from '../screens/SettlementScreen';
 import QuestionsScreen from '../screens/QuestionsScreen';
 import QuestionDetailScreen from '../screens/QuestionDetailScreen';
 import CoachingScreen from '../screens/CoachingScreen';
+import SiCoachScreen from '../screens/SiCoachScreen';
 import { User } from '../services/auth';
 import { colors } from '../theme/colors';
 
@@ -44,6 +45,7 @@ export type MainTabsParamList = {
   Debts: undefined;
   Calculators: undefined;
   Learn: undefined;
+  Coach: undefined;
   Profile: undefined;
 };
 
@@ -139,6 +141,16 @@ function MainTabs({ user, setUser }: { user: User | null; setUser: (user: User |
         }}
       >
         {(props) => <LearnStackScreen {...(props as any)} />}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Coach"
+        options={{
+          tabBarLabel: 'SI Coach',
+          title: 'SI Coach',
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles" color={color} size={size} />,
+        }}
+      >
+        {(props) => <SiCoachScreen {...(props as any)} user={user} setUser={setUser} />}
       </Tab.Screen>
       <Tab.Screen
         name="Profile"

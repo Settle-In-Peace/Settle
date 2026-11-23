@@ -32,6 +32,7 @@ const linking: LinkingOptions<any> = {
               Debts: 'debts',
               Calculators: 'calculators',
               Learn: { screens: { LearnList: 'learn', Article: 'learn/:slug' } },
+              Coach: 'coach',
               Profile: 'profile',
             },
           },
