@@ -46,15 +46,13 @@ locked for 12 months, first pick on lead volume in your states, and a
 direct line to the team building the matching engine"
 (`tools/provider-invite/generate_invite_emails.mjs`).
 
-> **⚠ PRICE-CLAIM FLAG (2026-11-23, NEEDS_HUMAN filed):** marketing copy
-> now advertises a **$99/month founding Marketplace Seat** ("locked 12
-> months, standard $199/mo") on `/providers`, `/providers/founding`, and
-> the invite-email templates. **No $99 price exists in code or the Stripe
-> catalog** — `STRIPE_PRICE_PROVIDER_SEAT` is $199/mo
-> (`price_1UaTH3GzFIOqs48PWnXJ4wv6`). Until a $99 Stripe price is created
-> and wired, checkout charges $199 while copy says $99 — an
-> unverifiable-claim violation if published. Counsel/owner must either
-> ratify the $99 rate (create the price) or revert copy to $199.
+> **PRICE-CLAIM VERIFIED (2026-11-23):** the $99/month founding Marketplace
+> Seat advertised in `/providers` copy is copy-true. Code tier
+> `marketplace_seat_founding` (`priceMonthly: 99` → env
+> `STRIPE_PRICE_PROVIDER_SEAT_FOUNDING`) resolves on oracle to Stripe
+> price `price_1UevJlGzFIOqs48PS219Riit` = $99/mo recurring. Standard seat
+> is $199/mo (`price_1UaTH3GzFIOqs48PWnXJ4wv6`). Earlier flag claiming no
+> $99 price existed was incorrect — resolved in NEEDS_HUMAN.
 
 - **[TBD — counsel/owner]**: "first pick on lead volume" is a priority-
   routing promise. Confirm it is deliverable and contract-safe before it
