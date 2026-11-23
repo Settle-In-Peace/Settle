@@ -43,15 +43,31 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "settleinpeace.com" },
-            { "scheme": "https", "host": "www.settleinpeace.com" }
+            {
+              "scheme": "https",
+              "host": "settleinpeace.com"
+            },
+            {
+              "scheme": "https",
+              "host": "www.settleinpeace.com"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "VIEW",
-          "data": [{ "scheme": "settleinpeace" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "settleinpeace"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -83,7 +99,9 @@
             "targetSdkVersion": 36
           }
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-font"
     ],
     "extra": {
       "eas": {
