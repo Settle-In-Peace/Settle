@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { getAuthenticatedApi } from '@/lib/api';
 
 /**
- * Staff-side portal-link minter for a collections account.
+ * Staff-side portal-link minter + sender for a collections account.
  *
  * Generates the debtor-facing /pay/<token> URL via
- * POST /collections/accounts/:id/portal-link. Generation only — this panel
- * deliberately does NOT send anything; pasting the link into an SMS/email is
- * a human + compliance decision. Every mint/revoke writes an audit note on
- * the account server-side.
+ * POST /collections/accounts/:id/portal-link and can deliver it by email
+ * and/or SMS via POST .../portal-link/send — always a manual per-account
+ * staff action. Every mint/revoke/send writes an audit note on the account
+ * server-side.
  */
 interface PortalLinkResult {
   collectionAccountId: string;
@@ -18,6 +18,10 @@ interface PortalLinkResult {
   url: string;
   issuedAt: string;
   rotated: boolean;
+}
+
+interface PortalLinkSendResult extends PortalLinkResult {
+  deliveries: Array<{ channel: 'email' | 'sms'; sent: boolean; recipient: string }>;
 }
 
 export default function PortalLinkPanel({
@@ -33,6 +37,32 @@ export default function PortalLinkPanel({
   const [error, setError] = useState('');
   const [issuedAt, setIssuedAt] = useState<string | undefined>(existingIssuedAt);
   const [revoked, setRevoked] = useState(false);
+  const [sendSummary, setSendSummary] = useState('');
+
+  const sendLink = async (channel: 'email' | 'sms') => {
+    setBusy(true);
+    setError('');
+    setCopied(false);
+    setSendSummary('');
+    try {
+      const res = await getAuthenticatedApi()<PortalLinkSendResult>(
+        `/collections/accounts/${accountId}/portal-link/send`,
+        { method: 'POST', body: JSON.stringify({ [channel]: true }) },
+      );
+      setLink(res);
+      setIssuedAt(res.issuedAt);
+      setRevoked(false);
+      setSendSummary(
+        res.deliveries
+          .map((d) => `${d.channel === 'email' ? 'Email' : 'SMS'} ${d.sent ? 'sent' : 'FAILED'} → ${d.recipient}`)
+          .join(' · '),
+      );
+    } catch (err: any) {
+      setError(err?.message || `Could not send the portal link by ${channel}`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const mint = async (rotate: boolean) => {
     setBusy(true);
@@ -94,7 +124,8 @@ export default function PortalLinkPanel({
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Generates a unique link the debtor can use to view their balance and pay
-        online. The link is only created here — it is never sent automatically.
+        online. Delivery is always a manual staff action — the email includes
+        the required disclosures and every send is audit-noted on the account.
       </p>
 
       {link?.url && (
@@ -140,6 +171,29 @@ export default function PortalLinkPanel({
         )}
       </div>
 
+      <div className="flex items-center gap-3">
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Send link:</span>
+        <button
+          onClick={() => sendLink('email')}
+          disabled={busy}
+          className="px-4 py-2 border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-lg text-sm font-medium disabled:opacity-50"
+          title="Email the link to the debtor's email on file"
+        >
+          Email
+        </button>
+        <button
+          onClick={() => sendLink('sms')}
+          disabled={busy}
+          className="px-4 py-2 border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-lg text-sm font-medium disabled:opacity-50"
+          title="Text the link to the debtor's phone on file"
+        >
+          SMS
+        </button>
+      </div>
+
+      {sendSummary && (
+        <p className="text-xs text-green-700 dark:text-green-400">{sendSummary}</p>
+      )}
       {revoked && (
         <p className="text-xs text-amber-700 dark:text-amber-300">
           Link revoked — the previous URL no longer resolves.

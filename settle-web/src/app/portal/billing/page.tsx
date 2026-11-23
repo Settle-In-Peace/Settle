@@ -81,7 +81,7 @@ export default function BillingPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-black text-black dark:text-white mb-2">Billing & Credits</h1>
-        <p className="text-zinc-500 mb-8">Purchase credits to buy leads. Each lead costs $75–$300 depending on quality.</p>
+        <p className="text-zinc-500 mb-8">Purchase credits for lead flow inside your portal — credit cost per lead varies by lead quality and is shown before you accept.</p>
 
         {/* Current balance */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6 mb-8">
@@ -91,8 +91,8 @@ export default function BillingPage() {
               <div className="text-3xl font-black text-green-600">${stats?.creditBalance || 0}</div>
             </div>
             <div className="text-right text-sm text-zinc-500">
-              <div>Approx. {Math.floor((stats?.creditBalance || 0) / 150)} leads available</div>
-              <div className="text-xs mt-1">Based on avg lead price of $150</div>
+              <div>Lead costs vary by quality</div>
+              <div className="text-xs mt-1">Shown before you accept each lead</div>
             </div>
           </div>
         </div>
@@ -146,14 +146,14 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* Marketplace Seat — $199/mo subscription checkout (advertised on
+        {/* Marketplace Seat — flat-rate subscription checkout (advertised on
             /providers; API is env-gated until STRIPE_PRICE_PROVIDER_SEAT is set) */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 className="font-bold text-black dark:text-white">Marketplace Seat — $199/mo</h3>
+              <h3 className="font-bold text-black dark:text-white">Marketplace Seat — founding rate $99/mo</h3>
               <p className="text-sm text-zinc-500 mt-1">
-                Comparison-page listing, priority lead access, 20% off all lead purchases. First 30 days free.
+                Comparison-page listing and priority lead access. Founding rate locked for 12 months (standard $199/mo). First 30 days free.
               </p>
             </div>
             <button

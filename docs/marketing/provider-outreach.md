@@ -1,6 +1,7 @@
 # Settle Provider Outreach Pack
 
-> Goal: first provider seat ($500–$1,500/mo) or first lead-purchase agreement ($75–$300/qualified lead).
+> Goal: first provider seat — founding rate **$99/mo Marketplace Seat, locked for 12 months** (standard $199/mo).
+> Commercials: **flat-rate only on regulated services** (debt settlement = FTC TSR). Do NOT quote per-lead pricing anywhere — earlier per-lead figures in this doc were flagged for counsel. Use "lead flow details shared during onboarding" instead.
 > Compliance: we are a **lead marketplace / referral partner** — never imply we settle debt. All claims must be about lead quality, volume, and exclusivity — never settlement outcomes.
 > Prereq: `api.settleinpeace.com` must be live — providers will click through before signing. (See AGENT_STATE blocker: Render repo reconnect.)
 
@@ -45,7 +46,7 @@ Hi {first_name},
 
 Quick follow-up. Two things partners usually care about:
 
-1. **Qualification before you pay** — we only charge for leads meeting your filters (debt ≥ $X, state, debt type). Leads you reject don't bill.
+1. **Qualification first** — leads are pre-filtered (debt ≥ $X, state, debt type, expressed intent) before they reach your portal.
 2. **Real-time delivery** — ping/post or direct webhook into your CRM; no batch files.
 
 Happy to send a sample (anonymized) lead record so you can see the data quality. Worth 15 minutes?
@@ -62,12 +63,13 @@ If it is, one reply gets you the sample lead + pricing sheet.
 
 {signature}
 
-## Pricing sheet (send on reply)
+## Terms sheet (send on reply) — flat-rate only
 
-- Pay-per-lead: $100–$150/qualified lead (filters: debt amount ≥$7,500, employed, in-state, expressed intent). Rejected leads don't bill.
-- Marketplace seat: $1,000/mo — dedicated lead stream + dashboard + priority routing.
-- Premium placement: $300/mo add-on — featured provider position in match results.
-- Pilot offer: first 5 leads free to prove quality; then month-to-month.
+> Do not quote per-lead pricing on regulated services (FTC TSR — flagged for counsel).
+
+- Marketplace Seat: **founding rate $99/mo, locked for 12 months** (standard $199/mo) — comparison-page listing + priority placement + dashboard.
+- Lead Access: matched leads delivered to your portal — **lead flow details shared during onboarding**.
+- Pilot: 30-day free trial on the founding seat; then month-to-month.
 
 ## Tracking
 

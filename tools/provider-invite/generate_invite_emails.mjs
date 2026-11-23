@@ -144,9 +144,9 @@ I'm reaching out from Settle In Peace — a debt-relief marketplace where consum
 We're opening our provider network{{state_phrase}} and {{company}} looks like a strong fit. Here's the short version:
 
 - Leads are scored 0–100 on debt amount, delinquency, employment, and income before they're matched
-- You see the lead's state, debt types, amount, and match score BEFORE you buy
-- Leads are exclusive — once you purchase, nobody else gets it
-- Pay-per-lead from $75, no monthly minimums; marketplace seats include priority placement
+- You see the lead's state, debt types, amount, and match score BEFORE you accept
+- Leads are exclusive — once matched to you, nobody else gets it
+- Founding rate: $99/mo Marketplace Seat, locked for 12 months (standard $199/mo); lead flow details shared during onboarding
 
 Enrollment takes about 5 minutes and there's no cost to apply:
 
@@ -170,14 +170,14 @@ Quick follow-up — here's what a matched lead looks like inside the provider po
   Lead #SET-4821 · Match score 92/100 · Premium tier
   $34,500 total debt · Credit card + medical · Texas
   3 months behind · Employed · $4,200/mo income
-  Price: $200 — exclusive, full contact info on purchase
+  Cost: 2 credits — exclusive, full contact info on match
 
 Every consumer consents to provider contact (TCPA) during the assessment, so your calls are expected, not cold.
 
 Two ways to participate:
 
-- Pay Per Lead — buy only the leads you want, from $75
-- Marketplace Seat — $199/mo adds your profile to the consumer comparison page plus priority placement and 20% off leads
+- Marketplace Seat — founding rate $99/mo, locked for 12 months (standard $199/mo): your profile on the consumer comparison page plus priority placement
+- Lead Access — matched leads delivered to your portal; lead flow details shared during onboarding
 
 Apply in about 5 minutes — applications are reviewed within 1–2 business days:
 
@@ -195,7 +195,7 @@ Not interested? Unsubscribe: {{unsubscribe_url}}`,
 
 Last email from us on this.
 
-We're onboarding our founding cohort of providers now, and early partners get the best terms: founding rates locked for 12 months, first pick on lead volume in your states, and a direct line to the team building the matching engine.
+We're onboarding our founding cohort of providers now, and early partners get the best terms: a founding rate of $99/mo on the Marketplace Seat, locked for 12 months (standard $199/mo), first pick on lead volume in your states, and a direct line to the team building the matching engine.
 
 If the timing isn't right, no problem — but if you'd like {{company}} in the first cohort, the door is open:
 

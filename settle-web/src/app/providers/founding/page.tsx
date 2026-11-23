@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 /**
  * Static founding-provider program stub.
  *
- * Pricing shown here is quoted verbatim from the live billing catalog
- * (settle-api PROVIDER_SUBSCRIPTION_TIERS / DIRECTORY_TIERS) — nothing here
- * invents terms. Formal program terms are a draft pending counsel review
- * (docs/provider-founding-terms.md); enrollment remains subject to the
- * provider agreement presented at onboarding.
+ * Flat-rate founding terms only — no per-lead pricing is quoted on
+ * regulated services (FTC TSR; flagged for counsel). Formal program terms
+ * are a draft pending counsel review (docs/provider-founding-terms.md);
+ * enrollment remains subject to the provider agreement presented at
+ * onboarding.
  */
 export default function FoundingProvidersPage() {
   return (
@@ -48,23 +48,24 @@ export default function FoundingProvidersPage() {
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md p-6">
             <h2 className="text-xl font-bold text-black dark:text-white mb-2">
-              Marketplace Seat — $199/month
+              Marketplace Seat — founding rate $99/month
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               One marketplace seat with a 30-day free trial: company profile
               on the comparison page, priority placement in consumer results,
-              and access to the exclusive-lead inbox.
+              and access to the exclusive-lead inbox. Founding rate locked
+              for 12 months (standard $199/month).
             </p>
           </div>
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md p-6">
             <h2 className="text-xl font-bold text-black dark:text-white mb-2">
-              Exclusive leads — $75–$300 each
+              Exclusive lead access
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Buy only the leads you want. Each lead is sold once, priced by
-              the consumer&apos;s total debt. No shared leads, no monthly
-              minimum for pay-per-lead.
+              Matched consumer leads delivered to your portal — each lead is
+              matched to one provider only, no shared leads. Lead flow
+              details are shared during onboarding.
             </p>
           </div>
         </div>
