@@ -6,6 +6,7 @@ import { getAuthenticatedApi } from '@/lib/api';
 import { getStoredUser, isAuthenticated } from '@/lib/authUtils';
 import CreditReportsPanel from '@/components/CreditReportsPanel';
 import TakePaymentPanel from '@/components/payments/TakePaymentPanel';
+import PortalLinkPanel from '@/components/payments/PortalLinkPanel';
 import DialerPanel from '@/components/dialer/DialerPanel';
 import CollectionAiPanel from '@/components/CollectionAiPanel';
 
@@ -1850,7 +1851,13 @@ export default function CollectionsDashboardPage() {
             )}
 
             {activeTab === 'payments' && (
-              <TakePaymentPanel accountId={selectedAccount.id} debtorId={selectedAccount.crmClientId} />
+              <div className="space-y-6">
+                <PortalLinkPanel
+                  accountId={selectedAccount.id}
+                  existingIssuedAt={selectedAccount.customFields?.portalAccessTokenIssuedAt}
+                />
+                <TakePaymentPanel accountId={selectedAccount.id} debtorId={selectedAccount.crmClientId} />
+              </div>
             )}
 
             {activeTab === 'aiAssist' && (

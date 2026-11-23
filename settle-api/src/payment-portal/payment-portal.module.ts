@@ -5,6 +5,8 @@ import { PaymentPlan } from '../entities/payment-plan.entity';
 import { PaymentPlanPayment } from '../entities/payment-plan-payment.entity';
 import { Settlement } from '../entities/settlement.entity';
 import { SettlementPayment } from '../entities/settlement-payment.entity';
+import { Creditor } from '../entities/creditor.entity';
+import { CrmClient } from '../entities/crm-client.entity';
 import { PaymentPortalController } from './payment-portal.controller';
 import { PaymentPortalService } from './payment-portal.service';
 
@@ -16,6 +18,8 @@ import { PaymentPortalService } from './payment-portal.service';
       PaymentPlanPayment,
       Settlement,
       SettlementPayment,
+      Creditor,
+      CrmClient,
     ]),
   ],
   controllers: [PaymentPortalController],

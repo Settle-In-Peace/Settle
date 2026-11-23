@@ -8,6 +8,7 @@ import {
 import { PaymentPortalService } from './payment-portal.service';
 import { CreatePortalPaymentPlanDto } from './dto/create-portal-payment-plan.dto';
 import { MakeOneTimePaymentDto } from './dto/make-one-time-payment.dto';
+import { CompletePortalPaymentDto } from './dto/complete-portal-payment.dto';
 
 @Controller('portal/pay')
 export class PaymentPortalController {
@@ -41,6 +42,19 @@ export class PaymentPortalController {
   ) {
     const account = await this.paymentPortalService.getAccountByToken(token);
     return this.paymentPortalService.makeOneTimePayment(account.id, dto);
+  }
+
+  /**
+   * Credit a PaymentIntent after client-side 3DS confirmation. Idempotent —
+   * safe for the client to call on every requires_action completion.
+   */
+  @Post(':token/payment/complete')
+  async completeOneTimePayment(
+    @Param('token') token: string,
+    @Body() dto: CompletePortalPaymentDto,
+  ) {
+    const account = await this.paymentPortalService.getAccountByToken(token);
+    return this.paymentPortalService.completeOneTimePayment(account.id, dto);
   }
 
   @Get(':token/history')

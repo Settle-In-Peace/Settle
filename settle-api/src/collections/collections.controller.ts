@@ -26,6 +26,7 @@ import { RunDialerCallDto } from './dto/run-dialer-call.dto';
 import { CreateCreditReportDto } from './dto/create-credit-report.dto';
 import { CreateBackgroundCheckDto } from './dto/create-background-check.dto';
 import { AssignCollectionAccountDto } from './dto/assign-collection-account.dto';
+import { IssuePortalLinkDto } from './dto/issue-portal-link.dto';
 
 interface AuthenticatedRequest extends Request {
   user: { sub: string; id: string; role: string; email: string };
@@ -168,5 +169,25 @@ export class CollectionsController {
   @Get('accounts/:id/background-checks')
   findBackgroundChecks(@Param('id') id: string) {
     return this.collectionsService.findBackgroundChecks(id);
+  }
+
+  /**
+   * Mint (or return the existing) debtor payment-portal link.
+   * Generation only — the link is never dispatched by the API; sending it is
+   * a deliberate staff/compliance action outside this endpoint.
+   */
+  @Post('accounts/:id/portal-link')
+  issuePortalLink(
+    @Param('id') id: string,
+    @Body() dto: IssuePortalLinkDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.collectionsService.issuePortalLink(id, req.user.sub, dto?.rotate === true);
+  }
+
+  /** Revoke the debtor payment-portal link for an account. */
+  @Delete('accounts/:id/portal-link')
+  revokePortalLink(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.collectionsService.revokePortalLink(id, req.user.sub);
   }
 }

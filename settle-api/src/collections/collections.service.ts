@@ -19,6 +19,7 @@ import { CreateCallLogDto } from './dto/create-call-log.dto';
 import { RunDialerCallDto } from './dto/run-dialer-call.dto';
 import { CreateCreditReportDto } from './dto/create-credit-report.dto';
 import { CreateBackgroundCheckDto } from './dto/create-background-check.dto';
+import { PaymentPortalService } from '../payment-portal/payment-portal.service';
 
 @Injectable()
 export class CollectionsService {
@@ -39,6 +40,7 @@ export class CollectionsService {
     private readonly backgroundChecksRepository: Repository<BackgroundCheck>,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    private readonly paymentPortalService: PaymentPortalService,
   ) {}
 
   async findAll(filter: FilterCollectionAccountDto = {}) {
@@ -162,6 +164,46 @@ export class CollectionsService {
       authorId: dto.authorId ?? authorId,
     });
     return this.notesRepository.save(note);
+  }
+
+  /**
+   * Mint (or return the existing) debtor payment-portal link for an account.
+   * The link is ONLY generated here — it is never sent; delivery (SMS/email)
+   * stays a human/compliance decision. An audit note is recorded each time.
+   */
+  async issuePortalLink(accountId: string, agentId: string, rotate = false) {
+    const result = await this.paymentPortalService.issuePortalToken(
+      accountId,
+      agentId,
+      rotate,
+    );
+    await this.notesRepository.save(
+      this.notesRepository.create({
+        collectionAccountId: accountId,
+        authorId: agentId,
+        noteType: CollectionNoteType.GENERAL,
+        content: result.rotated
+          ? 'Debtor payment portal link re-issued — previous link invalidated. Link was generated only; it has not been sent to the debtor.'
+          : 'Debtor payment portal link generated. Link was generated only; it has not been sent to the debtor.',
+      }),
+    );
+    return result;
+  }
+
+  /** Invalidate the debtor portal link for an account (audit-noted). */
+  async revokePortalLink(accountId: string, agentId: string) {
+    const result = await this.paymentPortalService.revokePortalToken(accountId);
+    if (result.revoked) {
+      await this.notesRepository.save(
+        this.notesRepository.create({
+          collectionAccountId: accountId,
+          authorId: agentId,
+          noteType: CollectionNoteType.GENERAL,
+          content: 'Debtor payment portal link revoked — the previous link no longer resolves.',
+        }),
+      );
+    }
+    return result;
   }
 
   async getNotes(accountId: string) {

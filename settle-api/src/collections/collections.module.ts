@@ -10,9 +10,10 @@ import { CallLog } from '../entities/call-log.entity';
 import { CreditReport } from '../entities/credit-report.entity';
 import { BackgroundCheck } from '../entities/background-check.entity';
 import { User } from '../entities/user.entity';
+import { PaymentPortalModule } from '../payment-portal/payment-portal.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CollectionAccount, DebtorProfile, CollectionNote, SkipTraceResult, CallLog, CreditReport, BackgroundCheck, User])],
+  imports: [TypeOrmModule.forFeature([CollectionAccount, DebtorProfile, CollectionNote, SkipTraceResult, CallLog, CreditReport, BackgroundCheck, User]), PaymentPortalModule],
   controllers: [CollectionsController],
   providers: [CollectionsService],
   exports: [CollectionsService],
