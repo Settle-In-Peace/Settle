@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import ComplianceDisclosure from '../../components/ComplianceDisclosure';
 import { enrollAsProvider, getProviderPublicCount } from '@/lib/api';
 
@@ -37,8 +38,8 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     step: '5',
-    title: 'Provider purchases lead',
-    desc: 'Buy exclusive leads with credits. $75-300 per lead based on debt amount',
+    title: 'Provider accepts lead',
+    desc: 'Exclusive leads matched to your criteria — lead flow details shared during onboarding',
   },
   {
     step: '6',
@@ -59,7 +60,7 @@ const PORTAL_FEATURES: { title: string; desc: string; icon: ReactNode }[] = [
   },
   {
     title: 'ML Quality Scoring',
-    desc: 'Every lead scored 0-100 using historical conversion data. Premium leads cost more but convert 3x better.',
+    desc: 'Every lead scored 0-100 using historical conversion data. Higher-score leads are flagged as premium tier.',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125 9 7.5l4.5 4.5L21 5.25M21 5.25v5.25m0-5.25h-5.25" />
@@ -68,7 +69,7 @@ const PORTAL_FEATURES: { title: string; desc: string; icon: ReactNode }[] = [
   },
   {
     title: 'Exclusive Leads',
-    desc: 'No shared leads. No competition. Once you buy a lead, it\'s yours alone.',
+    desc: 'No shared leads. No competition. Once a lead is matched to you, it\'s yours alone.',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -76,8 +77,8 @@ const PORTAL_FEATURES: { title: string; desc: string; icon: ReactNode }[] = [
     ),
   },
   {
-    title: 'Credit-Based Pricing',
-    desc: 'Buy credits in bulk. Spend only on leads you want. Pause anytime, no minimums.',
+    title: 'Flat-Rate Plans',
+    desc: 'One flat monthly rate — founding members lock their rate for 12 months. Pause or cancel anytime.',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
@@ -107,9 +108,9 @@ const PORTAL_FEATURES: { title: string; desc: string; icon: ReactNode }[] = [
 const PLANS = [
   {
     id: 'pay_per_lead',
-    name: 'Pay Per Lead',
-    price: 'From $75/lead',
-    description: 'Buy only the leads you want. No minimums, pause anytime.',
+    name: 'Lead Access',
+    price: 'Shared during onboarding',
+    description: 'Matched consumer leads delivered to your portal — lead flow details shared during onboarding.',
     features: [
       'Pre-qualified consumer leads',
       'Leads scored by debt amount & urgency',
@@ -123,13 +124,13 @@ const PLANS = [
   {
     id: 'marketplace_seat',
     name: 'Marketplace Seat',
-    price: '$199/month',
-    description: 'Listed on the comparison page + priority lead access. 30-day free trial.',
+    price: '$99/month',
+    description: 'Founding rate — locked for 12 months (standard $199/mo). Listed on the comparison page + priority lead access. 30-day free trial.',
     features: [
-      'Everything in Pay Per Lead',
+      'Everything in Lead Access',
       'Company profile on /compare page',
       'Priority placement in consumer results',
-      '20% discount on all lead purchases',
+      'Priority access to new lead flow',
       'Logo and description in marketplace',
       'Dedicated account manager',
     ],
@@ -147,7 +148,7 @@ const PLANS = [
       'Custom lead volume agreements',
       'Exclusive geographic territories',
       'Co-branded landing pages',
-      'Real-time bidding access',
+      'Real-time lead-routing access',
     ],
     cta: 'Contact Sales',
     highlighted: false,
@@ -280,7 +281,7 @@ export default function ProvidersPage() {
             <div className="text-center mb-14">
               <p className="text-sm text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide mb-3">For Debt Relief Companies</p>
               <h1 className="text-4xl md:text-5xl font-black text-black dark:text-white mb-4">
-                Access the most qualified<br />debt relief leads in the market.
+                Access qualified debt relief leads<br />matched to your business.
               </h1>
               <p className="text-xl text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">
                 Our consumers self-qualify through a detailed 7-step assessment before you ever speak to them. Higher intent. Better conversions. Lower waste.
@@ -290,6 +291,11 @@ export default function ProvidersPage() {
                   {providerCount} debt relief {providerCount === 1 ? 'company is' : 'companies are'} active on the marketplace
                 </p>
               )}
+              <p className="mt-4 text-sm">
+                <Link href="/providers/founding" className="text-blue-600 dark:text-blue-400 hover:underline">
+                  Founding provider program — introductory rates →
+                </Link>
+              </p>
             </div>
 
             {/* Stats */}
@@ -463,15 +469,15 @@ export default function ProvidersPage() {
                     ))}
                   </div>
 
-                  {/* price + actions */}
+                  {/* cost + actions */}
                   <div className="flex items-center justify-between pt-2">
                     <div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Price</div>
-                      <div className="text-lg font-black text-black dark:text-white">$200 <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">(2 credits)</span></div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Lead cost</div>
+                      <div className="text-lg font-black text-black dark:text-white">2 credits</div>
                     </div>
                     <div className="flex gap-2">
                       <button type="button" className="px-4 py-2 rounded-lg text-sm font-semibold text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Decline</button>
-                      <button type="button" className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors">Purchase Lead</button>
+                      <button type="button" className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors">Accept Lead</button>
                     </div>
                   </div>
                 </div>

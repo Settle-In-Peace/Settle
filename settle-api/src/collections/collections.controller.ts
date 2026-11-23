@@ -27,6 +27,8 @@ import { CreateCreditReportDto } from './dto/create-credit-report.dto';
 import { CreateBackgroundCheckDto } from './dto/create-background-check.dto';
 import { AssignCollectionAccountDto } from './dto/assign-collection-account.dto';
 import { IssuePortalLinkDto } from './dto/issue-portal-link.dto';
+import { SendPortalLinkDto } from './dto/send-portal-link.dto';
+import { ExportPortalLinksDto } from './dto/export-portal-links.dto';
 
 interface AuthenticatedRequest extends Request {
   user: { sub: string; id: string; role: string; email: string };
@@ -173,8 +175,8 @@ export class CollectionsController {
 
   /**
    * Mint (or return the existing) debtor payment-portal link.
-   * Generation only — the link is never dispatched by the API; sending it is
-   * a deliberate staff/compliance action outside this endpoint.
+   * Generation only — delivery is a separate explicit staff action at
+   * POST /collections/accounts/:id/portal-link/send.
    */
   @Post('accounts/:id/portal-link')
   issuePortalLink(
@@ -189,5 +191,39 @@ export class CollectionsController {
   @Delete('accounts/:id/portal-link')
   revokePortalLink(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.collectionsService.revokePortalLink(id, req.user.sub);
+  }
+
+  /**
+   * Export a batch of debtor portal links as CSV (debtor name, token,
+   * issued/expiry columns) for the staff member to deliver through their
+   * own channel. Accounts without a link get one minted; every exported
+   * account gets an audit note recording who exported. Export only —
+   * the API never sends links to debtors.
+   */
+  @Post('portal-links/export')
+  exportPortalLinks(
+    @Body() dto: ExportPortalLinksDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.collectionsService.exportPortalLinks(
+      dto.accountIds ?? [],
+      req.user.sub,
+      dto.note,
+    );
+  }
+
+  /**
+   * Staff-triggered delivery of the debtor payment-portal link by email
+   * and/or SMS to the contact info on the account's CRM client. Mints-or-
+   * reuses the token; every attempted channel writes a masked audit note.
+   * Manual per-account action only — there is no bulk/auto send path.
+   */
+  @Post('accounts/:id/portal-link/send')
+  sendPortalLink(
+    @Param('id') id: string,
+    @Body() dto: SendPortalLinkDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.collectionsService.sendPortalLink(id, req.user.sub, dto);
   }
 }

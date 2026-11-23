@@ -3,6 +3,10 @@ import { Resend } from 'resend';
 import { User } from '../entities/user.entity';
 import { Provider } from '../entities/provider.entity';
 import { Lead } from '../entities/lead.entity';
+import {
+  PORTAL_MINI_MIRANDA,
+  PORTAL_PAYMENT_DISCLOSURE,
+} from '../payment-portal/payment-portal.service';
 
 /** Minimal recipient shape accepted by transactional templates. Both
  *  User (firstName) and Provider (companyName) satisfy this interface. */
@@ -454,6 +458,50 @@ export class EmailService {
   }
 
   // ---------------------------------------------------------------------------
+  // Debtor payment-portal link (staff-triggered, per-account)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Delivers a debtor payment-portal link by email. The template carries the
+   * house FDCPA mini-Miranda + payment-authorization disclosure verbatim and a
+   * CAN-SPAM physical mailing address footer (MAILING_ADDRESS env, portfolio
+   * standard fallback).
+   */
+  async sendPortalLinkEmail(
+    toEmail: string,
+    portalUrl: string,
+    firstName?: string,
+  ): Promise<boolean> {
+    const subject = 'Your secure payment link — Settle In Peace';
+    const html = this.renderPortalLinkTemplate(portalUrl, firstName);
+
+    if (!this.resend) {
+      this.logger.log(`[DEV EMAIL] To: ${toEmail} | Subject: ${subject} | URL: ${portalUrl}`);
+      return true;
+    }
+
+    try {
+      const { error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: toEmail,
+        subject,
+        html,
+      });
+
+      if (error) {
+        this.logger.error(`Failed to send portal link email: ${error.message}`);
+        return false;
+      }
+
+      this.logger.log(`Portal link email sent to ${toEmail}`);
+      return true;
+    } catch (err) {
+      this.logger.error(`Email send error: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Password reset confirmation
   // ---------------------------------------------------------------------------
 
@@ -889,6 +937,38 @@ export class EmailService {
         </p>
         <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
         <p style="color: #a1a1aa; font-size: 12px;">Settle In Peace, Inc. — The debt relief marketplace that puts you in control.</p>
+      </body>
+      </html>
+    `;
+  }
+
+  private renderPortalLinkTemplate(portalUrl: string, firstName?: string): string {
+    const mailingAddress =
+      process.env.MAILING_ADDRESS || 'Settle In Peace, Inc., 172 W Verdugo Ave, Burbank, CA 91502';
+    return `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <h1 style="color: #2563eb; font-size: 24px; margin: 0;">Settle<span style="color: #60a5fa;">InPeace</span></h1>
+        </div>
+        <h2 style="color: #18181b; font-size: 20px;">Your secure payment link</h2>
+        <p style="color: #71717a; font-size: 16px; line-height: 1.6;">
+          Hi${firstName ? ` ${firstName}` : ''}, a secure payment link has been prepared for your account. Use the button below to review your balance, see payment options, and make a payment online — no password required.
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${portalUrl}" style="display: inline-block; background: #2563eb; color: white; text-decoration: none; font-weight: 700; padding: 12px 32px; border-radius: 8px;">Open Your Payment Portal</a>
+        </div>
+        <p style="color: #a1a1aa; font-size: 13px; line-height: 1.5; word-break: break-all;">
+          Or paste this link into your browser: ${portalUrl}
+        </p>
+        <p style="color: #a1a1aa; font-size: 13px; line-height: 1.5;">
+          If you did not expect this message, you can safely ignore it — the link only works for the account it was issued to.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
+        <p style="color: #a1a1aa; font-size: 12px; line-height: 1.5;">${PORTAL_MINI_MIRANDA}</p>
+        <p style="color: #a1a1aa; font-size: 12px; line-height: 1.5;">${PORTAL_PAYMENT_DISCLOSURE}</p>
+        <p style="color: #a1a1aa; font-size: 12px; line-height: 1.5;">Settle In Peace — ${mailingAddress}</p>
       </body>
       </html>
     `;

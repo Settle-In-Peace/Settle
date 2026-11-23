@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ServiceUnavailableException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CollectionAccount, CollectionAccountStatus } from '../entities/collection-account.entity';
 import { CollectionNote, CollectionNoteType } from '../entities/collection-note.entity';
+import { CrmClient } from '../entities/crm-client.entity';
 import { DebtorProfile } from '../entities/debtor-profile.entity';
 import { SkipTraceResult, SkipTraceStatus } from '../entities/skip-trace-result.entity';
 import { CallLog, CallDirection, CallStatus } from '../entities/call-log.entity';
@@ -19,10 +20,26 @@ import { CreateCallLogDto } from './dto/create-call-log.dto';
 import { RunDialerCallDto } from './dto/run-dialer-call.dto';
 import { CreateCreditReportDto } from './dto/create-credit-report.dto';
 import { CreateBackgroundCheckDto } from './dto/create-background-check.dto';
+import { SendPortalLinkDto } from './dto/send-portal-link.dto';
 import { PaymentPortalService } from '../payment-portal/payment-portal.service';
+import { EmailService } from '../email/email.service';
+import { normalizeEmail, normalizePhone } from '../lead-vendors/lead-normalizer';
+
+/** Mask a recipient for audit notes — never log a full email/phone. */
+function maskRecipient(recipient: string): string {
+  if (recipient.includes('@')) {
+    const [local, domain] = recipient.split('@');
+    return `${local.slice(0, 1)}***@${domain}`;
+  }
+  return recipient.length > 4
+    ? `${'*'.repeat(recipient.length - 4)}${recipient.slice(-4)}`
+    : '****';
+}
 
 @Injectable()
 export class CollectionsService {
+  private readonly logger = new Logger(CollectionsService.name);
+
   constructor(
     @InjectRepository(CollectionAccount)
     private readonly accountsRepository: Repository<CollectionAccount>,
@@ -40,7 +57,10 @@ export class CollectionsService {
     private readonly backgroundChecksRepository: Repository<BackgroundCheck>,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(CrmClient)
+    private readonly crmClientsRepository: Repository<CrmClient>,
     private readonly paymentPortalService: PaymentPortalService,
+    private readonly emailService: EmailService,
   ) {}
 
   async findAll(filter: FilterCollectionAccountDto = {}) {
@@ -168,8 +188,8 @@ export class CollectionsService {
 
   /**
    * Mint (or return the existing) debtor payment-portal link for an account.
-   * The link is ONLY generated here — it is never sent; delivery (SMS/email)
-   * stays a human/compliance decision. An audit note is recorded each time.
+   * The link is ONLY generated here — email/SMS delivery is the separate
+   * staff-triggered sendPortalLink() path. An audit note is recorded each time.
    */
   async issuePortalLink(accountId: string, agentId: string, rotate = false) {
     const result = await this.paymentPortalService.issuePortalToken(
@@ -204,6 +224,220 @@ export class CollectionsService {
       );
     }
     return result;
+  }
+
+  /**
+   * Staff-triggered delivery of the debtor payment-portal link by email
+   * and/or SMS. Mints-or-reuses the existing token (never rotates), resolves
+   * the debtor's contact info from the linked CRM client, sends on each
+   * requested channel, and writes a masked audit note per channel.
+   *
+   * Fails closed: an unconfigured requested channel -> 503 before anything
+   * sends; a send that fails on every requested channel -> 503. The audit
+   * note still records each attempted channel's outcome.
+   */
+  async sendPortalLink(accountId: string, agentId: string, dto: SendPortalLinkDto) {
+    const account = await this.findOne(accountId);
+    const wantEmail = dto?.email === true;
+    const wantSms = dto?.sms === true;
+    if (!wantEmail && !wantSms) {
+      throw new BadRequestException('Choose at least one delivery channel (email and/or sms).');
+    }
+
+    const client = account.crmClientId
+      ? await this.crmClientsRepository.findOne({ where: { id: account.crmClientId } })
+      : null;
+
+    // Contact info normalized at the write boundary — E.164 for phones,
+    // lowercased/validated for emails.
+    const toEmail = normalizeEmail(client?.email);
+    const toPhone = normalizePhone(client?.phone);
+
+    if (wantEmail && !toEmail) {
+      throw new BadRequestException('No usable debtor email on file for this account.');
+    }
+    if (wantSms && !toPhone) {
+      throw new BadRequestException('No usable debtor phone on file for this account.');
+    }
+
+    const emailConfigured = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+    const smsConfigured = Boolean(process.env.TELNYX_API_KEY && process.env.TELNYX_FROM_NUMBER);
+    const unconfigured: string[] = [];
+    if (wantEmail && !emailConfigured) unconfigured.push('email (Resend)');
+    if (wantSms && !smsConfigured) unconfigured.push('SMS (Telnyx)');
+    if (unconfigured.length > 0) {
+      throw new ServiceUnavailableException(
+        `Portal link delivery is not configured for: ${unconfigured.join(', ')}.`,
+      );
+    }
+
+    const link = await this.paymentPortalService.issuePortalToken(accountId, agentId, false);
+
+    const deliveries: Array<{ channel: 'email' | 'sms'; sent: boolean; recipient: string }> = [];
+
+    if (wantEmail && toEmail) {
+      const sent = await this.emailService.sendPortalLinkEmail(
+        toEmail,
+        link.url,
+        client?.firstName,
+      );
+      deliveries.push({ channel: 'email', sent, recipient: toEmail });
+    }
+    if (wantSms && toPhone) {
+      const sent = await this.sendPortalLinkSms(toPhone, link.url);
+      deliveries.push({ channel: 'sms', sent, recipient: toPhone });
+    }
+
+    const tokenTag = link.token.slice(-4);
+    for (const d of deliveries) {
+      await this.notesRepository.save(
+        this.notesRepository.create({
+          collectionAccountId: accountId,
+          authorId: agentId,
+          noteType: CollectionNoteType.GENERAL,
+          content: d.sent
+            ? `Debtor payment portal link sent by ${d.channel} to ${maskRecipient(d.recipient)} (token …${tokenTag}).`
+            : `Debtor payment portal link delivery by ${d.channel} to ${maskRecipient(d.recipient)} FAILED (token …${tokenTag}).`,
+        }),
+      );
+    }
+
+    if (!deliveries.some((d) => d.sent)) {
+      throw new ServiceUnavailableException(
+        'Portal link delivery failed on every requested channel.',
+      );
+    }
+
+    return {
+      ...link,
+      deliveries: deliveries.map((d) => ({
+        channel: d.channel,
+        sent: d.sent,
+        recipient: maskRecipient(d.recipient),
+      })),
+    };
+  }
+
+  /**
+   * Transactional SMS via Telnyx (plain fetch — same zero-dep pattern as
+   * close-flow/notify.service.ts). Plain text only, no debt details.
+   */
+  private async sendPortalLinkSms(toE164: string, url: string): Promise<boolean> {
+    const apiKey = process.env.TELNYX_API_KEY;
+    const from = process.env.TELNYX_FROM_NUMBER;
+    if (!apiKey || !from) return false;
+    try {
+      const body: Record<string, unknown> = {
+        from,
+        to: toE164,
+        text: `Settle In Peace: a secure payment link is ready for your account: ${url}. Reply STOP to opt out.`,
+      };
+      const profile = process.env.TELNYX_MESSAGING_PROFILE_ID;
+      if (profile) body.messaging_profile_id = profile;
+      const res = await fetch('https://api.telnyx.com/v2/messages', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data: any = await res.json().catch(() => ({}));
+        this.logger.error(
+          `Telnyx ${res.status}: ${JSON.stringify(data?.errors ?? data).slice(0, 300)}`,
+        );
+        return false;
+      }
+      return true;
+    } catch (err: any) {
+      this.logger.error(`SMS send failed: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
+  /**
+   * Export a batch of debtor portal links as CSV for manual delivery.
+   * Accounts without a live link get one minted on export (existing links
+   * are never rotated). Every exported account gets an audit note recording
+   * who exported, plus the optional free-text staff note. The CSV is data
+   * only — nothing is sent anywhere by this method; delivering the links
+   * to debtors is a deliberate human/compliance action (see sendPortalLink
+   * for the gated staff-triggered path).
+   */
+  async exportPortalLinks(accountIds: string[], agentId: string, note?: string) {
+    const cleanNote = (note ?? '').replace(/[\r\n]+/g, ' ').trim() || undefined;
+    const batch = await this.paymentPortalService.exportPortalLinkBatch(
+      accountIds,
+      agentId,
+      cleanNote,
+    );
+
+    const exportedAt = new Date().toISOString();
+    for (const row of batch.rows) {
+      await this.notesRepository.save(
+        this.notesRepository.create({
+          collectionAccountId: row.collectionAccountId,
+          authorId: agentId,
+          noteType: CollectionNoteType.GENERAL,
+          content:
+            `Debtor payment portal link exported to CSV batch ` +
+            `(${row.linkState === 'minted_on_export' ? 'link minted on export' : 'existing link'}). ` +
+            `Exported only — it has not been sent to the debtor.` +
+            (cleanNote ? ` Staff note: ${cleanNote}` : ''),
+        }),
+      );
+    }
+
+    const header = [
+      'debtor_name',
+      'debtor_email',
+      'account_number',
+      'collection_account_id',
+      'portal_url',
+      'token',
+      'issued_at',
+      'expires_at',
+      'link_state',
+      'exported_by',
+      'exported_at',
+      'staff_note',
+    ];
+    const lines = [header.join(',')];
+    for (const row of batch.rows) {
+      lines.push(
+        [
+          row.debtorName ?? '',
+          row.debtorEmail ?? '',
+          row.accountNumber ?? '',
+          row.collectionAccountId,
+          row.url,
+          row.token,
+          row.issuedAt,
+          row.expiresAt,
+          row.linkState,
+          agentId,
+          exportedAt,
+          cleanNote ?? '',
+        ]
+          .map((v) => this.csvField(v))
+          .join(','),
+      );
+    }
+
+    const stamp = exportedAt.replace(/[:.]/g, '-').slice(0, 19);
+    return {
+      filename: `portal-links-${stamp}.csv`,
+      csv: lines.join('\n') + '\n',
+      exported: batch.rows.length,
+      minted: batch.minted,
+      skipped: batch.skipped,
+    };
+  }
+
+  /** RFC-4180-ish field escaping: quote when the value can break a row. */
+  private csvField(value: string): string {
+    if (/[",\n\r]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
   }
 
   async getNotes(accountId: string) {

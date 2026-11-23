@@ -162,6 +162,11 @@ export default function CollectionsDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Portal-link batch CSV export (export only — delivery is manual)
+  const [exportNote, setExportNote] = useState('');
+  const [exportingLinks, setExportingLinks] = useState(false);
+  const [exportSummary, setExportSummary] = useState('');
+
   // Vulnerability pause
   const [pauseModalOpen, setPauseModalOpen] = useState(false);
   const [pauseReason, setPauseReason] = useState('');
@@ -508,6 +513,58 @@ export default function CollectionsDashboardPage() {
       setError(err?.message || 'Failed to resume account');
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * Export portal links for the currently displayed (filtered) accounts as a
+   * CSV download. Export only — the API mints missing links and writes an
+   * audit note per account; it never sends anything to a debtor.
+   */
+  const handleExportPortalLinks = async () => {
+    if (exportingLinks) return;
+    const accountIds = displayedAccounts.map((a) => a.id);
+    if (!accountIds.length) {
+      setError('No accounts in the current view to export.');
+      return;
+    }
+    setExportingLinks(true);
+    setExportSummary('');
+    setError('');
+    try {
+      const res = await getAuthenticatedApi()<{
+        filename: string;
+        csv: string;
+        exported: number;
+        minted: number;
+        skipped: { accountId: string; reason: string }[];
+      }>('/collections/portal-links/export', {
+        method: 'POST',
+        body: JSON.stringify({
+          accountIds,
+          note: exportNote.trim() || undefined,
+        }),
+      });
+      const blob = new Blob([res.csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.filename || 'portal-links.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setExportSummary(
+        `Exported ${res.exported} link${res.exported === 1 ? '' : 's'} ` +
+          `(${res.minted} minted on export` +
+          `${res.skipped?.length ? `, ${res.skipped.length} skipped` : ''}). ` +
+          'Links were not sent — delivery stays manual.',
+      );
+      setExportNote('');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to export portal links');
+    } finally {
+      setExportingLinks(false);
     }
   };
 
@@ -925,6 +982,39 @@ export default function CollectionsDashboardPage() {
           >
             Filter
           </button>
+        </div>
+
+        {/* Portal-link batch export — generates a CSV for manual delivery.
+            The API mints missing links and audit-notes every export; it
+            never sends a link to a debtor. */}
+        <div className="mb-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <input
+              type="text"
+              value={exportNote}
+              onChange={(e) => setExportNote(e.target.value)}
+              placeholder="Optional audit note for this export batch…"
+              maxLength={500}
+              className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm"
+            />
+            <button
+              onClick={handleExportPortalLinks}
+              disabled={exportingLinks || !displayedAccounts.length}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 whitespace-nowrap"
+            >
+              {exportingLinks
+                ? 'Exporting…'
+                : `Export portal links CSV (${displayedAccounts.length} shown)`}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            Downloads debtor name + link + issue date for the accounts currently
+            shown. Links do not expire — revoke or rotate to invalidate. Export
+            only: nothing is sent to debtors; every export is audit-noted.
+          </p>
+          {exportSummary && (
+            <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">{exportSummary}</p>
+          )}
         </div>
 
         {/* Accounts table */}

@@ -35,6 +35,10 @@ export const PORTAL_PAYMENT_DISCLOSURE =
 const TOKEN_FIELD = 'portalAccessToken';
 const TOKEN_ISSUED_AT_FIELD = 'portalAccessTokenIssuedAt';
 const TOKEN_ISSUED_BY_FIELD = 'portalAccessTokenIssuedBy';
+/** customFields keys recording the most recent staff CSV export of the link. */
+const EXPORTED_AT_FIELD = 'portalAccessTokenLastExportAt';
+const EXPORTED_BY_FIELD = 'portalAccessTokenLastExportBy';
+const EXPORT_NOTE_FIELD = 'portalAccessTokenLastExportNote';
 /** customFields key recording Stripe PaymentIntent ids already credited. */
 const CREDITED_PAYMENTS_FIELD = 'portalCreditedPaymentIntents';
 const MAX_CREDITED_INTENTS_KEPT = 50;
@@ -45,6 +49,27 @@ export interface PortalLinkResult {
   url: string;
   issuedAt: string;
   rotated: boolean;
+}
+
+/** One row of a staff portal-link CSV export batch. */
+export interface PortalLinkExportRow {
+  collectionAccountId: string;
+  accountNumber?: string;
+  debtorName?: string;
+  debtorEmail?: string;
+  url: string;
+  token: string;
+  issuedAt: string;
+  /** Links do not expire — revoke or rotate to invalidate. */
+  expiresAt: string;
+  /** 'minted_on_export' | 'existing' */
+  linkState: string;
+}
+
+export interface PortalLinkExportBatch {
+  rows: PortalLinkExportRow[];
+  minted: number;
+  skipped: { accountId: string; reason: string }[];
 }
 
 @Injectable()
@@ -159,6 +184,79 @@ export class PaymentPortalService {
     account.customFields = fields;
     await this.accountsRepository.save(account);
     return { revoked: had };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Batch export (staff-side — CSV rows for manual delivery, never sends)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Gather portal-link rows for a batch of collection accounts. Accounts
+   * without a live link get one minted (rotate=false — an existing link is
+   * never silently rotated by an export). Each exported account is stamped
+   * in customFields with who exported it and when. This method only
+   * produces data — delivery of the links is a human/compliance decision
+   * made outside the platform.
+   */
+  async exportPortalLinkBatch(
+    accountIds: string[],
+    exportedBy: string,
+    staffNote?: string,
+  ): Promise<PortalLinkExportBatch> {
+    const rows: PortalLinkExportRow[] = [];
+    const skipped: { accountId: string; reason: string }[] = [];
+    let minted = 0;
+    const exportedAt = new Date().toISOString();
+
+    for (const accountId of accountIds) {
+      const account = await this.accountsRepository.findOne({
+        where: { id: accountId },
+      });
+      if (!account) {
+        skipped.push({ accountId, reason: 'not_found' });
+        continue;
+      }
+
+      const hadToken = Boolean(account.customFields?.[TOKEN_FIELD]);
+      const link = await this.issuePortalToken(accountId, exportedBy, false);
+      if (!hadToken) minted += 1;
+
+      const client = account.crmClientId
+        ? await this.crmClientsRepository.findOne({
+            where: { id: account.crmClientId },
+          })
+        : null;
+
+      // Stamp the export on the account itself so the audit trail lives on
+      // the record, not only in notes.
+      const fresh = await this.accountsRepository.findOne({
+        where: { id: accountId },
+      });
+      if (fresh) {
+        const fields = { ...(fresh.customFields ?? {}) };
+        fields[EXPORTED_AT_FIELD] = exportedAt;
+        fields[EXPORTED_BY_FIELD] = exportedBy;
+        if (staffNote) fields[EXPORT_NOTE_FIELD] = staffNote;
+        fresh.customFields = fields;
+        await this.accountsRepository.save(fresh);
+      }
+
+      rows.push({
+        collectionAccountId: accountId,
+        accountNumber: account.accountNumber,
+        debtorName: client
+          ? `${client.firstName} ${client.lastName}`.trim()
+          : undefined,
+        debtorEmail: client?.email,
+        url: link.url,
+        token: link.token,
+        issuedAt: link.issuedAt,
+        expiresAt: '', // links do not expire; revoke/rotate invalidates
+        linkState: hadToken ? 'existing' : 'minted_on_export',
+      });
+    }
+
+    return { rows, minted, skipped };
   }
 
   // ---------------------------------------------------------------------------
