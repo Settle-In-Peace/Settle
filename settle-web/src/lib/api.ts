@@ -164,10 +164,12 @@ export function createCheckoutSession(token: string, packageType: number) {
   });
 }
 
-export async function createCoachingCheckoutSession(token: string, returnUrl: string) {
+export type CoachingTierId = 'basic' | 'pro';
+
+export async function createCoachingCheckoutSession(token: string, returnUrl: string, tier?: CoachingTierId) {
   return authenticatedApi(token)<{ url: string; sessionId: string }>('/stripe/coaching/checkout', {
     method: 'POST',
-    body: JSON.stringify({ returnUrl }),
+    body: JSON.stringify({ returnUrl, ...(tier ? { tier } : {}) }),
   });
 }
 
