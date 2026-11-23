@@ -59,9 +59,13 @@ function authenticatedApi(token: string) {
         if (newToken) {
           return await api()<T>(endpoint, options);
         }
+        // Session truly dead — clear and bounce to login. Other HTTP errors
+        // (402 paywall, 403 forbidden, 5xx) are NOT auth failures: they
+        // propagate to the caller so pages can render the right UX instead
+        // of nuking the session.
+        clearAuth();
+        if (typeof window !== 'undefined') window.location.href = '/login';
       }
-      clearAuth();
-      if (typeof window !== 'undefined') window.location.href = '/login';
       throw err;
     }
   };
@@ -253,10 +257,20 @@ export interface Goal {
   completed: boolean;
 }
 
+export interface CoachingSubscriptionStatus {
+  status: string;
+  active: boolean;
+  stripeSubscriptionId: string | null;
+  startedAt: string | null;
+  canceledAt: string | null;
+}
+
 export interface CoachingDashboard {
+  /** False when the subscription gate locked the payload (budgets/goals empty). */
+  entitled?: boolean;
   budgets: Budget[];
   goals: Goal[];
-  subscription: { status: string; stripeSubscriptionId: string | null; startedAt: string | null; canceledAt: string | null };
+  subscription: CoachingSubscriptionStatus;
   summary: { totalMonthlyIncome: number; totalMonthlyExpenses: number; netMonthly: number; activeGoals: number; completedGoals: number; totalGoals: number };
 }
 
@@ -264,6 +278,7 @@ export interface BudgetPayload { monthlyIncome: number; expenses?: BudgetExpense
 export interface GoalPayload { title: string; targetAmount: number; currentAmount?: number; type?: Goal['type']; deadline?: string; }
 
 function coachingApi() { return authenticatedApi(getToken() ?? ''); }
+export function getCoachingSubscription() { return coachingApi()<CoachingSubscriptionStatus>('/coaching/subscription', { method: 'GET' }); }
 export function getCoachingDashboard() { return coachingApi()<CoachingDashboard>('/coaching/dashboard', { method: 'GET' }); }
 export function getBudgets() { return coachingApi()<Budget[]>('/coaching/budgets', { method: 'GET' }); }
 export function createBudget(data: BudgetPayload) { return coachingApi()<Budget>('/coaching/budgets', { method: 'POST', body: JSON.stringify(data) }); }

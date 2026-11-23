@@ -11,15 +11,18 @@ import {
   deleteBudget,
   deleteGoal,
   getCoachingDashboard,
+  getCoachingSubscription,
   type Budget,
   type BudgetExpense,
   type CoachingDashboard,
+  type CoachingSubscriptionStatus,
   type Goal,
   updateBudget,
   updateGoalProgress,
 } from '../../lib/api';
 import { isAuthenticated } from '../../lib/authUtils';
 import { getToken } from '../../lib/auth';
+import SiCoachChat from './SiCoachChat';
 
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -34,6 +37,22 @@ type ExpenseForm = { name: string; amount: string; category: string };
 
 const emptyExpense = (): ExpenseForm => ({ name: '', amount: '', category: 'other' });
 
+const coachingFeatures = [
+  'Monthly budget planner with expense tracking',
+  'Savings, emergency fund, and debt payoff goals with progress tracking',
+  'A coaching dashboard that keeps your whole plan in one place',
+  'Debt payoff and debt-to-income calculators',
+  'Cancel anytime from your billing portal',
+];
+
+const inactiveSubscription = (current?: CoachingSubscriptionStatus | null): CoachingSubscriptionStatus => ({
+  status: current?.status ?? 'inactive',
+  active: false,
+  stripeSubscriptionId: current?.stripeSubscriptionId ?? null,
+  startedAt: current?.startedAt ?? null,
+  canceledAt: current?.canceledAt ?? null,
+});
+
 function expenseTotal(expenses: BudgetExpense[]) {
   return expenses.reduce((total, expense) => total + Number(expense.amount), 0);
 }
@@ -41,6 +60,8 @@ function expenseTotal(expenses: BudgetExpense[]) {
 export default function CoachingPage() {
   const router = useRouter();
   const [dashboard, setDashboard] = useState<CoachingDashboard | null>(null);
+  const [subscription, setSubscription] = useState<CoachingSubscriptionStatus | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +82,13 @@ export default function CoachingPage() {
       const data = await getCoachingDashboard();
       setDashboard(data);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load your coaching dashboard.');
+      // 403 = subscription lapsed between page load and now — fall back to the paywall.
+      if ((loadError as { status?: number } | null)?.status === 403) {
+        setSubscription((current) => inactiveSubscription(current));
+        setDashboard(null);
+      } else {
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load your coaching dashboard.');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,10 +96,26 @@ export default function CoachingPage() {
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.replace('/login');
+      // Logged-out visitors get the marketing landing — no redirect, so the
+      // coaching page stays crawlable and CTAs have somewhere to land.
+      setLoading(false);
       return;
     }
-    void loadDashboard();
+    setSignedIn(true);
+    void (async () => {
+      try {
+        const status = await getCoachingSubscription();
+        setSubscription(status);
+        if (status.active) {
+          await loadDashboard();
+        } else {
+          setLoading(false);
+        }
+      } catch (statusError) {
+        setError(statusError instanceof Error ? statusError.message : 'Unable to check your coaching subscription.');
+        setLoading(false);
+      }
+    })();
   }, [router]);
 
   const subscribeToCoaching = async () => {
@@ -250,6 +293,113 @@ export default function CoachingPage() {
   const summary = dashboard?.summary;
   const budgets = dashboard?.budgets ?? [];
   const goals = dashboard?.goals ?? [];
+  // `subscription` (fetched up-front for signed-in users) is authoritative
+  // for the paywall; the dashboard block is the fallback.
+  const subscriptionStatus =
+    subscription?.status ?? dashboard?.subscription.status ?? 'inactive';
+  // The API masks budgets/goals when the subscription gate applies; the
+  // entitled flag is authoritative, with the status check as fallback for
+  // older API responses that predate it.
+  const entitled =
+    dashboard?.entitled ??
+    subscription?.active ??
+    ['active', 'trialing'].includes(subscriptionStatus);
+  const pastDue = subscriptionStatus === 'past_due';
+
+  // ---------------------------------------------------------------------
+  // Paywall — logged-out visitors and non-subscribed members see the
+  // subscription pitch instead of the tools. The API enforces the same
+  // gate (402 on data endpoints + masked dashboard), so this is UX, not
+  // the security boundary.
+  // ---------------------------------------------------------------------
+  if (!entitled) {
+    return (
+      <main className="min-h-screen bg-zinc-50 py-8 dark:bg-black">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <header className="mb-8">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">Financial Coaching</p>
+            <h1 className="text-3xl font-bold text-zinc-950 dark:text-white">Build your path to financial peace</h1>
+            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+              SI-powered coaching: budgeting tools, goal tracking, and an automated SI coach that knows your plan.
+            </p>
+          </header>
+
+          {error && <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">{error}</div>}
+
+          <section className={`${cardClass} border-blue-200 dark:border-blue-800`} aria-label="Coaching subscription">
+            <h2 className="text-xl font-bold text-zinc-950 dark:text-white">
+              {pastDue ? 'Your coaching payment is past due' : 'Coaching membership'}
+            </h2>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              {pastDue
+                ? 'Update your payment method in the billing portal to keep your coaching tools and SI coach access.'
+                : 'Everything runs online — the SI coach answers in chat, anytime. Membership includes:'}
+            </p>
+            {!pastDue && (
+              <ul className="mt-4 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+                {coachingFeatures.map((feature) => (
+                  <li key={feature} className="flex gap-2">
+                    <span aria-hidden="true" className="text-blue-600 dark:text-blue-400">✓</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {pastDue ? (
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => void manageBilling()}
+                className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting ? 'Redirecting…' : 'Update payment method'}
+              </button>
+            ) : (
+              <div className="mt-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-zinc-950 dark:text-white">$49</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">/month</span>
+                </div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => void subscribeToCoaching()}
+                    className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submitting ? 'Redirecting…' : signedIn ? 'Start free trial' : 'Sign in to subscribe'}
+                  </button>
+                  {!signedIn && (
+                    <Link href="/register?next=/coaching" className="rounded-lg border border-zinc-300 px-5 py-2.5 text-center font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                      Create a free account
+                    </Link>
+                  )}
+                  {signedIn && subscription?.stripeSubscriptionId && (
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => void manageBilling()}
+                      className="rounded-lg border border-zinc-300 px-5 py-2.5 font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
+                      Manage billing
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!pastDue && (
+              <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
+                Start with a 30-day free trial — cancel anytime from your billing portal.
+                {signedIn ? ' Debt tracking and calculators stay free.' : ' Debt tracking and calculators are free with an account.'}
+              </p>
+            )}
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-zinc-50 py-8 dark:bg-black">
@@ -263,9 +413,9 @@ export default function CoachingPage() {
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm dark:bg-blue-950/50">
               <span className="text-zinc-600 dark:text-zinc-400">Coaching status: </span>
-              <span className="font-semibold capitalize text-blue-700 dark:text-blue-300">{dashboard?.subscription.status ?? 'inactive'}</span>
+              <span className="font-semibold capitalize text-blue-700 dark:text-blue-300">{subscription?.status ?? 'inactive'}</span>
             </div>
-            {['active', 'trialing'].includes(dashboard?.subscription.status ?? 'inactive') && (
+            {subscription?.active && (
               <button
                 type="button"
                 disabled={submitting}
@@ -279,20 +429,6 @@ export default function CoachingPage() {
         </header>
 
         {error && <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">{error}</div>}
-
-        {!['active', 'trialing'].includes(dashboard?.subscription.status ?? 'inactive') && (
-          <section className={`${cardClass} mb-8 border-blue-200 dark:border-blue-800`} aria-label="Coaching subscription">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">Monthly Coaching Subscription</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Get ongoing guidance, budgeting tools, and goal tracking for $49/month. Start with a 30-day free trial.</p>
-              </div>
-              <button type="button" disabled={submitting} onClick={() => void subscribeToCoaching()} className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
-                {submitting ? 'Redirecting...' : 'Subscribe to Coaching'}
-              </button>
-            </div>
-          </section>
-        )}
 
         <section aria-label="Coaching overview" className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
@@ -308,6 +444,10 @@ export default function CoachingPage() {
             </div>
           ))}
         </section>
+
+        <div className="mb-8">
+          <SiCoachChat />
+        </div>
 
         <section className={`${cardClass} mb-8`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Budget } from '../entities/budget.entity';
@@ -39,6 +40,16 @@ export interface DebtToIncomeResult {
   recommendation: string;
 }
 
+/** Stripe coaching-subscription statuses that unlock the coaching feature. */
+export const COACHING_ENTITLED_STATUSES = new Set(['active', 'trialing']);
+
+export interface CoachingEntitlement {
+  entitled: boolean;
+  status: string;
+  /** True when access came from the staff/test bypass, not a paid sub. */
+  bypassed: boolean;
+}
+
 @Injectable()
 export class CoachingService {
   private readonly logger = new Logger(CoachingService.name);
@@ -55,7 +66,61 @@ export class CoachingService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private dataSource: DataSource,
+    private configService: ConfigService,
   ) {}
+
+  // ---------------------------------------------------------------------------
+  // Subscription entitlement
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Resolve whether a user may use coaching features.
+   * Entitled = coaching subscription status 'active' or 'trialing', sourced
+   * from the coaching_subscriptions ledger row first and the denormalized
+   * users.coaching_subscription_status column as fallback (same precedence
+   * as getDashboard).
+   *
+   * STAFF/TEST BYPASS (clearly marked): role 'admin'/'sales' accounts and
+   * emails listed in the COACHING_GATE_EXEMPT_EMAILS env var (comma-separated,
+   * e.g. app-store reviewer accounts) skip the paywall. Never use the
+   * bypass for real consumers — it exists so staff and store reviewers can
+   * exercise the feature without buying a subscription.
+   */
+  async resolveEntitlement(userId: string): Promise<CoachingEntitlement> {
+    const [user, subscription] = await Promise.all([
+      this.usersRepository.findOne({ where: { id: userId } }),
+      this.coachingSubscriptionsRepository.findOne({
+        where: { userId },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
+
+    const status =
+      subscription?.status || user?.coachingSubscriptionStatus || 'inactive';
+
+    const bypassed = this.isExemptUser(user);
+    return {
+      entitled: bypassed || COACHING_ENTITLED_STATUSES.has(status),
+      status,
+      bypassed,
+    };
+  }
+
+  /**
+   * Staff/test paywall bypass — internal staff roles plus the
+   * COACHING_GATE_EXEMPT_EMAILS allowlist (review/test accounts).
+   */
+  private isExemptUser(user: User | null): boolean {
+    if (!user) return false;
+    if (user.role === 'admin' || user.role === 'sales') return true;
+    const exemptEmails = (
+      this.configService.get<string>('COACHING_GATE_EXEMPT_EMAILS') || ''
+    )
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+    return exemptEmails.includes((user.email || '').toLowerCase());
+  }
 
   // ---------------------------------------------------------------------------
   // Budgets
@@ -187,20 +252,83 @@ export class CoachingService {
   }
 
   // ---------------------------------------------------------------------------
-  // Dashboard
+  // Subscription status
   // ---------------------------------------------------------------------------
 
-  async getDashboard(userId: string) {
-    const [budgets, goals, subscription] = await Promise.all([
-      this.getBudgets(userId),
-      this.getGoals(userId),
+  /**
+   * Resolves the user's coaching subscription state. The latest
+   * `coaching_subscriptions` row wins; `user.coachingSubscriptionStatus`
+   * (maintained by the Stripe webhook handlers) is the fallback.
+   * `active` is entitlement-aware — staff/test bypass accounts read as
+   * active so clients render the tools instead of the paywall.
+   */
+  async getSubscriptionStatus(userId: string) {
+    const [subscription, user, entitlement] = await Promise.all([
       this.coachingSubscriptionsRepository.findOne({
         where: { userId },
         order: { createdAt: 'DESC' },
       }),
+      this.usersRepository.findOne({ where: { id: userId } }),
+      this.resolveEntitlement(userId),
     ]);
 
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    const status =
+      subscription?.status || user?.coachingSubscriptionStatus || 'inactive';
+
+    return {
+      status,
+      active: entitlement.entitled,
+      stripeSubscriptionId:
+        subscription?.stripeSubscriptionId || user?.stripeSubscriptionId || null,
+      startedAt: subscription?.startedAt || null,
+      canceledAt: subscription?.canceledAt || null,
+    };
+  }
+
+  /**
+   * Whether the user may use the gated coaching tools (budgets, goals,
+   * dashboard, calculators). Includes the staff/test bypass — see
+   * resolveEntitlement.
+   */
+  async hasActiveSubscription(userId: string): Promise<boolean> {
+    const { entitled } = await this.resolveEntitlement(userId);
+    return entitled;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dashboard
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Dashboard stays reachable for every signed-in user (it carries the
+   * subscription block the apps use to render subscribe/manage UI), but the
+   * budget/goal payloads are stripped unless the caller is entitled — same
+   * field-masking convention as matching.service contact gating.
+   */
+  async getDashboard(userId: string) {
+    const subscription = await this.getSubscriptionStatus(userId);
+
+    if (!subscription.active) {
+      return {
+        entitled: false,
+        budgets: [],
+        goals: [],
+        subscription,
+        summary: {
+          totalMonthlyIncome: 0,
+          totalMonthlyExpenses: 0,
+          netMonthly: 0,
+          activeGoals: 0,
+          completedGoals: 0,
+          totalGoals: 0,
+        },
+      };
+    }
+
+    const [budgets, goals] = await Promise.all([
+      this.getBudgets(userId),
+      this.getGoals(userId),
+    ]);
 
     // Aggregate budget summary
     const totalMonthlyExpenses = budgets.reduce((sum, budget) => {
@@ -220,15 +348,10 @@ export class CoachingService {
     const completedGoals = goals.filter((g) => g.completed).length;
 
     return {
+      entitled: true,
       budgets,
       goals,
-      subscription: {
-        status: subscription?.status || user?.coachingSubscriptionStatus || 'inactive',
-        stripeSubscriptionId:
-          subscription?.stripeSubscriptionId || user?.stripeSubscriptionId || null,
-        startedAt: subscription?.startedAt || null,
-        canceledAt: subscription?.canceledAt || null,
-      },
+      subscription,
       summary: {
         totalMonthlyIncome,
         totalMonthlyExpenses,
