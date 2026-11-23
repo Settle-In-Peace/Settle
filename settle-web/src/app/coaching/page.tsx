@@ -118,7 +118,7 @@ export default function CoachingPage() {
     })();
   }, [router]);
 
-  const subscribeToCoaching = async () => {
+  const subscribeToCoaching = async (tier?: 'basic' | 'pro') => {
     const token = getToken();
     if (!token) {
       router.push('/login');
@@ -128,7 +128,7 @@ export default function CoachingPage() {
     try {
       setSubmitting(true);
       setError('');
-      const session = await createCoachingCheckoutSession(token, window.location.origin);
+      const session = await createCoachingCheckoutSession(token, window.location.origin, tier);
       if (!session.url) throw new Error('Stripe Checkout did not return a redirect URL.');
       window.location.assign(session.url);
     } catch (checkoutError) {
@@ -356,20 +356,40 @@ export default function CoachingPage() {
                 {submitting ? 'Redirecting…' : 'Update payment method'}
               </button>
             ) : (
-              <div className="mt-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-zinc-950 dark:text-white">$49</span>
-                  <span className="text-zinc-600 dark:text-zinc-400">/month</span>
-                </div>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+                  <p className="text-sm font-semibold text-zinc-950 dark:text-white">Basic</p>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-zinc-950 dark:text-white">$19</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">/month</span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Coaching tools + SI coach chat.</p>
                   <button
                     type="button"
                     disabled={submitting}
-                    onClick={() => void subscribeToCoaching()}
-                    className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => void subscribeToCoaching('basic')}
+                    className="mt-3 w-full rounded-lg border border-blue-600 px-5 py-2.5 font-semibold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-zinc-900"
                   >
                     {submitting ? 'Redirecting…' : signedIn ? 'Start free trial' : 'Sign in to subscribe'}
                   </button>
+                </div>
+                <div className="rounded-xl border border-blue-600 p-4 dark:border-blue-500">
+                  <p className="text-sm font-semibold text-zinc-950 dark:text-white">Pro</p>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-zinc-950 dark:text-white">$49</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">/month</span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Everything in Basic + priority SI coach responses.</p>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => void subscribeToCoaching('pro')}
+                    className="mt-3 w-full rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submitting ? 'Redirecting…' : signedIn ? 'Start free trial' : 'Sign in to subscribe'}
+                  </button>
+                </div>
+                <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row">
                   {!signedIn && (
                     <Link href="/register?next=/coaching" className="rounded-lg border border-zinc-300 px-5 py-2.5 text-center font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
                       Create a free account
