@@ -30,9 +30,10 @@ const money = (v?: number | string | null) => {
   return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 };
 
-export default function CoachingScreen() {
+export default function CoachingScreen({ navigation }: any) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [gated, setGated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [bName, setBName] = useState('');
@@ -46,7 +47,9 @@ export default function CoachingScreen() {
       const [b, g] = await Promise.all([listBudgets(), listGoals()]);
       setBudgets(b);
       setGoals(g);
-    } catch {
+    } catch (e: any) {
+      const status = e?.response?.status;
+      if (status === 402 || status === 403) setGated(true);
       /* keep stale */
     } finally {
       setLoading(false);
@@ -119,6 +122,23 @@ export default function CoachingScreen() {
     return (
       <View style={styles.container}>
         <ActivityIndicator style={{ marginTop: 60 }} color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (gated) {
+    return (
+      <View style={[styles.container, styles.gatedWrap]}>
+        <Text style={styles.gatedTitle}>Coaching is a subscriber feature</Text>
+        <Text style={styles.gatedBody}>
+          Budgets and payoff goals are included with an SI Coach plan.
+        </Text>
+        <Pressable
+          style={styles.gatedBtn}
+          onPress={() => navigation.navigate('Tabs', { screen: 'Coach' })}
+        >
+          <Text style={styles.gatedBtnText}>See SI Coach plans</Text>
+        </Pressable>
       </View>
     );
   }
@@ -271,4 +291,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: 12,
   },
+  gatedWrap: { padding: 24, paddingTop: 80, alignItems: 'center' },
+  gatedTitle: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 10 },
+  gatedBody: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: 22 },
+  gatedBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 13 },
+  gatedBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });
